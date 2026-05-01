@@ -1,5 +1,4 @@
 # Cloud-Arena
- Game Server Rental Platform providing servers with high performance, modpack support, and easy management.
 ---
 
 ## 1. Cấu trúc thư mục (MVC Architecture)
