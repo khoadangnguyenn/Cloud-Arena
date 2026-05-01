@@ -16,7 +16,7 @@
 
 ## 📌 Overview
 
-**CLOUD-ARENA** là một nền tảng website chuyên cung cấp dịch vụ cho thuê máy chủ game. Dự án sử dụng kiến trúc **Model-View-Controller** tùy chỉnh, giúp tối ưu hóa hiệu suất, dễ dàng bảo trì và phân tách rõ ràng giữa logic nghiệp vụ và giao diện người dùng.
+**CLOUD-ARENA** là một nền tảng website chuyên cung cấp dịch vụ cho thuê máy chủ game. Dự án sử dụng kiến trúc Model-View-Controller tùy chỉnh, giúp tối ưu hóa hiệu suất, dễ dàng bảo trì và phân tách rõ ràng giữa logic nghiệp vụ và giao diện người dùng.
 
 ---
 
