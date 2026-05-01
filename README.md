@@ -1,6 +1,8 @@
+```
 **Đề tài:** Game Server Rental Platform (G-SERVER)
 **Kiến trúc:** Model-View-Controller (MVC) Custom
 **Ngôn ngữ:** PHP 8.x, MySQL, Tailwind CSS, JavaScript
+```
 ---
 
 ## 1. MVC Architecture
