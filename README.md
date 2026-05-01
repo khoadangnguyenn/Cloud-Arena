@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🎮 Cloud-Arena
+# 🎮 CLOUD-ARENA
 **Game Server Rental Platform**
 
 [![PHP](https://img.shields.io/badge/PHP-8.x-777BB4.svg?style=flat-square&logo=php&logoColor=white)](https://www.php.net/)
@@ -16,7 +16,7 @@
 
 ## 📌 Overview
 
-**G-SERVER** là một nền tảng website chuyên cung cấp dịch vụ cho thuê máy chủ game. Dự án được xây dựng từ con số không (from scratch) sử dụng kiến trúc **Model-View-Controller (MVC)** tùy chỉnh, giúp tối ưu hóa hiệu suất, dễ dàng bảo trì và phân tách rõ ràng giữa logic nghiệp vụ và giao diện người dùng.
+**CLOUD-ARENA** là một nền tảng website chuyên cung cấp dịch vụ cho thuê máy chủ game. Dự án được xây dựng từ con số không (from scratch) sử dụng kiến trúc **Model-View-Controller (MVC)** tùy chỉnh, giúp tối ưu hóa hiệu suất, dễ dàng bảo trì và phân tách rõ ràng giữa logic nghiệp vụ và giao diện người dùng.
 
 ---
 
