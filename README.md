@@ -14,13 +14,13 @@
 
 <br>
 
-## 📌 Tổng quan
+## 📌 Overview
 
 **G-SERVER** là một nền tảng website chuyên cung cấp dịch vụ cho thuê máy chủ game. Dự án được xây dựng từ con số không (from scratch) sử dụng kiến trúc **Model-View-Controller (MVC)** tùy chỉnh, giúp tối ưu hóa hiệu suất, dễ dàng bảo trì và phân tách rõ ràng giữa logic nghiệp vụ và giao diện người dùng.
 
 ---
 
-## 🏗️ Kiến trúc Hệ thống (MVC)
+## 🏗️ MVC Architecture
 
 Hệ thống hoạt động dựa trên mô hình MVC tự xây dựng với luồng xử lý chặt chẽ:
 
@@ -32,7 +32,7 @@ Hệ thống hoạt động dựa trên mô hình MVC tự xây dựng với lu�
     - `Controller.php`: Lớp cơ sở (Base Controller) cung cấp các phương thức dùng chung như `view()` và `model()`.
     - `Database.php`: Wrapper sử dụng PDO, xử lý kết nối CSDL và chống SQL Injection.
 
-### 2. Luồng xử lý dữ liệu (Workflow)
+### 2. Workflow
 *Pipeline cơ bản:* **Client truy cập ➔ Route (index.php) ➔ Controller ➔ Model (CSDL) ➔ View (Giao diện HTML)**
 
 1. **Request**: Trình duyệt gọi URL ➔ File `.htaccess` điều hướng tất cả về `public/index.php`.
@@ -42,7 +42,7 @@ Hệ thống hoạt động dựa trên mô hình MVC tự xây dựng với lu�
 
 ---
 
-## 🗄️ Cơ sở Dữ liệu
+## 🗄️ Database
 
 Dự án sử dụng **MySQL** làm hệ quản trị cơ sở dữ liệu. Dưới đây là các bảng (tables) cấu thành nên hệ thống:
 
@@ -55,14 +55,11 @@ Dự án sử dụng **MySQL** làm hệ quản trị cơ sở dữ liệu. Dư�
 
 ---
 
-## 📂 Cấu trúc Dự án
-*(Bạn có thể bổ sung cây thư mục chi tiết của mã nguồn vào đây để người xem dễ hình dung hơn)*
-```
-
+## 📂 System Architecture
 
 ---
 ```
-Game Server Rental Platform/
+Cloud-Arena/
 ├── app/                        # Chứa toàn bộ logic backend của ứng dụng
 │   ├── config/
 │   │   └── config.php          # Chứa cấu hình Database và các hằng số (URLROOT, APPROOT)
@@ -94,7 +91,7 @@ Game Server Rental Platform/
 └── database.sql                # File SQL cấu trúc các bảng
 ```
 
-## 7. HƯỚNG DẪN CÀI ĐẶT
+## 🚀 Getting Started
 1. Giải nén vào `xampp/htdocs`.
 2. Tạo database `game_server_db` trên phpmyadmin và import `database.sql`.
 3. Truy cập: `http://localhost/Game%20Server%20Rental%20Platform/public/`.
