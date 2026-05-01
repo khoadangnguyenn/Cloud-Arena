@@ -1,7 +1,7 @@
 # Cloud-Arena
 ---
 
-## 1. Cấu trúc thư mục (MVC Architecture)
+## 1. MVC Architecture
 
 Luồng xử lý: **Client truy cập -> Route (index.php) -> Controller -> Model (CSDL) -> View (Giao diện HTML)**.
 
