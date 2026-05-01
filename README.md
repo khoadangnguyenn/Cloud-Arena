@@ -3,7 +3,7 @@
 # 🎮 CLOUD-ARENA
 **Game Server Rental Platform**
 
-[![PHP](https://img.shields.io/badge/PHP-8.x-777BB4.svg?style=flat-square&logo=php&logoColor=white)](https://www.php.net/)
+[![PHP](https://img.shields.io/badge/PHP-8.2+-777BB4.svg?style=flat-square&logo=php&logoColor=white)](https://www.php.net/)
 [![MySQL](https://img.shields.io/badge/MySQL-Database-4479A1.svg?style=flat-square&logo=mysql&logoColor=white)](https://www.mysql.com/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-Styling-38B2AC.svg?style=flat-square&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![JavaScript](https://img.shields.io/badge/JavaScript-Logic-F7DF1E.svg?style=flat-square&logo=javascript&logoColor=black)](https://developer.mozilla.org/)
@@ -16,7 +16,7 @@
 
 ## 📌 Overview
 
-**CLOUD-ARENA** là một nền tảng website chuyên cung cấp dịch vụ cho thuê máy chủ game. Dự án sử dụng kiến trúc Model-View-Controller tùy chỉnh, giúp tối ưu hóa hiệu suất, dễ dàng bảo trì và phân tách rõ ràng giữa logic nghiệp vụ và giao diện người dùng.
+**CLOUD-ARENA** là một nền tảng website chuyên nghiệp cung cấp dịch vụ cho thuê máy chủ game. Dự án được xây dựng trên kiến trúc **Model-View-Controller (MVC)** tùy chỉnh, tích hợp giao diện hiện đại (Dark Mode), hệ thống tin tức, giỏ hàng và bảng điều khiển quản trị (Admin Dashboard) mạnh mẽ.
 
 ---
 
@@ -42,28 +42,54 @@ Hệ thống hoạt động dựa trên mô hình MVC với luồng xử lý ch�
 
 ---
 
-## 🗄️ Database
+## 🛠️ Getting Started (Hướng dẫn chạy dự án)
 
-Dự án sử dụng **MySQL** làm hệ quản trị cơ sở dữ liệu. Dưới đây là các tables cấu thành nên hệ thống:
+### 1. Yêu cầu hệ thống
+- **XAMPP**, WampServer hoặc MAMP.
+- PHP version >= **8.2**.
+- MySQL Server.
+- Apache với module `mod_rewrite` được bật.
 
-- 👤 `users`: Quản lý thông tin tài khoản, mật khẩu và phân quyền hệ thống (Admin / Member).
-- 📦 `products`: Danh mục các gói dịch vụ server (Cấu hình RAM, CPU, Mức giá).
-- 📰 `news`: Lưu trữ hệ thống tin tức, thông báo và các bài viết hướng dẫn.
-- 💬 `contacts`: Quản lý các tin nhắn, phản hồi hỗ trợ từ khách hàng.
-- 🖥️ `user_servers` *(Mở rộng)*: Quản lý chi tiết các máy chủ thực tế mà khách đã thuê (Theo dõi Status: *Running / Stopped*).
-- 💳 `orders`: Ghi nhận lịch sử giao dịch, đơn hàng và trạng thái thanh toán.
+### 2. Các bước cài đặt
+
+1. **Copy mã nguồn**:
+   - Giải nén và copy thư mục `Game Server Rental Platform` vào thư mục `htdocs` của XAMPP.
+
+2. **Cấu hình Database**:
+   - Truy cập `http://localhost/phpmyadmin`.
+   - Tạo cơ sở dữ liệu mới tên là `cloud_arena`.
+   - Import tệp `database.sql` (nằm ở thư mục gốc) vào CSDL vừa tạo.
+
+3. **Cấu hình ứng dụng**:
+   - Mở tệp `app/config/config.php` và cập nhật thông số:
+     ```php
+     define('DB_HOST', 'localhost');
+     define('DB_USER', 'root');
+     define('DB_PASS', '');
+     define('DB_NAME', 'cloud_arena');
+     define('URLROOT', 'http://localhost/Game Server Rental Platform');
+     ```
+
+### 3. Cách truy cập
+- **Client**: `http://localhost/Game Server Rental Platform/` (Tự động redirect vào thư mục `public`).
+- **Admin**: `http://localhost/Game Server Rental Platform/admin` (Mặc định: admin / 123456).
 
 ---
 
-## 📂 System Architecture
+## 🗄️ Database Schema
+
+Dự án sử dụng **MySQL** với các bảng chính:
+- 👤 `users`: Quản lý tài khoản và phân quyền (Admin/Member).
+- 📦 `products`: Gói dịch vụ server (RAM, CPU, Giá).
+- 📰 `news`: Hệ thống tin tức và bài viết.
+- 💬 `contacts`: Tin nhắn hỗ trợ từ khách hàng.
+- 💳 `orders`: Lịch sử giao dịch và trạng thái thanh toán.
 
 ---
+
+## 📂 System Architecture & Team Tasks
+
 ```
-#1: Giang
-#2: Bảo
-#3: Thiện
-#4: Khoa
-
 Cloud-Arena/
 ├── app/                        # Chứa toàn bộ logic backend của ứng dụng
 │   ├── config/
@@ -72,20 +98,19 @@ Cloud-Arena/
 │   │   ├── App.php             # Router: Phân tích URL
 │   │   ├── Controller.php      # Controller gốc (Load Model/View)
 │   │   └── Database.php        # Wrapper PDO kết nối MySQL
-│   ├── helpers/                # [MỚI] Các hàm tiện ích dùng chung
+│   ├── helpers/                # Các hàm tiện ích dùng chung
 │   │   ├── Pagination.php      # Xử lý phân trang (#2)
 │   │   └── Upload.php          # Xử lý upload hình ảnh (#2)
 │   ├── controllers/            # Xử lý logic và nhận Request
 │   │   ├── Pages.php           # Trang chủ, Liên hệ (#1) | Giới thiệu, Hỏi đáp (#2)
 │   │   ├── Products.php        # Hiển thị danh sách & chi tiết sản phẩm (#3)
 │   │   ├── Cart.php            # Quản lý giỏ hàng và thanh toán (#3)
-│   │   ├── Posts.php           # Hiển thị danh sách & đọc tin tức (#4)
+│   │   ├── News.php            # Hiển thị danh sách & đọc tin tức (#4)
 │   │   ├── Users.php           # Đăng ký / Đăng nhập (Cả nhóm)
 │   │   ├── Admin.php           # Dashboard & Cài đặt hệ thống (#1)
 │   │   ├── AdminProducts.php   # Quản lý sản phẩm CRUD (#3)
 │   │   ├── AdminOrders.php     # Quản lý đơn hàng & trạng thái (#3)
-│   │   ├── AdminPosts.php      # Quản lý bài viết tin tức CRUD (#4)
-│   │   ├── AdminComments.php   # Quản lý bình luận & đánh giá (#4)
+│   │   ├── AdminNews.php       # Quản lý bài viết tin tức CRUD (#4)
 │   │   ├── AdminFaqs.php       # Quản lý bộ câu hỏi Hỏi/đáp (#2)
 │   │   ├── AdminContacts.php   # Quản lý tin nhắn liên hệ từ khách (#1)
 │   │   └── AdminAbout.php      # Quản lý nội dung trang Giới thiệu (#2)
@@ -93,44 +118,20 @@ Cloud-Arena/
 │   │   ├── User.php            # Model Thành viên (Cả nhóm)
 │   │   ├── Product.php         # Model Sản phẩm (#3)
 │   │   ├── Order.php           # Model Đơn hàng (#3)
-│   │   ├── Post.php            # Model Bài viết (#4)
-│   │   ├── Comment.php         # Model Bình luận (#4)
-│   │   ├── Faq.php             # Model Câu hỏi (#2)
-│   │   ├── About.php           # Model Giới thiệu (#2)
+│   │   ├── NewsModel.php       # Model Bài viết (#4)
 │   │   ├── Contact.php         # Model Liên hệ (#1)
-│   │   └── Setting.php         # Model Cài đặt (Logo, SĐT, Địa chỉ) (#1)
+│   │   └── ...
 │   └── views/                  # Chứa file giao diện HTML/PHP
 │       ├── admin/              # GIAO DIỆN ADMIN (SrtDash)
-│       │   ├── settings/       # Sửa Logo, thông tin công ty (#1)
-│       │   ├── contacts/       # Danh sách tin nhắn khách hàng (#1)
-│       │   ├── products/       # Quản lý sản phẩm (#3)
-│       │   ├── orders/         # Quản lý đơn hàng (#3)
-│       │   ├── posts/          # Quản lý tin tức (#4)
-│       │   ├── comments/       # Quản lý bình luận (#4)
-│       │   ├── faqs/           # Quản lý câu hỏi/đáp (#2)
-│       │   ├── about/          # Sửa nội dung giới thiệu (#2)
-│       │   └── index.php       # Dashboard tổng quan (#1)
-│       ├── client/             # GIAO DIỆN KHÁCH (Tailwind CSS)
-│       │   ├── index.php       # Trang chủ (#1)
-│       │   ├── contact.php     # Trang liên hệ (#1)
-│       │   ├── about.php       # Trang giới thiệu (#2)
-│       │   ├── faq.php         # Trang hỏi đáp (#2)
-│       │   ├── products/       # Danh sách & chi tiết SP (#3)
-│       │   ├── cart/           # Giỏ hàng & Thanh toán (#3)
-│       │   └── posts/          # Danh sách & đọc bài viết (#4)
-│       └── layouts/            # Header và Footer chung (Cả nhóm)
-├── public/                     # Thư mục công khai
-│   ├── index.php               # Front-controller (Cả nhóm)
-│   ├── .htaccess               # Cấu hình URL đẹp (Cả nhóm)
-│   ├── css/                    # Custom CSS (Cả nhóm)
-│   ├── js/                     # Custom Javascript (Cả nhóm)
-│   ├── uploads/                # Nơi lưu trữ ảnh (Xử lý bởi #2, dùng bởi #1, #3, #4)
-│   └── admin_assets/           # Assets của template Srtdash (Bảo - #4 quản lý)
-└── database.sql                # File SQL cấu trúc các bảng (Cả nhóm)
+│       └── client/             # GIAO DIỆN KHÁCH (Tailwind CSS - Premium Dark Theme)
+├── public/                     # Thư mục công khai (Entry Point)
+│   ├── .htaccess               # Cấu hình URL đẹp & Bảo mật
+│   └── assets/                 # CSS, JS, Images, Uploads
+└── database.sql                # Cấu trúc CSDL gốc
 ```
 
-## 🚀 Getting Started
-1. Giải nén vào `xampp/htdocs`.
-2. Tạo database `game_server_db` trên phpmyadmin và import `database.sql`.
-3. Truy cập: `http://localhost/Game%20Server%20Rental%20Platform/public/`.
+---
 
+## 📝 License
+Dự án được phát triển bởi nhóm sinh viên cho môn học **Lập trình Web**.
+- #1: Giang | #2: Bảo | #3: Thiện | #4: Khoa
