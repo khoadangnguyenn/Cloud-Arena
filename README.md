@@ -59,6 +59,10 @@ Dự án sử dụng **MySQL** làm hệ quản trị cơ sở dữ liệu. Dư�
 
 ---
 ```
+#1: Giang
+#2: Bảo
+#3: Thiện
+#4: Khoa
 Cloud-Arena/
 ├── app/                        # Chứa toàn bộ logic backend của ứng dụng
 │   ├── config/
