@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🎮 G-SERVER
+# 🎮 Cloud-Arena
 **Game Server Rental Platform**
 
 [![PHP](https://img.shields.io/badge/PHP-8.x-777BB4.svg?style=flat-square&logo=php&logoColor=white)](https://www.php.net/)
