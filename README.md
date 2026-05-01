@@ -58,39 +58,7 @@ Dự án sử dụng **MySQL** làm hệ quản trị cơ sở dữ liệu. Dư�
 ## 📂 Cấu trúc Dự án
 *(Bạn có thể bổ sung cây thư mục chi tiết của mã nguồn vào đây để người xem dễ hình dung hơn)*
 ```
-**Đề tài:** Game Server Rental Platform (G-SERVER)
-**Kiến trúc:** Model-View-Controller (MVC) Custom
-**Ngôn ngữ:** PHP 8.x, MySQL, Tailwind CSS, JavaScript
-```
----
 
-## 1. MVC Architecture
-
-### 1.1. Cấu trúc thư mục
-- **/app**: Logic nghiệp vụ (Controller, Model, Core). Không thể truy cập từ URL.
-- **/public**: Tài nguyên tĩnh (CSS, JS, Images) và file `index.php` (Entry point).
-- **Core Classes**: 
-    - `App.php`: Routing URL thông minh.
-    - `Controller.php`: Lớp cơ sở cung cấp phương thức `view()` và `model()`.
-    - `Database.php`: Wrapper PDO chống SQL Injection.
-
-### 1.2. Workflow
-Luồng xử lý: **Client truy cập -> Route (index.php) -> Controller -> Model (CSDL) -> View (Giao diện HTML)**.
-1. **Request**: Trình duyệt gọi URL -> `.htaccess` chuyển về `index.php`.
-2. **Route**: `App.php` xác định Controller/Action.
-3. **Action**: Controller nhận yêu cầu, lấy dữ liệu từ Model.
-4. **Response**: Controller truyền dữ liệu vào View và hiển thị kết quả cho người dùng.
-
----
-
-## 2. DATABASE
-Hệ thống sử dụng MySQL với các bảng chính:
-- `users`: Quản lý tài khoản và phân quyền (Admin/Member).
-- `products`: Các gói dịch vụ server (RAM, CPU, Giá).
-- `news`: Tin tức và bài viết hướng dẫn.
-- `contacts`: Phản hồi khách hàng.
-- `user_servers` (Mở rộng): Quản lý các máy chủ thực tế mà khách đã thuê (Status: Running/Stopped).
-- `orders`: Lịch sử giao dịch và thanh toán.
 
 ---
 ```
