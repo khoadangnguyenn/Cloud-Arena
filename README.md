@@ -8,7 +8,7 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-Styling-38B2AC.svg?style=flat-square&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![JavaScript](https://img.shields.io/badge/JavaScript-Logic-F7DF1E.svg?style=flat-square&logo=javascript&logoColor=black)](https://developer.mozilla.org/)
 
-*Nền tảng cho thuê và quản lý máy chủ game tối ưu, vận hành trên kiến trúc Custom MVC.*
+*Nền tảng cho thuê và quản lý máy chủ game tối ưu.*
 
 </div>
 
@@ -16,13 +16,13 @@
 
 ## 📌 Overview
 
-**CLOUD-ARENA** là một nền tảng website chuyên cung cấp dịch vụ cho thuê máy chủ game. Dự án được xây dựng từ con số không (from scratch) sử dụng kiến trúc **Model-View-Controller (MVC)** tùy chỉnh, giúp tối ưu hóa hiệu suất, dễ dàng bảo trì và phân tách rõ ràng giữa logic nghiệp vụ và giao diện người dùng.
+**CLOUD-ARENA** là một nền tảng website chuyên cung cấp dịch vụ cho thuê máy chủ game. Dự án sử dụng kiến trúc **Model-View-Controller** tùy chỉnh, giúp tối ưu hóa hiệu suất, dễ dàng bảo trì và phân tách rõ ràng giữa logic nghiệp vụ và giao diện người dùng.
 
 ---
 
 ## 🏗️ MVC Architecture
 
-Hệ thống hoạt động dựa trên mô hình MVC tự xây dựng với luồng xử lý chặt chẽ:
+Hệ thống hoạt động dựa trên mô hình MVC với luồng xử lý chặt chẽ:
 
 ### 1. Cấu trúc thư mục cốt lõi
 - 📁 **/app**: Chứa toàn bộ logic nghiệp vụ (Controller, Model, Core). Thư mục này được bảo mật và **không thể truy cập trực tiếp từ URL**.
@@ -33,7 +33,7 @@ Hệ thống hoạt động dựa trên mô hình MVC tự xây dựng với lu�
     - `Database.php`: Wrapper sử dụng PDO, xử lý kết nối CSDL và chống SQL Injection.
 
 ### 2. Workflow
-*Pipeline cơ bản:* **Client truy cập ➔ Route (index.php) ➔ Controller ➔ Model (CSDL) ➔ View (Giao diện HTML)**
+*Pipeline:* **Client truy cập ➔ Route (index.php) ➔ Controller ➔ Model (CSDL) ➔ View (Giao diện HTML)**
 
 1. **Request**: Trình duyệt gọi URL ➔ File `.htaccess` điều hướng tất cả về `public/index.php`.
 2. **Route**: `App.php` phân tích URL để xác định Controller và Action tương ứng.
@@ -44,7 +44,7 @@ Hệ thống hoạt động dựa trên mô hình MVC tự xây dựng với lu�
 
 ## 🗄️ Database
 
-Dự án sử dụng **MySQL** làm hệ quản trị cơ sở dữ liệu. Dưới đây là các bảng (tables) cấu thành nên hệ thống:
+Dự án sử dụng **MySQL** làm hệ quản trị cơ sở dữ liệu. Dưới đây là các tables cấu thành nên hệ thống:
 
 - 👤 `users`: Quản lý thông tin tài khoản, mật khẩu và phân quyền hệ thống (Admin / Member).
 - 📦 `products`: Danh mục các gói dịch vụ server (Cấu hình RAM, CPU, Mức giá).
