@@ -1,0 +1,6 @@
+/* Custom styles for the client side */
+/* Tailwind handles most utilities, but you can add custom CSS here */
+body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
