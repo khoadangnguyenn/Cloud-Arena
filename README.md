@@ -4,7 +4,7 @@
 
 ## 1. Cấu trúc thư mục (MVC Architecture)
 
-Dự án tuân theo luồng xử lý: **Người dùng truy cập -> Route (index.php) -> Controller -> Model (CSDL) -> View (Giao diện HTML)**.
+Luồng xử lý: **Client truy cập -> Route (index.php) -> Controller -> Model (CSDL) -> View (Giao diện HTML)**.
 
 ```text
 Game Server Rental Platform/
