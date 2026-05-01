@@ -68,7 +68,7 @@ Cloud-Arena/
 ├── app/                        # Chứa toàn bộ logic backend của ứng dụng
 │   ├── config/
 │   │   └── config.php          # Cấu hình Database và hằng số (Cả nhóm)
-│   ├── core/                   # Thư mục nhân hệ thống (Cả nhóm/Leader)
+│   ├── core/                   # Thư mục core (Cả nhóm/Leader)
 │   │   ├── App.php             # Router: Phân tích URL
 │   │   ├── Controller.php      # Controller gốc (Load Model/View)
 │   │   └── Database.php        # Wrapper PDO kết nối MySQL
