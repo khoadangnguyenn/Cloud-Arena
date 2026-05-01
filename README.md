@@ -62,33 +62,66 @@ Dự án sử dụng **MySQL** làm hệ quản trị cơ sở dữ liệu. Dư�
 Cloud-Arena/
 ├── app/                        # Chứa toàn bộ logic backend của ứng dụng
 │   ├── config/
-│   │   └── config.php          # Chứa cấu hình Database và các hằng số (URLROOT, APPROOT)
-│   ├── core/
-│   │   ├── App.php             # Router: Phân tích URL và gọi Controller tương ứng
-│   │   ├── Controller.php      # Controller gốc: Chứa hàm gọi Model và View
-│   │   └── Database.php        # Wrapper PDO kết nối và truy vấn MySQL
-│   ├── controllers/            # Xử lý logic và nhận Request từ người dùng
-│   │   ├── Pages.php           # Controller cho trang chủ, giới thiệu,...
-│   │   ├── Products.php        # Controller hiển thị sản phẩm cho khách
-│   │   ├── Cart.php            # Controller quản lý giỏ hàng
-│   │   ├── Users.php           # Controller Đăng ký / Đăng nhập
-│   │   ├── Admin.php           # Controller cho Dashboard Admin
-│   │   └── AdminProducts.php   # Controller quản lý sản phẩm trong Admin
+│   │   └── config.php          # Cấu hình Database và hằng số (Cả nhóm)
+│   ├── core/                   # Thư mục nhân hệ thống (Cả nhóm/Leader)
+│   │   ├── App.php             # Router: Phân tích URL
+│   │   ├── Controller.php      # Controller gốc (Load Model/View)
+│   │   └── Database.php        # Wrapper PDO kết nối MySQL
+│   ├── helpers/                # [MỚI] Các hàm tiện ích dùng chung
+│   │   ├── Pagination.php      # Xử lý phân trang (#2)
+│   │   └── Upload.php          # Xử lý upload hình ảnh (#2)
+│   ├── controllers/            # Xử lý logic và nhận Request
+│   │   ├── Pages.php           # Trang chủ, Liên hệ (#1) | Giới thiệu, Hỏi đáp (#2)
+│   │   ├── Products.php        # Hiển thị danh sách & chi tiết sản phẩm (#3)
+│   │   ├── Cart.php            # Quản lý giỏ hàng và thanh toán (#3)
+│   │   ├── Posts.php           # Hiển thị danh sách & đọc tin tức (#4)
+│   │   ├── Users.php           # Đăng ký / Đăng nhập (Cả nhóm)
+│   │   ├── Admin.php           # Dashboard & Cài đặt hệ thống (#1)
+│   │   ├── AdminProducts.php   # Quản lý sản phẩm CRUD (#3)
+│   │   ├── AdminOrders.php     # Quản lý đơn hàng & trạng thái (#3)
+│   │   ├── AdminPosts.php      # Quản lý bài viết tin tức CRUD (#4)
+│   │   ├── AdminComments.php   # Quản lý bình luận & đánh giá (#4)
+│   │   ├── AdminFaqs.php       # Quản lý bộ câu hỏi Hỏi/đáp (#2)
+│   │   ├── AdminContacts.php   # Quản lý tin nhắn liên hệ từ khách (#1)
+│   │   └── AdminAbout.php      # Quản lý nội dung trang Giới thiệu (#2)
 │   ├── models/                 # Chứa các class giao tiếp với Database
-│   │   ├── User.php
-│   │   └── Product.php
-│   └── views/                  # Chứa file HTML/PHP để hiển thị giao diện
-│       ├── admin/              # Giao diện cho Admin (sử dụng template Srtdash)
-│       ├── client/             # Giao diện cho Khách/Thành viên (sử dụng Tailwind CSS)
-│       └── layouts/            # Chứa Header và Footer chung
-├── public/                     # Thư mục gốc công khai ra ngoài internet
-│   ├── index.php               # Front-controller (Nơi đón mọi request)
-│   ├── .htaccess               # Chuyển hướng URL đẹp
-│   ├── css/                    # Custom CSS
-│   ├── js/                     # Custom Javascript
-│   ├── uploads/                # Nơi lưu trữ hình ảnh tải lên
-│   └── admin_assets/           # Chứa các file CSS/JS của template Srtdash
-└── database.sql                # File SQL cấu trúc các bảng
+│   │   ├── User.php            # Model Thành viên (Cả nhóm)
+│   │   ├── Product.php         # Model Sản phẩm (#3)
+│   │   ├── Order.php           # Model Đơn hàng (#3)
+│   │   ├── Post.php            # Model Bài viết (#4)
+│   │   ├── Comment.php         # Model Bình luận (#4)
+│   │   ├── Faq.php             # Model Câu hỏi (#2)
+│   │   ├── About.php           # Model Giới thiệu (#2)
+│   │   ├── Contact.php         # Model Liên hệ (#1)
+│   │   └── Setting.php         # Model Cài đặt (Logo, SĐT, Địa chỉ) (#1)
+│   └── views/                  # Chứa file giao diện HTML/PHP
+│       ├── admin/              # GIAO DIỆN ADMIN (SrtDash)
+│       │   ├── settings/       # Sửa Logo, thông tin công ty (#1)
+│       │   ├── contacts/       # Danh sách tin nhắn khách hàng (#1)
+│       │   ├── products/       # Quản lý sản phẩm (#3)
+│       │   ├── orders/         # Quản lý đơn hàng (#3)
+│       │   ├── posts/          # Quản lý tin tức (#4)
+│       │   ├── comments/       # Quản lý bình luận (#4)
+│       │   ├── faqs/           # Quản lý câu hỏi/đáp (#2)
+│       │   ├── about/          # Sửa nội dung giới thiệu (#2)
+│       │   └── index.php       # Dashboard tổng quan (#1)
+│       ├── client/             # GIAO DIỆN KHÁCH (Tailwind CSS)
+│       │   ├── index.php       # Trang chủ (#1)
+│       │   ├── contact.php     # Trang liên hệ (#1)
+│       │   ├── about.php       # Trang giới thiệu (#2)
+│       │   ├── faq.php         # Trang hỏi đáp (#2)
+│       │   ├── products/       # Danh sách & chi tiết SP (#3)
+│       │   ├── cart/           # Giỏ hàng & Thanh toán (#3)
+│       │   └── posts/          # Danh sách & đọc bài viết (#4)
+│       └── layouts/            # Header và Footer chung (Cả nhóm)
+├── public/                     # Thư mục công khai
+│   ├── index.php               # Front-controller (Cả nhóm)
+│   ├── .htaccess               # Cấu hình URL đẹp (Cả nhóm)
+│   ├── css/                    # Custom CSS (Cả nhóm)
+│   ├── js/                     # Custom Javascript (Cả nhóm)
+│   ├── uploads/                # Nơi lưu trữ ảnh (Xử lý bởi #2, dùng bởi #1, #3, #4)
+│   └── admin_assets/           # Assets của template Srtdash (Bảo - #4 quản lý)
+└── database.sql                # File SQL cấu trúc các bảng (Cả nhóm)
 ```
 
 ## 🚀 Getting Started
