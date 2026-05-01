@@ -1,10 +1,43 @@
-# Cloud-Arena
+**Đề tài:** Game Server Rental Platform (G-SERVER)
+**Kiến trúc:** Model-View-Controller (MVC) Custom
+**Ngôn ngữ:** PHP 8.x, MySQL, Tailwind CSS, JavaScript
 ---
 
 ## 1. MVC Architecture
 
 Luồng xử lý: **Client truy cập -> Route (index.php) -> Controller -> Model (CSDL) -> View (Giao diện HTML)**.
 
+
+---
+
+## 2. KIẾN TRÚC HỆ THỐNG & LUỒNG XỬ LÝ (MVC)
+
+### 2.1. Cấu trúc thư mục
+- **/app**: Logic nghiệp vụ (Controller, Model, Core). Không thể truy cập từ URL.
+- **/public**: Tài nguyên tĩnh (CSS, JS, Images) và file `index.php` (Entry point).
+- **Core Classes**: 
+    - `Core.php`: Routing URL thông minh.
+    - `Controller.php`: Lớp cơ sở cung cấp phương thức `view()` và `model()`.
+    - `Database.php`: Wrapper PDO chống SQL Injection.
+
+### 2.2. Luồng xử lý (Flow)
+1. **Request**: Trình duyệt gọi URL -> `.htaccess` chuyển về `index.php`.
+2. **Route**: `Core.php` xác định Controller/Action.
+3. **Action**: Controller nhận yêu cầu, lấy dữ liệu từ Model.
+4. **Response**: Controller truyền dữ liệu vào View và hiển thị kết quả cho người dùng.
+
+---
+
+## 3. THIẾT KẾ CƠ SỞ DỮ LIỆU (DATABASE)
+Hệ thống sử dụng MySQL với các bảng chính:
+- `users`: Quản lý tài khoản và phân quyền (Admin/Member).
+- `products`: Các gói dịch vụ server (RAM, CPU, Giá).
+- `news`: Tin tức và bài viết hướng dẫn.
+- `contacts`: Phản hồi khách hàng.
+- `user_servers` (Mở rộng): Quản lý các máy chủ thực tế mà khách đã thuê (Status: Running/Stopped).
+- `orders`: Lịch sử giao dịch và thanh toán.
+
+---
 ```text
 Game Server Rental Platform/
 ├── app/                        # Chứa toàn bộ logic backend của ứng dụng
@@ -37,4 +70,9 @@ Game Server Rental Platform/
 │   └── admin_assets/           # Chứa các file CSS/JS của template Srtdash
 └── database.sql                # File SQL cấu trúc các bảng
 ```
+
+## 7. HƯỚNG DẪN CÀI ĐẶT
+1. Giải nén vào `xampp/htdocs`.
+2. Tạo database `game_server_db` trên phpmyadmin và import `database.sql`.
+3. Truy cập: `http://localhost/Game%20Server%20Rental%20Platform/public/`.
 
