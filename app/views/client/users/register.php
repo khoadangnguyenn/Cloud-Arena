@@ -1,44 +1,49 @@
 <?php require APPROOT . '/views/layouts/client/header.php'; ?>
-<div class="min-h-[80vh] flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-  <div class="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-md">
+<div class="min-h-[80vh] flex items-center justify-center bg-gray-950 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+  <!-- Decorative blobs -->
+  <div class="absolute top-1/4 right-1/4 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl"></div>
+  <div class="absolute bottom-1/4 left-1/4 w-64 h-64 bg-cyan-500/20 rounded-full blur-3xl"></div>
+
+  <div class="max-w-md w-full space-y-8 bg-gray-900/50 backdrop-blur-xl p-10 rounded-3xl border border-white/5 relative z-10">
     <div>
-      <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-        Đăng ký tài khoản
+      <div class="w-16 h-16 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-cyan-500/20">
+          <i class="fa-solid fa-user-plus text-white text-2xl"></i>
+      </div>
+      <h2 class="mt-6 text-center text-3xl font-bold text-white tracking-tight">
+        Tạo tài khoản mới
       </h2>
-      <p class="mt-2 text-center text-sm text-gray-600">
-        Đã có tài khoản?
-        <a href="<?php echo URLROOT; ?>/users/login" class="font-medium text-primary hover:text-blue-500">
+      <p class="mt-2 text-center text-sm text-gray-400">
+        Đã có tài khoản? 
+        <a href="<?php echo URLROOT; ?>/users/login" class="font-medium text-cyan-400 hover:text-cyan-300 transition-colors">
           Đăng nhập ngay
         </a>
       </p>
     </div>
-    <form class="mt-8 space-y-6" action="<?php echo URLROOT; ?>/users/register" method="POST">
-      <div class="rounded-md shadow-sm -space-y-px">
-        <div class="mb-4">
-          <label for="username" class="sr-only">Tên đăng nhập</label>
-          <input id="username" name="username" type="text" class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm <?php echo (!empty($data['username_err'])) ? 'border-red-500' : ''; ?>" placeholder="Tên đăng nhập" value="<?php echo $data['username']; ?>">
-          <span class="text-xs text-red-500"><?php echo $data['username_err']; ?></span>
-        </div>
-        <div class="mb-4">
-          <label for="email" class="sr-only">Địa chỉ Email</label>
-          <input id="email" name="email" type="email" class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm <?php echo (!empty($data['email_err'])) ? 'border-red-500' : ''; ?>" placeholder="Địa chỉ Email" value="<?php echo $data['email']; ?>">
-          <span class="text-xs text-red-500"><?php echo $data['email_err']; ?></span>
-        </div>
-        <div class="mb-4">
-          <label for="password" class="sr-only">Mật khẩu</label>
-          <input id="password" name="password" type="password" class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm <?php echo (!empty($data['password_err'])) ? 'border-red-500' : ''; ?>" placeholder="Mật khẩu" value="<?php echo $data['password']; ?>">
-          <span class="text-xs text-red-500"><?php echo $data['password_err']; ?></span>
-        </div>
-        <div>
-          <label for="confirm_password" class="sr-only">Xác nhận mật khẩu</label>
-          <input id="confirm_password" name="confirm_password" type="password" class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm <?php echo (!empty($data['confirm_password_err'])) ? 'border-red-500' : ''; ?>" placeholder="Xác nhận mật khẩu" value="<?php echo $data['confirm_password']; ?>">
-          <span class="text-xs text-red-500"><?php echo $data['confirm_password_err']; ?></span>
-        </div>
+    <form class="mt-8 space-y-4" action="<?php echo URLROOT; ?>/users/register" method="POST">
+      <div>
+        <label class="block text-sm font-medium text-gray-400 mb-2">Tên đăng nhập</label>
+        <input name="username" type="text" class="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all <?php echo (!empty($data['username_err'])) ? 'border-red-500 bg-red-500/5' : ''; ?>" placeholder="Nhập tên đăng nhập" value="<?php echo $data['username']; ?>">
+        <span class="text-[10px] text-red-500 mt-1 block ml-1 uppercase font-bold"><?php echo $data['username_err']; ?></span>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-400 mb-2">Email</label>
+        <input name="email" type="email" class="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all <?php echo (!empty($data['email_err'])) ? 'border-red-500 bg-red-500/5' : ''; ?>" placeholder="example@email.com" value="<?php echo $data['email']; ?>">
+        <span class="text-[10px] text-red-500 mt-1 block ml-1 uppercase font-bold"><?php echo $data['email_err']; ?></span>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-400 mb-2">Mật khẩu</label>
+        <input name="password" type="password" class="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all <?php echo (!empty($data['password_err'])) ? 'border-red-500 bg-red-500/5' : ''; ?>" placeholder="••••••••">
+        <span class="text-[10px] text-red-500 mt-1 block ml-1 uppercase font-bold"><?php echo $data['password_err']; ?></span>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-400 mb-2">Xác nhận mật khẩu</label>
+        <input name="confirm_password" type="password" class="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all <?php echo (!empty($data['confirm_password_err'])) ? 'border-red-500 bg-red-500/5' : ''; ?>" placeholder="••••••••">
+        <span class="text-[10px] text-red-500 mt-1 block ml-1 uppercase font-bold"><?php echo $data['confirm_password_err']; ?></span>
       </div>
 
-      <div>
-        <button type="submit" class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
-          Đăng ký
+      <div class="pt-4">
+        <button type="submit" class="w-full flex justify-center py-4 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-cyan-500/25 active:scale-[0.98]">
+          Đăng ký tài khoản
         </button>
       </div>
     </form>

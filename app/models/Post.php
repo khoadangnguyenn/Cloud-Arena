@@ -1,5 +1,5 @@
 <?php
-class Product {
+class Post {
     private $db;
     public function __construct() {
         $this->db = new Database;

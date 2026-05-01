@@ -1,35 +1,16 @@
 <?php
-  class Products extends Controller {
-    private $productModel;
-
-    public function __construct(){
-      $this->productModel = $this->model('Product');
+class Products extends Controller {
+    public function index() {
+        $data = ['title' => 'Danh sách sản phẩm'];
+        $this->view('client/products/index', $data);
     }
 
-    public function index(){
-      $products = $this->productModel->getProducts();
-
-      $data = [
-        'title' => 'Sản phẩm',
-        'products' => $products
-      ];
-
-      $this->view('client/products/index', $data);
+    public function show($id) {
+        $product = $this->model('ProductModel')->getProductById($id);
+        $data = [
+            'title' => 'Chi tiết sản phẩm',
+            'product' => $product
+        ];
+        $this->view('client/products/show', $data);
     }
-
-    public function show($id){
-      $product = $this->productModel->getProductById($id);
-
-      if(empty($product)){
-        header('Location: ' . URLROOT . '/products');
-        exit();
-      }
-
-      $data = [
-        'title' => $product->name,
-        'product' => $product
-      ];
-
-      $this->view('client/products/show', $data);
-    }
-  }
+}
