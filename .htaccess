@@ -1,0 +1,8 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /Cloud-Arena/
+
+    # Route all requests through /public, but avoid rewriting /public again.
+    RewriteCond %{REQUEST_URI} !^/Cloud-Arena/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>

@@ -1,7 +1,307 @@
 <?php
 class Contact {
     private $db;
+    private $allowedStatuses = ['unread', 'read', 'replied'];
+    private $allowedPriorities = ['low', 'normal', 'high', 'urgent'];
+    private $metaKeyPrefix = 'contact_ticket_meta_';
+
     public function __construct() {
         $this->db = new Database;
+    }
+
+    public function getOrCreateGuestUserId() {
+        $guestUsername = 'guest_contact';
+        $guestEmail = 'guest@cloud-arena.local';
+
+        $this->db->query('SELECT id FROM users WHERE username = :username LIMIT 1');
+        $this->db->bind(':username', $guestUsername);
+        $existingUser = $this->db->single();
+        if ($existingUser) {
+            return (int) $existingUser->id;
+        }
+
+        $this->db->query(
+            'INSERT INTO users (username, password, email, full_name, role, status)
+             VALUES (:username, :password, :email, :full_name, :role, :status)'
+        );
+        $this->db->bind(':username', $guestUsername);
+        $this->db->bind(':password', password_hash('guest-contact-placeholder', PASSWORD_DEFAULT));
+        $this->db->bind(':email', $guestEmail);
+        $this->db->bind(':full_name', 'Guest Contact');
+        $this->db->bind(':role', 'member');
+        $this->db->bind(':status', 'active');
+
+        if (!$this->db->execute()) {
+            return 0;
+        }
+
+        $this->db->query('SELECT id FROM users WHERE username = :username LIMIT 1');
+        $this->db->bind(':username', $guestUsername);
+        $createdUser = $this->db->single();
+        return $createdUser ? (int) $createdUser->id : 0;
+    }
+
+    private function getNextContactId($userId) {
+        $this->db->query('SELECT COALESCE(MAX(contact_id), 0) + 1 AS next_id FROM contacts WHERE user_id = :user_id');
+        $this->db->bind(':user_id', (int) $userId);
+        $row = $this->db->single();
+        return $row ? (int) $row->next_id : 1;
+    }
+
+    private function getMetaKey($userId, $contactId) {
+        return $this->metaKeyPrefix . (int) $userId . '_' . (int) $contactId;
+    }
+
+    private function normalizeMeta($metaValue) {
+        $defaultMeta = [
+            'priority' => 'normal',
+            'admin_reply' => null,
+            'replied_at' => null
+        ];
+
+        if (empty($metaValue)) {
+            return $defaultMeta;
+        }
+
+        $decoded = json_decode($metaValue, true);
+        if (!is_array($decoded)) {
+            return $defaultMeta;
+        }
+
+        $priority = isset($decoded['priority']) && in_array($decoded['priority'], $this->allowedPriorities, true)
+            ? $decoded['priority']
+            : 'normal';
+
+        return [
+            'priority' => $priority,
+            'admin_reply' => isset($decoded['admin_reply']) ? $decoded['admin_reply'] : null,
+            'replied_at' => isset($decoded['replied_at']) ? $decoded['replied_at'] : null
+        ];
+    }
+
+    private function applyMetaToContact($contact) {
+        if (!$contact) {
+            return null;
+        }
+
+        $meta = $this->normalizeMeta($contact->meta_value ?? null);
+        $contact->priority = $meta['priority'];
+        $contact->admin_reply = $meta['admin_reply'];
+        $contact->replied_at = $meta['replied_at'];
+        unset($contact->meta_value);
+
+        return $contact;
+    }
+
+    private function upsertMeta($userId, $contactId, $priority = 'normal', $adminReply = null, $repliedAt = null) {
+        $safePriority = in_array($priority, $this->allowedPriorities, true) ? $priority : 'normal';
+        $metaKey = $this->getMetaKey($userId, $contactId);
+        $metaValue = json_encode([
+            'priority' => $safePriority,
+            'admin_reply' => $adminReply !== null ? trim((string) $adminReply) : null,
+            'replied_at' => $repliedAt
+        ]);
+
+        $this->db->query(
+            'INSERT INTO settings (key_name, value)
+             VALUES (:key_name, :value)
+             ON DUPLICATE KEY UPDATE value = VALUES(value)'
+        );
+        $this->db->bind(':key_name', $metaKey);
+        $this->db->bind(':value', $metaValue);
+
+        return $this->db->execute();
+    }
+
+    private function buildFilterSql($filters, &$params) {
+        $conditions = [];
+        $params = [];
+
+        if (!empty($filters['status']) && in_array($filters['status'], $this->allowedStatuses, true)) {
+            $conditions[] = 'c.status = :status';
+            $params[':status'] = $filters['status'];
+        }
+
+        if (!empty($filters['priority']) && in_array($filters['priority'], $this->allowedPriorities, true)) {
+            $conditions[] = 's.value LIKE :priority_like';
+            $params[':priority_like'] = '%"priority":"' . $filters['priority'] . '"%';
+        }
+
+        if (!empty($filters['keyword'])) {
+            $conditions[] = '(c.name LIKE :keyword OR c.email LIKE :keyword OR c.subject LIKE :keyword OR c.message LIKE :keyword)';
+            $params[':keyword'] = '%' . trim($filters['keyword']) . '%';
+        }
+
+        if (empty($conditions)) {
+            return '';
+        }
+
+        return ' WHERE ' . implode(' AND ', $conditions);
+    }
+
+    public function createContact($data) {
+        $userId = (int) $data['user_id'];
+        $contactId = $this->getNextContactId($userId);
+        $subject = isset($data['subject']) ? trim($data['subject']) : '';
+
+        $this->db->query(
+            'INSERT INTO contacts (user_id, contact_id, name, email, subject, message, status)
+             VALUES (:user_id, :contact_id, :name, :email, :subject, :message, :status)'
+        );
+        $this->db->bind(':user_id', $userId);
+        $this->db->bind(':contact_id', $contactId);
+        $this->db->bind(':name', trim($data['name']));
+        $this->db->bind(':email', trim($data['email']));
+        $this->db->bind(':subject', $subject);
+        $this->db->bind(':message', trim($data['message']));
+        $this->db->bind(':status', 'unread');
+
+        if (!$this->db->execute()) {
+            return false;
+        }
+
+        $this->upsertMeta($userId, $contactId, 'normal', null, null);
+
+        return [
+            'user_id' => $userId,
+            'contact_id' => $contactId
+        ];
+    }
+
+    public function getContacts($filters = [], $page = 1, $perPage = 10) {
+        $offset = max(0, ((int) $page - 1) * (int) $perPage);
+        $params = [];
+        $filterSql = $this->buildFilterSql($filters, $params);
+
+        $sql = "SELECT c.user_id, c.contact_id, c.name, c.email, c.subject, c.message, c.status, c.created_at,
+                       s.value AS meta_value, u.username AS user_name
+                FROM contacts c
+                LEFT JOIN settings s
+                    ON s.key_name = CONCAT(:meta_prefix, c.user_id, '_', c.contact_id)
+                LEFT JOIN users u
+                    ON u.id = c.user_id" . $filterSql . "
+                ORDER BY c.created_at DESC
+                LIMIT :limit OFFSET :offset";
+
+        $this->db->query($sql);
+        $this->db->bind(':meta_prefix', $this->metaKeyPrefix);
+        foreach ($params as $param => $value) {
+            $this->db->bind($param, $value);
+        }
+        $this->db->bind(':limit', (int) $perPage);
+        $this->db->bind(':offset', $offset);
+
+        $rows = $this->db->resultSet();
+        foreach ($rows as $row) {
+            $this->applyMetaToContact($row);
+        }
+
+        return $rows;
+    }
+
+    public function countContacts($filters = []) {
+        $params = [];
+        $filterSql = $this->buildFilterSql($filters, $params);
+
+        $sql = 'SELECT COUNT(*) AS total
+                FROM contacts c
+                LEFT JOIN settings s
+                    ON s.key_name = CONCAT(:meta_prefix, c.user_id, "_", c.contact_id)' . $filterSql;
+
+        $this->db->query($sql);
+        $this->db->bind(':meta_prefix', $this->metaKeyPrefix);
+        foreach ($params as $param => $value) {
+            $this->db->bind($param, $value);
+        }
+        $row = $this->db->single();
+
+        return $row ? (int) $row->total : 0;
+    }
+
+    public function getContactByKey($userId, $contactId) {
+        $this->db->query(
+            'SELECT c.user_id, c.contact_id, c.name, c.email, c.subject, c.message, c.status, c.created_at,
+                    s.value AS meta_value, u.username AS user_name
+             FROM contacts c
+             LEFT JOIN settings s
+                ON s.key_name = CONCAT(:meta_prefix, c.user_id, "_", c.contact_id)
+             LEFT JOIN users u
+                ON u.id = c.user_id
+             WHERE c.user_id = :user_id AND c.contact_id = :contact_id
+             LIMIT 1'
+        );
+        $this->db->bind(':meta_prefix', $this->metaKeyPrefix);
+        $this->db->bind(':user_id', (int) $userId);
+        $this->db->bind(':contact_id', (int) $contactId);
+        return $this->applyMetaToContact($this->db->single());
+    }
+
+    public function updateStatus($userId, $contactId, $status) {
+        if (!in_array($status, $this->allowedStatuses, true)) {
+            return false;
+        }
+
+        $this->db->query(
+            'UPDATE contacts
+             SET status = :status
+             WHERE user_id = :user_id AND contact_id = :contact_id'
+        );
+        $this->db->bind(':status', $status);
+        $this->db->bind(':user_id', (int) $userId);
+        $this->db->bind(':contact_id', (int) $contactId);
+        return $this->db->execute();
+    }
+
+    public function updatePriority($userId, $contactId, $priority) {
+        $contact = $this->getContactByKey($userId, $contactId);
+        if (!$contact) {
+            return false;
+        }
+
+        return $this->upsertMeta(
+            (int) $userId,
+            (int) $contactId,
+            $priority,
+            $contact->admin_reply ?? null,
+            $contact->replied_at ?? null
+        );
+    }
+
+    public function replyToContact($userId, $contactId, $replyMessage) {
+        $contact = $this->getContactByKey($userId, $contactId);
+        if (!$contact) {
+            return false;
+        }
+
+        $savedMeta = $this->upsertMeta(
+            (int) $userId,
+            (int) $contactId,
+            $contact->priority ?? 'normal',
+            trim($replyMessage),
+            date('Y-m-d H:i:s')
+        );
+
+        if (!$savedMeta) {
+            return false;
+        }
+
+        return $this->updateStatus($userId, $contactId, 'replied');
+    }
+
+    public function deleteContact($userId, $contactId) {
+        $this->db->query(
+            'DELETE FROM settings
+             WHERE key_name = :key_name'
+        );
+        $this->db->bind(':key_name', $this->getMetaKey($userId, $contactId));
+        $this->db->execute();
+
+        $this->db->query(
+            'DELETE FROM contacts
+             WHERE user_id = :user_id AND contact_id = :contact_id'
+        );
+        $this->db->bind(':user_id', (int) $userId);
+        $this->db->bind(':contact_id', (int) $contactId);
+        return $this->db->execute();
     }
 }

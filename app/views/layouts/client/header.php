@@ -1,3 +1,22 @@
+<?php
+$publicSettings = $data['public_settings'] ?? [];
+$siteLogoText = $publicSettings['site_logo_text'] ?? 'G-SERVER';
+$siteLogoImageFile = basename((string) ($publicSettings['site_logo_image'] ?? ''));
+$siteLogoImageUrl = $siteLogoImageFile !== '' ? URLROOT . '/uploads/branding/' . rawurlencode($siteLogoImageFile) : '';
+$sessionAvatarRaw = trim((string) ($_SESSION['user_avatar'] ?? ''));
+$sessionAvatarUrl = '';
+if ($sessionAvatarRaw !== '') {
+    if (strpos($sessionAvatarRaw, 'http://') === 0 || strpos($sessionAvatarRaw, 'https://') === 0) {
+        $sessionAvatarUrl = $sessionAvatarRaw;
+    } elseif (strpos($sessionAvatarRaw, '/uploads/') === 0) {
+        $sessionAvatarUrl = URLROOT . $sessionAvatarRaw;
+    } elseif (strpos($sessionAvatarRaw, 'uploads/') === 0) {
+        $sessionAvatarUrl = URLROOT . '/' . ltrim($sessionAvatarRaw, '/');
+    } else {
+        $sessionAvatarUrl = URLROOT . '/uploads/avatars/' . ltrim($sessionAvatarRaw, '/');
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -35,6 +54,9 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
     </style>
+    <script>
+        window.URLROOT = '<?php echo URLROOT; ?>';
+    </script>
 </head>
 <body class="bg-gray-950 text-white antialiased flex flex-col min-h-screen">
     
@@ -44,10 +66,16 @@
             <div class="flex justify-between h-20">
                 <div class="flex items-center">
                     <a href="<?php echo URLROOT; ?>" class="flex-shrink-0 flex items-center gap-3">
-                        <div class="w-10 h-10 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-cyan-500/20">
-                            <i class="fa-solid fa-server text-white text-xl"></i>
-                        </div>
-                        <span class="font-bold text-2xl tracking-tighter bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">G-SERVER</span>
+                        <?php if ($siteLogoImageUrl !== ''): ?>
+                            <img src="<?php echo htmlspecialchars($siteLogoImageUrl); ?>" alt="Logo thương hiệu" class="w-10 h-10 rounded-lg object-cover shadow-lg shadow-cyan-500/20">
+                        <?php else: ?>
+                            <div class="w-10 h-10 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                                <i class="fa-solid fa-server text-white text-xl"></i>
+                            </div>
+                        <?php endif; ?>
+                        <span class="font-bold text-2xl tracking-tighter bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+                            <?php echo htmlspecialchars($siteLogoText); ?>
+                        </span>
                     </a>
                     <div class="hidden md:ml-10 md:flex md:space-x-8">
                         <a href="<?php echo URLROOT; ?>" class="text-gray-300 hover:text-cyan-400 px-1 pt-1 text-sm font-medium transition-colors">
@@ -59,7 +87,7 @@
                         <a href="<?php echo URLROOT; ?>/news" class="text-gray-300 hover:text-cyan-400 px-1 pt-1 text-sm font-medium transition-colors">
                             Tin tức
                         </a>
-                        <a href="<?php echo URLROOT; ?>/contact" class="text-gray-300 hover:text-cyan-400 px-1 pt-1 text-sm font-medium transition-colors">
+                        <a href="<?php echo URLROOT; ?>/pages/contact" class="text-gray-300 hover:text-cyan-400 px-1 pt-1 text-sm font-medium transition-colors">
                             Liên hệ
                         </a>
                     </div>
@@ -68,9 +96,13 @@
                     <?php if(isset($_SESSION['user_id'])) : ?>
                         <div class="flex items-center gap-4">
                             <a href="<?php echo URLROOT; ?>/users/profile" class="text-sm font-medium text-gray-300 hover:text-cyan-400 transition-colors flex items-center gap-2">
-                                <div class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center border border-gray-700">
-                                    <i class="fa-solid fa-user text-xs"></i>
-                                </div>
+                                <?php if ($sessionAvatarUrl !== ''): ?>
+                                    <img src="<?php echo htmlspecialchars($sessionAvatarUrl); ?>" alt="Avatar người dùng" class="w-8 h-8 rounded-full object-cover border border-gray-700">
+                                <?php else: ?>
+                                    <div class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center border border-gray-700">
+                                        <i class="fa-solid fa-user text-xs"></i>
+                                    </div>
+                                <?php endif; ?>
                                 <?php echo $_SESSION['user_name']; ?>
                             </a>
                             <?php if($_SESSION['user_role'] == 'admin') : ?>

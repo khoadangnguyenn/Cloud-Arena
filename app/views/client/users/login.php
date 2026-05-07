@@ -19,6 +19,22 @@
                 </a>
             </p>
         </div>
+
+        <?php if (!empty($_SESSION['register_success'])) : ?>
+            <div class="flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm px-4 py-3 rounded-xl">
+                <i class="fa-solid fa-circle-check flex-shrink-0"></i>
+                <span><?php echo htmlspecialchars($_SESSION['register_success']); ?></span>
+            </div>
+            <?php unset($_SESSION['register_success']); ?>
+        <?php endif; ?>
+
+        <?php if (!empty($data['login_err'])) : ?>
+            <div class="flex items-center gap-3 bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-xl">
+                <i class="fa-solid fa-circle-exclamation flex-shrink-0"></i>
+                <span><?php echo htmlspecialchars($data['login_err']); ?></span>
+            </div>
+        <?php endif; ?>
+
         <form class="mt-8 space-y-6" action="<?php echo URLROOT; ?>/users/login" method="POST">
             <div class="space-y-4">
                 <div>

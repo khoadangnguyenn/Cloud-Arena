@@ -1,9 +1,16 @@
 <?php require APPROOT . '/views/layouts/client/header.php'; ?>
 
+<?php
+$publicSettings = $data['public_settings'] ?? [];
+$siteAboutSnippet = $publicSettings['site_about_snippet'] ?? '';
+?>
+
 <!-- Hero Section -->
-<div class="relative overflow-hidden bg-gray-950">
+<div class="relative overflow-hidden bg-gray-950" id="hero-parallax">
     <div class="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-purple-500/10 to-pink-500/10"></div>
     <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(6,182,212,0.1),transparent_50%)]"></div>
+    <div class="absolute -top-28 -left-20 w-96 h-96 rounded-full bg-cyan-500/20 blur-3xl parallax-layer" data-speed="0.25"></div>
+    <div class="absolute -bottom-24 -right-20 w-96 h-96 rounded-full bg-purple-500/20 blur-3xl parallax-layer" data-speed="0.15"></div>
 
     <div class="relative max-w-7xl mx-auto px-4 py-24 sm:px-6 lg:px-8">
         <div class="text-center space-y-10">
@@ -19,6 +26,11 @@
                 Máy chủ game chuyên nghiệp với hiệu năng cao, hỗ trợ modpack và quản lý dễ dàng.
                 Khởi động server của bạn chỉ trong vài phút với công nghệ ảo hóa tiên tiến nhất.
             </p>
+            <?php if ($siteAboutSnippet !== ''): ?>
+                <p class="text-sm text-gray-500 max-w-3xl mx-auto leading-relaxed">
+                    <?php echo htmlspecialchars($siteAboutSnippet); ?>
+                </p>
+            <?php endif; ?>
 
             <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
                 <a href="<?php echo URLROOT; ?>/products" class="group relative px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold rounded-xl hover:shadow-[0_0_40px_rgba(6,182,212,0.5)] transition-all transform hover:scale-105 active:scale-95">
@@ -28,6 +40,25 @@
                 <a href="#features" class="px-8 py-4 border border-gray-700 text-gray-300 font-bold rounded-xl hover:bg-white/5 hover:border-gray-500 transition-all">
                     Tìm hiểu thêm
                 </a>
+            </div>
+
+            <div class="max-w-3xl mx-auto pt-4">
+                <form id="quick-resource-search" class="grid grid-cols-1 md:grid-cols-4 gap-3 bg-gray-900/60 border border-white/10 rounded-2xl p-3" autocomplete="off">
+                    <div class="md:col-span-1">
+                        <label for="resource_type" class="sr-only">Loại tài nguyên</label>
+                        <select id="resource_type" class="w-full h-12 bg-gray-800 border border-gray-700 rounded-xl px-3 text-gray-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/50">
+                            <option value="products">Sản phẩm</option>
+                            <option value="news">Tin tức</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="resource_keyword" class="sr-only">Từ khóa</label>
+                        <input id="resource_keyword" type="text" class="w-full h-12 bg-gray-800 border border-gray-700 rounded-xl px-4 text-gray-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/50" placeholder="Tìm gói server hoặc bài viết nhanh...">
+                    </div>
+                    <button type="submit" class="h-12 bg-cyan-600 hover:bg-cyan-500 text-white font-semibold rounded-xl transition-colors">
+                        Tìm nhanh
+                    </button>
+                </form>
             </div>
 
             <!-- Stats Grid -->

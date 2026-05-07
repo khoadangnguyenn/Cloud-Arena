@@ -1,16 +1,30 @@
+<?php
+$publicSettings = $data['public_settings'] ?? [];
+$siteLogoText = $publicSettings['site_logo_text'] ?? 'G-SERVER';
+$siteLogoImageFile = basename((string) ($publicSettings['site_logo_image'] ?? ''));
+$siteLogoImageUrl = $siteLogoImageFile !== '' ? URLROOT . '/uploads/branding/' . rawurlencode($siteLogoImageFile) : '';
+$siteHotline = $publicSettings['site_hotline'] ?? '0123 456 789';
+$siteEmail = $publicSettings['site_contact_email'] ?? 'contact@gameserver.vn';
+$siteAddress = $publicSettings['site_address'] ?? '268 Lý Thường Kiệt, Q10, TP.HCM';
+$siteAboutSnippet = $publicSettings['site_about_snippet'] ?? 'Nền tảng cho thuê Game Server hàng đầu Việt Nam. Cung cấp máy chủ chất lượng cao, ổn định và bảo mật tối đa cho cộng đồng game thủ.';
+?>
     </main>
     <footer class="bg-gray-900 border-t border-gray-800 text-white mt-auto">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-12">
                 <div class="col-span-1 md:col-span-1">
                     <a href="<?php echo URLROOT; ?>" class="flex items-center gap-3 mb-6">
-                        <div class="w-8 h-8 bg-gradient-to-br from-cyan-500 to-purple-600 rounded flex items-center justify-center">
-                            <i class="fa-solid fa-server text-white text-sm"></i>
-                        </div>
-                        <span class="font-bold text-xl tracking-tighter text-white">G-SERVER</span>
+                        <?php if ($siteLogoImageUrl !== ''): ?>
+                            <img src="<?php echo htmlspecialchars($siteLogoImageUrl); ?>" alt="Logo thương hiệu" class="w-8 h-8 rounded object-cover">
+                        <?php else: ?>
+                            <div class="w-8 h-8 bg-gradient-to-br from-cyan-500 to-purple-600 rounded flex items-center justify-center">
+                                <i class="fa-solid fa-server text-white text-sm"></i>
+                            </div>
+                        <?php endif; ?>
+                        <span class="font-bold text-xl tracking-tighter text-white"><?php echo htmlspecialchars($siteLogoText); ?></span>
                     </a>
                     <p class="text-gray-400 text-sm leading-relaxed">
-                        Nền tảng cho thuê Game Server hàng đầu Việt Nam. Cung cấp máy chủ chất lượng cao, ổn định và bảo mật tối đa cho cộng đồng game thủ.
+                        <?php echo htmlspecialchars($siteAboutSnippet); ?>
                     </p>
                     <div class="flex gap-4 mt-6">
                         <a href="#" class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 hover:bg-cyan-500 hover:text-white transition-all"><i class="fa-brands fa-facebook-f"></i></a>
@@ -41,15 +55,15 @@
                     <ul class="space-y-4 text-sm text-gray-400">
                         <li class="flex items-start gap-3">
                             <i class="fa-solid fa-location-dot text-cyan-500 mt-1"></i>
-                            <span>268 Lý Thường Kiệt, Q10, TP.HCM</span>
+                            <span><?php echo htmlspecialchars($siteAddress); ?></span>
                         </li>
                         <li class="flex items-center gap-3">
                             <i class="fa-solid fa-phone text-cyan-500"></i>
-                            <span>0123 456 789</span>
+                            <span><?php echo htmlspecialchars($siteHotline); ?></span>
                         </li>
                         <li class="flex items-center gap-3">
                             <i class="fa-solid fa-envelope text-cyan-500"></i>
-                            <span>contact@gameserver.vn</span>
+                            <span><?php echo htmlspecialchars($siteEmail); ?></span>
                         </li>
                     </ul>
                 </div>
