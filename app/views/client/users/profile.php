@@ -67,7 +67,7 @@ $displayName = $user ? ($user->full_name ?: $user->username) : '';
                     <form action="<?php echo URLROOT; ?>/users/profile" method="POST" class="space-y-4">
                         <input type="hidden" name="action" value="profile_info">
                         <div>
-                            <label class="block text-sm text-gray-400 mb-2">Full Name</label>
+                            <label class="block text-sm text-gray-400 mb-2">Display Name</label>
                             <input type="text" name="full_name" value="<?php echo htmlspecialchars($user->full_name ?? ''); ?>" class="w-full px-4 py-3 bg-gray-800 border <?php echo !empty($errors['full_name']) ? 'border-red-500' : 'border-gray-700'; ?> rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50">
                             <?php if (!empty($errors['full_name'])): ?><p class="text-xs text-red-400 mt-1"><?php echo htmlspecialchars($errors['full_name']); ?></p><?php endif; ?>
                         </div>

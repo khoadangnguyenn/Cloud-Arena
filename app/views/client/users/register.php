@@ -26,6 +26,11 @@
         <span class="text-[10px] text-red-500 mt-1 block ml-1 uppercase font-bold"><?php echo $data['username_err']; ?></span>
       </div>
       <div>
+        <label class="block text-sm font-medium text-gray-400 mb-2">Tên hiển thị</label>
+        <input name="full_name" type="text" class="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all <?php echo (!empty($data['full_name_err'])) ? 'border-red-500 bg-red-500/5' : ''; ?>" placeholder="Ví dụ: Nguyễn Văn A" value="<?php echo $data['full_name'] ?? ''; ?>">
+        <span class="text-[10px] text-red-500 mt-1 block ml-1 uppercase font-bold"><?php echo $data['full_name_err'] ?? ''; ?></span>
+      </div>
+      <div>
         <label class="block text-sm font-medium text-gray-400 mb-2">Email</label>
         <input name="email" type="email" class="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all <?php echo (!empty($data['email_err'])) ? 'border-red-500 bg-red-500/5' : ''; ?>" placeholder="example@email.com" value="<?php echo $data['email']; ?>">
         <span class="text-[10px] text-red-500 mt-1 block ml-1 uppercase font-bold"><?php echo $data['email_err']; ?></span>

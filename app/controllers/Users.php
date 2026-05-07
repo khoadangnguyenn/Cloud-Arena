@@ -95,6 +95,7 @@ class Users extends Controller {
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $username         = trim($_POST['username'] ?? '');
+            $fullName         = trim($_POST['full_name'] ?? '');
             $email            = trim($_POST['email'] ?? '');
             $password         = trim($_POST['password'] ?? '');
             $confirm_password = trim($_POST['confirm_password'] ?? '');
@@ -102,10 +103,12 @@ class Users extends Controller {
             $data = [
                 'title'                => 'Đăng ký',
                 'username'             => htmlspecialchars($username),
+                'full_name'            => htmlspecialchars($fullName),
                 'email'                => htmlspecialchars($email),
                 'password'             => '',
                 'confirm_password'     => '',
                 'username_err'         => '',
+                'full_name_err'        => '',
                 'email_err'            => '',
                 'password_err'         => '',
                 'confirm_password_err' => '',
@@ -129,6 +132,11 @@ class Users extends Controller {
                 $data['email_err'] = 'Email này đã được sử dụng.';
             }
 
+            // Validate optional display name
+            if ($fullName !== '' && strlen($fullName) > 100) {
+                $data['full_name_err'] = 'Tên hiển thị tối đa 100 ký tự.';
+            }
+
             // Validate password
             if (empty($password)) {
                 $data['password_err'] = 'Vui lòng nhập mật khẩu.';
@@ -143,7 +151,7 @@ class Users extends Controller {
                 $data['confirm_password_err'] = 'Mật khẩu xác nhận không khớp.';
             }
 
-            $hasErrors = $data['username_err'] || $data['email_err']
+            $hasErrors = $data['username_err'] || $data['full_name_err'] || $data['email_err']
                       || $data['password_err'] || $data['confirm_password_err'];
 
             if (!$hasErrors) {
@@ -151,6 +159,7 @@ class Users extends Controller {
 
                 $registerData = [
                     'username' => $username,
+                    'full_name' => $fullName === '' ? $username : $fullName,
                     'email'    => $email,
                     'password' => $data['password'],
                 ];
@@ -172,10 +181,12 @@ class Users extends Controller {
         $data = [
             'title'                => 'Đăng ký',
             'username'             => '',
+            'full_name'            => '',
             'email'                => '',
             'password'             => '',
             'confirm_password'     => '',
             'username_err'         => '',
+            'full_name_err'        => '',
             'email_err'            => '',
             'password_err'         => '',
             'confirm_password_err' => '',
