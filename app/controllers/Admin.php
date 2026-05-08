@@ -143,7 +143,7 @@ class Admin extends Controller {
                 'active_servers' => $this->productModel->countActiveServices(),
                 'total_users' => $this->userModel->countAllUsers(),
                 'active_users' => $activeUsers,
-                'new_users' => $this->userModel->countNewUsersSince(30),
+                'new_users' => $this->userModel->countNewUsersSince(7),
                 'monthly_revenue' => $this->orderModel->getMonthlyRevenue(),
                 'unread_tickets' => $unreadTickets,
                 'system_uptime' => '99.9%'

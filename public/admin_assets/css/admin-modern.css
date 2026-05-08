@@ -24,7 +24,7 @@ body.admin-modern {
 body.admin-modern.admin-theme-dark {
     --admin-main-bg: #0f172a;
     --admin-surface: #111f38;
-    --admin-border: #1c3153;
+    --admin-border: #2d4771;
     --admin-text: #deebff;
     --admin-muted: #8ca0c4;
     --admin-shadow: 0 14px 34px rgba(3, 10, 24, 0.45);
@@ -38,7 +38,9 @@ body.admin-modern.admin-theme-dark {
 .admin-sidebar {
     width: 280px;
     background: linear-gradient(180deg, #08162f 0%, #0f2244 100%);
-    border-right: 1px solid var(--sidebar-border);
+    border-right: 1px solid var(--admin-border);
+    
+    
     position: fixed;
     inset: 0 auto 0 0;
     z-index: 1030;
@@ -73,18 +75,16 @@ body.admin-sidebar-hidden .admin-main {
 .admin-brand {
     padding: 1.2rem 1.25rem;
     border-bottom: 1px solid rgba(116, 144, 191, 0.26);
+    
 }
 
 .admin-brand-title {
     font-weight: 700;
+    font-size: 1rem;
     color: #ffffff;
     letter-spacing: 0.3px;
 }
 
-.admin-brand-subtitle {
-    color: var(--sidebar-muted);
-    font-size: 0.84rem;
-}
 
 .admin-nav {
     padding: 1rem 0.85rem 1.3rem;
@@ -569,10 +569,56 @@ body.admin-modern.admin-theme-dark .area-grid line {
     stroke: #24395f;
 }
 
+.revenue-area-wrap {
+    position: relative;
+    overflow: visible;
+}
+.revenue-point-tooltip {
+    position: absolute;
+    z-index: 20;
+    min-width: 132px;
+    max-width: 220px;
+    padding: 0.45rem 0.6rem;
+    border-radius: 0.55rem;
+    border: 1px solid var(--admin-border);
+    background: #ffffff;
+    color: var(--admin-text);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.14s ease, transform 0.14s ease;
+    font-size: 0.76rem;
+    line-height: 1.35;
+}
+.revenue-point-tooltip.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+.revenue-point-tooltip strong {
+    display: block;
+    font-size: 0.72rem;
+    color: var(--admin-muted);
+    margin-bottom: 0.15rem;
+}
+.revenue-point-tooltip span {
+    font-weight: 700;
+    color: var(--admin-text);
+}
+body.admin-modern.admin-theme-dark .revenue-point-tooltip {
+    background: #0f1c34;
+    border-color: #2a4167;
+    box-shadow: 0 10px 28px rgba(2, 8, 23, 0.45);
+}
 #revenuePoints circle {
     fill: #ffffff;
     stroke: #2563eb;
     stroke-width: 2;
+    cursor: pointer;
+}
+#revenuePoints circle:hover,
+#revenuePoints circle:focus {
+    stroke-width: 3;
 }
 
 .revenue-axis-labels {
@@ -1305,6 +1351,7 @@ body.admin-modern.admin-theme-dark .user-handle {
 .settings-divider {
     margin: 0.4rem 0 1rem;
     border-color: var(--admin-border);
+    border-width: 3px;
 }
 
 .settings-upload-zone {

@@ -1,13 +1,39 @@
 <?php
 class Pages extends Controller {
     private $contactModel;
+    private $productModel;
+    private $commentModel;
+    private $userModel;
 
+    
     public function __construct() {
         $this->contactModel = $this->model('Contact');
+        $this->productModel = $this->model('Product');
+        $this->commentModel = $this->model('Comment');
+        $this->userModel = $this->model('User');
     }
 
     public function index() {
-        $data = ['title' => 'Trang chủ'];
+        $featuredProducts = [];
+        $featuredReview = null;
+
+        try {
+            $featuredProducts = $this->productModel->getHomepagePackages(4);
+        } catch (Throwable $error) {
+            $featuredProducts = [];
+        }
+
+        try {
+            $featuredReview = $this->commentModel->getLatestFiveStarProductReview();
+        } catch (Throwable $error) {
+            $featuredReview = null;
+        }
+
+        $data = [
+            'title' => 'Trang chủ',
+            'featured_products' => $featuredProducts,
+            'featured_review' => $featuredReview
+        ];
         $this->view('client/pages/index', $data);
     }
 
@@ -17,38 +43,67 @@ class Pages extends Controller {
     }
 
     public function contact() {
+        $isLoggedIn = isset($_SESSION['user_id']);
+        $currentUser = null;
+
+        if ($isLoggedIn) {
+            $currentUser = $this->userModel->getUserById((int) $_SESSION['user_id']);
+            if (!$currentUser) {
+                session_destroy();
+                header('Location: ' . URLROOT . '/users/login');
+                exit();
+            }
+        }
         $data = [
             'title' => 'Liên hệ',
+            'is_logged_in' => $isLoggedIn,
             'form' => [
-                'name' => '',
-                'email' => '',
+                'name' => $isLoggedIn ? trim((string) ($currentUser->full_name ?: $currentUser->username)) : '',
+                'email' => $isLoggedIn ? trim((string) $currentUser->email) : '',
                 'subject' => '',
-                'message' => ''
+                'message' => '',
+                'website' => '' // honeypot
             ],
             'errors' => [],
             'success_message' => ''
         ];
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $data['form'] = [
-                'name' => trim($_POST['name'] ?? ''),
-                'email' => trim($_POST['email'] ?? ''),
-                'subject' => trim($_POST['subject'] ?? ''),
-                'message' => trim($_POST['message'] ?? '')
-            ];
 
-            if ($data['form']['name'] === '') {
-                $data['errors']['name'] = 'Vui lòng nhập họ tên.';
-            } elseif (strlen($data['form']['name']) > 100) {
-                $data['errors']['name'] = 'Họ tên tối đa 100 ký tự.';
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $data['form']['subject'] = trim($_POST['subject'] ?? '');
+            $data['form']['message'] = trim($_POST['message'] ?? '');
+            $data['form']['website'] = trim($_POST['website'] ?? '');
+
+            if ($isLoggedIn) {
+                // KHÓA NGUỒN DỮ LIỆU name/email từ DB user đăng nhập
+                $data['form']['name'] = trim((string) ($currentUser->full_name ?: $currentUser->username));
+                $data['form']['email'] = trim((string) $currentUser->email);
+            } else {
+                $data['form']['name'] = trim($_POST['name'] ?? '');
+                $data['form']['email'] = trim($_POST['email'] ?? '');
             }
 
-            if ($data['form']['email'] === '') {
-                $data['errors']['email'] = 'Vui lòng nhập email.';
-            } elseif (!filter_var($data['form']['email'], FILTER_VALIDATE_EMAIL)) {
-                $data['errors']['email'] = 'Email không đúng định dạng.';
-            } elseif (strlen($data['form']['email']) > 100) {
-                $data['errors']['email'] = 'Email tối đa 100 ký tự.';
+            if ($isLoggedIn) {
+                if ($data['form']['name'] === '') {
+                    $data['errors']['general'] = 'Tài khoản thiếu thông tin họ tên. Vui lòng cập nhật hồ sơ.';
+                }
+                if (!filter_var($data['form']['email'], FILTER_VALIDATE_EMAIL)) {
+                    $data['errors']['general'] = 'Email tài khoản không hợp lệ. Vui lòng cập nhật hồ sơ.';
+                }
+            } else {
+                if ($data['form']['name'] === '') {
+                    $data['errors']['name'] = 'Vui lòng nhập họ tên.';
+                } elseif (strlen($data['form']['name']) > 100) {
+                    $data['errors']['name'] = 'Họ tên tối đa 100 ký tự.';
+                }
+            
+                if ($data['form']['email'] === '') {
+                    $data['errors']['email'] = 'Vui lòng nhập email.';
+                } elseif (!filter_var($data['form']['email'], FILTER_VALIDATE_EMAIL)) {
+                    $data['errors']['email'] = 'Email không đúng định dạng.';
+                } elseif (strlen($data['form']['email']) > 100) {
+                    $data['errors']['email'] = 'Email tối đa 100 ký tự.';
+                }
             }
 
             if ($data['form']['subject'] !== '' && strlen($data['form']['subject']) > 255) {

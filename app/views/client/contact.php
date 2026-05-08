@@ -6,6 +6,7 @@ $siteHotline = $publicSettings['site_hotline'] ?? '0123 456 789';
 $siteEmail = $publicSettings['site_contact_email'] ?? 'contact@gameserver.vn';
 $siteAddress = $publicSettings['site_address'] ?? '268 Lý Thường Kiệt, Q10, TP.HCM';
 $siteMapEmbedUrl = $publicSettings['site_map_embed_url'] ?? 'https://www.google.com/maps?q=268+Ly+Thuong+Kiet+Q10+TPHCM&output=embed';
+$isLoggedIn = !empty($data['is_logged_in']);
 ?>
 
 <div class="bg-gray-950 py-20 min-h-[80vh]">
@@ -38,9 +39,8 @@ $siteMapEmbedUrl = $publicSettings['site_map_embed_url'] ?? 'https://www.google.
                                 name="name"
                                 value="<?php echo htmlspecialchars($data['form']['name'] ?? ''); ?>"
                                 class="w-full px-4 py-3 bg-gray-800/50 border <?php echo !empty($data['errors']['name']) ? 'border-red-500' : 'border-gray-700'; ?> rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
-                                placeholder="Nhập họ tên"
-                                maxlength="100"
-                                required
+                                <?php echo $isLoggedIn ? 'bg-gray-700/40 text-gray-300 cursor-not-allowed' : ''; ?>
+                                <?php echo $isLoggedIn ? 'readonly' : ''; ?>
                             >
                             <?php if (!empty($data['errors']['name'])): ?>
                                 <p class="mt-2 text-sm text-red-400"><?php echo htmlspecialchars($data['errors']['name']); ?></p>
@@ -54,9 +54,8 @@ $siteMapEmbedUrl = $publicSettings['site_map_embed_url'] ?? 'https://www.google.
                                 name="email"
                                 value="<?php echo htmlspecialchars($data['form']['email'] ?? ''); ?>"
                                 class="w-full px-4 py-3 bg-gray-800/50 border <?php echo !empty($data['errors']['email']) ? 'border-red-500' : 'border-gray-700'; ?> rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
-                                placeholder="example@email.com"
-                                maxlength="100"
-                                required
+                                <?php echo $isLoggedIn ? 'bg-gray-700/40 text-gray-300 cursor-not-allowed' : ''; ?>
+                                <?php echo $isLoggedIn ? 'readonly' : ''; ?>
                             >
                             <?php if (!empty($data['errors']['email'])): ?>
                                 <p class="mt-2 text-sm text-red-400"><?php echo htmlspecialchars($data['errors']['email']); ?></p>

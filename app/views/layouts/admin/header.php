@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <title><?php echo isset($data['title']) ? htmlspecialchars($data['title']) . ' - ' . SITENAME : 'Quản trị - ' . SITENAME; ?></title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="icon" type="image/png" href="<?php echo URLROOT; ?>/admin_assets/images/icon/logo.png">
+    <link rel="icon" type="image/png" href="<?php echo URLROOT; ?>/admin_assets/images/icon/logo-v2.png">
     <link rel="stylesheet" href="<?php echo URLROOT; ?>/admin_assets/css/bootstrap.min.css">
     <link rel="stylesheet" href="<?php echo URLROOT; ?>/admin_assets/css/fontawesome.min.css">
     <link rel="stylesheet" href="<?php echo URLROOT; ?>/admin_assets/css/themify-icons.css">
@@ -45,10 +45,10 @@
         <aside class="admin-sidebar" id="adminSidebar" aria-label="Thanh điều hướng quản trị">
             <div class="admin-brand">
                 <a href="<?php echo URLROOT; ?>/admin" class="d-flex align-items-center gap-2 text-decoration-none">
-                    <img src="<?php echo URLROOT; ?>/admin_assets/images/icon/logo.png" alt="Cloud Arena logo" style="max-width:34px;">
+                    <img src="<?php echo URLROOT; ?>/admin_assets/images/icon/logo-v2.png" alt="Cloud Arena logo" style="max-width:40px;">
                         <div>
-                            <div class="admin-brand-title"><?php echo SITENAME; ?></div>
-                            <div class="admin-brand-subtitle">Khu vực quản trị</div>
+                            <div class="admin-brand-title">Admin Zone</div>
+                            
                         </div>
                 </a>
             </div>

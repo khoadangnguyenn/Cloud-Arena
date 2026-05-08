@@ -1,5 +1,18 @@
 // Custom JavaScript for the client side
 function initCloudArenaUi() {
+    var siteHeader = document.getElementById('site-header');
+    if (siteHeader) {
+        var updateHeaderState = function() {
+            if ((window.scrollY || window.pageYOffset) > 24) {
+                siteHeader.classList.add('is-scrolled');
+            } else {
+                siteHeader.classList.remove('is-scrolled');
+            }
+        };
+        updateHeaderState();
+        window.addEventListener('scroll', updateHeaderState);
+    }
+
     var hero = document.getElementById('hero-parallax');
     if (hero) {
         var layers = hero.querySelectorAll('.parallax-layer');
@@ -159,6 +172,45 @@ function initCloudArenaUi() {
         var filterSelect = document.getElementById('dashboardRevenueFilter');
         var totalLabel = document.getElementById('revenueTotalLabel');
         var revenueSeries = Array.isArray(window.adminRevenueSeries) ? window.adminRevenueSeries : [];
+        var escapeHtmlAttr = function(value) {
+            return String(value || '').replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        };
+        var chartWrap = chartSvg ? chartSvg.closest('.revenue-area-wrap') : null;
+        var revenueTooltip = null;
+        if (chartWrap) {
+            revenueTooltip = chartWrap.querySelector('.revenue-point-tooltip');
+            if (!revenueTooltip) {
+                revenueTooltip = document.createElement('div');
+                revenueTooltip.className = 'revenue-point-tooltip';
+                chartWrap.appendChild(revenueTooltip);
+            }
+        }
+        var hideRevenueTooltip = function() {
+            if (!revenueTooltip) return;
+            revenueTooltip.classList.remove('is-visible');
+        };
+        var showRevenueTooltip = function(clientX, clientY, label, revenue) {
+            if (!revenueTooltip || !chartWrap) return;
+            revenueTooltip.innerHTML =
+                '<strong>' + label + '</strong>' +
+                '<span>Tổng: ' + formatCurrency(revenue) + '</span>';
+            var wrapRect = chartWrap.getBoundingClientRect();
+            var x = clientX - wrapRect.left;
+            var y = clientY - wrapRect.top;
+            revenueTooltip.classList.add('is-visible');
+            var tipRect = revenueTooltip.getBoundingClientRect();
+            var left = x - (tipRect.width / 2);
+            left = Math.max(8, Math.min(left, wrapRect.width - tipRect.width - 8));
+            var top = y - tipRect.height - 12;
+            if (top < 8) {
+                top = y + 12;
+            }
+            revenueTooltip.style.left = left + 'px';
+            revenueTooltip.style.top = top + 'px';
+        };
 
         var formatCurrency = function(value) {
             return '$' + Number(value || 0).toLocaleString(undefined, {
@@ -217,7 +269,13 @@ function initCloudArenaUi() {
 
                 lineParts.push((i === 0 ? 'M ' : 'L ') + x.toFixed(2) + ' ' + y.toFixed(2));
                 areaParts.push((i === 0 ? 'M ' : 'L ') + x.toFixed(2) + ' ' + y.toFixed(2));
-                circleMarkup.push('<circle cx="' + x.toFixed(2) + '" cy="' + y.toFixed(2) + '" r="4"></circle>');
+                var pointLabel = String(points[i].label || '');
+                circleMarkup.push(
+                    '<circle cx="' + x.toFixed(2) + '" cy="' + y.toFixed(2) + '" r="5"' +
+                    ' data-label="' + escapeHtmlAttr(pointLabel) + '"' +
+                    ' data-revenue="' + revenue + '"' +
+                    ' tabindex="0"></circle>'
+                );
             }
 
             areaParts.push('L ' + xEnd.toFixed(2) + ' ' + yBottom.toFixed(2));
@@ -227,7 +285,25 @@ function initCloudArenaUi() {
             linePath.setAttribute('d', lineParts.join(' '));
             areaPath.setAttribute('d', areaParts.join(' '));
             pointsGroup.innerHTML = circleMarkup.join('');
-
+            var pointNodes = pointsGroup.querySelectorAll('circle');
+            pointNodes.forEach(function(node) {
+                var onMove = function(evt) {
+                    var label = node.getAttribute('data-label') || '';
+                    var revenue = parseRevenueValue(node.getAttribute('data-revenue'));
+                    showRevenueTooltip(evt.clientX, evt.clientY, label, revenue);
+                };
+                node.addEventListener('mouseenter', onMove);
+                node.addEventListener('mousemove', onMove);
+                node.addEventListener('mouseleave', hideRevenueTooltip);
+                node.addEventListener('focus', function() {
+                    var rect = node.getBoundingClientRect();
+                    var label = node.getAttribute('data-label') || '';
+                    var revenue = parseRevenueValue(node.getAttribute('data-revenue'));
+                    showRevenueTooltip(rect.left + (rect.width / 2), rect.top, label, revenue);
+                });
+                node.addEventListener('blur', hideRevenueTooltip);
+            });
+            
             axisLabels.style.gridTemplateColumns = 'repeat(' + points.length + ', minmax(0, 1fr))';
             axisLabels.innerHTML = points.map(function(item) {
                 return '<span>' + item.label + '</span>';

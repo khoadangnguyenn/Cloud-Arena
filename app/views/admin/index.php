@@ -73,6 +73,30 @@ foreach ($revenueSeries as $item) {
         'revenue' => (float) ($item['revenue'] ?? 0)
     ];
 }
+
+$currentRevenue = (float) ($stats['monthly_revenue'] ?? 0);
+$previousRevenue = 0.0;
+if (count($revenueSeries) >= 2) {
+    $previousRevenue = (float) ($revenueSeries[count($revenueSeries) - 2]['revenue'] ?? 0);
+}
+$revenueBadgeClass = 'badge-soft-warning';
+$revenueBadgeText = 'Tăng 0%';
+if ($previousRevenue > 0) {
+    $deltaPercent = (($currentRevenue - $previousRevenue) / $previousRevenue) * 100;
+    if ($deltaPercent >= 0) {
+        $revenueBadgeClass = 'badge-soft-success';
+        $revenueBadgeText = 'Tăng ' . number_format(abs($deltaPercent), 1) . '%';
+    } else {
+        $revenueBadgeClass = 'badge-soft-danger';
+        $revenueBadgeText = 'Giảm ' . number_format(abs($deltaPercent), 1) . '%';
+    }
+} else {
+    // Tránh chia cho 0 khi tháng trước chưa có doanh thu
+    if ($currentRevenue > 0) {
+        $revenueBadgeClass = 'badge-soft-success';
+        $revenueBadgeText = 'Tăng mới';
+    }
+}
 ?>
 
 <div class="row g-3 mb-4">
@@ -83,7 +107,9 @@ foreach ($revenueSeries as $item) {
                     <p class="stat-label">Doanh thu tháng</p>
                     <h2 class="stat-value">$<?php echo number_format((float) ($stats['monthly_revenue'] ?? 0), 2); ?></h2>
                 </div>
-                <span class="badge badge-soft-primary"><?php echo (int) ($stats['unread_tickets'] ?? 0); ?> chưa đọc</span>
+                <span class="badge <?php echo $revenueBadgeClass; ?>">
+                    <?php echo $revenueBadgeText; ?>
+                </span>
             </div>
             <p class="stat-note">Doanh thu đơn hàng hoàn tất trong tháng hiện tại.</p>
         </article>
@@ -136,7 +162,6 @@ foreach ($revenueSeries as $item) {
                         <p class="panel-muted">Biểu đồ xu hướng doanh thu theo tháng.</p>
                     </div>
                     <label class="d-flex align-items-center gap-2 m-0">
-                        <span class="small text-muted">Khoảng thời gian</span>
                         <select id="dashboardRevenueFilter" class="form-select form-select-sm">
                             <option value="3">3 tháng gần nhất</option>
                             <option value="5" selected>5 tháng gần nhất</option>
