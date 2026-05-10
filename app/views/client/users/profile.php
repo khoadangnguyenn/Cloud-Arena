@@ -47,6 +47,7 @@ $displayName = $user ? ($user->full_name ?: $user->username) : '';
 
                         <form action="<?php echo URLROOT; ?>/users/profile" method="POST" enctype="multipart/form-data" class="w-full text-center">
                             <input type="hidden" name="action" value="upload_avatar">
+                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($data['csrf_token'] ?? ''); ?>">
                             <label class="inline-flex items-center gap-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg cursor-pointer transition">
                                 <i class="fa-solid fa-upload"></i>
                                 Upload New
@@ -64,17 +65,18 @@ $displayName = $user ? ($user->full_name ?: $user->username) : '';
             <div class="lg:col-span-2 space-y-6">
                 <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
                     <h2 class="text-xl font-semibold text-white mb-5">Personal Information</h2>
-                    <form action="<?php echo URLROOT; ?>/users/profile" method="POST" class="space-y-4">
+                    <form id="profileInfoForm" action="<?php echo URLROOT; ?>/users/profile" method="POST" class="space-y-4" novalidate>
                         <input type="hidden" name="action" value="profile_info">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($data['csrf_token'] ?? ''); ?>">
                         <div>
                             <label class="block text-sm text-gray-400 mb-2">Display Name</label>
-                            <input type="text" name="full_name" value="<?php echo htmlspecialchars($user->full_name ?? ''); ?>" class="w-full px-4 py-3 bg-gray-800 border <?php echo !empty($errors['full_name']) ? 'border-red-500' : 'border-gray-700'; ?> rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50">
-                            <?php if (!empty($errors['full_name'])): ?><p class="text-xs text-red-400 mt-1"><?php echo htmlspecialchars($errors['full_name']); ?></p><?php endif; ?>
+                            <input id="prof-full-name" type="text" name="full_name" value="<?php echo htmlspecialchars($user->full_name ?? ''); ?>" class="w-full px-4 py-3 bg-gray-800 border <?php echo !empty($errors['full_name']) ? 'border-red-500' : 'border-gray-700'; ?> rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50">
+                            <span id="prof-full-name-err" class="text-xs text-red-400 mt-1 block"><?php echo htmlspecialchars($errors['full_name'] ?? ''); ?></span>
                         </div>
                         <div>
                             <label class="block text-sm text-gray-400 mb-2">Email Address</label>
-                            <input type="email" name="email" value="<?php echo htmlspecialchars($user->email ?? ''); ?>" class="w-full px-4 py-3 bg-gray-800 border <?php echo !empty($errors['email']) ? 'border-red-500' : 'border-gray-700'; ?> rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50">
-                            <?php if (!empty($errors['email'])): ?><p class="text-xs text-red-400 mt-1"><?php echo htmlspecialchars($errors['email']); ?></p><?php endif; ?>
+                            <input id="prof-email" type="email" name="email" value="<?php echo htmlspecialchars($user->email ?? ''); ?>" class="w-full px-4 py-3 bg-gray-800 border <?php echo !empty($errors['email']) ? 'border-red-500' : 'border-gray-700'; ?> rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50">
+                            <span id="prof-email-err" class="text-xs text-red-400 mt-1 block"><?php echo htmlspecialchars($errors['email'] ?? ''); ?></span>
                         </div>
                         <button type="submit" class="px-6 py-3 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl transition">Save Changes</button>
                     </form>
@@ -82,22 +84,23 @@ $displayName = $user ? ($user->full_name ?: $user->username) : '';
 
                 <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
                     <h2 class="text-xl font-semibold text-white mb-5">Change Password</h2>
-                    <form action="<?php echo URLROOT; ?>/users/profile" method="POST" class="space-y-4">
+                    <form id="changePasswordForm" action="<?php echo URLROOT; ?>/users/profile" method="POST" class="space-y-4" novalidate>
                         <input type="hidden" name="action" value="change_password">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($data['csrf_token'] ?? ''); ?>">
                         <div>
                             <label class="block text-sm text-gray-400 mb-2">Current Password</label>
-                            <input type="password" name="current_password" class="w-full px-4 py-3 bg-gray-800 border <?php echo !empty($errors['current_password']) ? 'border-red-500' : 'border-gray-700'; ?> rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50">
-                            <?php if (!empty($errors['current_password'])): ?><p class="text-xs text-red-400 mt-1"><?php echo htmlspecialchars($errors['current_password']); ?></p><?php endif; ?>
+                            <input id="prof-current-password" type="password" name="current_password" class="w-full px-4 py-3 bg-gray-800 border <?php echo !empty($errors['current_password']) ? 'border-red-500' : 'border-gray-700'; ?> rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50">
+                            <span id="prof-current-password-err" class="text-xs text-red-400 mt-1 block"><?php echo htmlspecialchars($errors['current_password'] ?? ''); ?></span>
                         </div>
                         <div>
                             <label class="block text-sm text-gray-400 mb-2">New Password</label>
-                            <input type="password" name="new_password" class="w-full px-4 py-3 bg-gray-800 border <?php echo !empty($errors['new_password']) ? 'border-red-500' : 'border-gray-700'; ?> rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50">
-                            <?php if (!empty($errors['new_password'])): ?><p class="text-xs text-red-400 mt-1"><?php echo htmlspecialchars($errors['new_password']); ?></p><?php endif; ?>
+                            <input id="prof-new-password" type="password" name="new_password" class="w-full px-4 py-3 bg-gray-800 border <?php echo !empty($errors['new_password']) ? 'border-red-500' : 'border-gray-700'; ?> rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50">
+                            <span id="prof-new-password-err" class="text-xs text-red-400 mt-1 block"><?php echo htmlspecialchars($errors['new_password'] ?? ''); ?></span>
                         </div>
                         <div>
                             <label class="block text-sm text-gray-400 mb-2">Confirm New Password</label>
-                            <input type="password" name="confirm_password" class="w-full px-4 py-3 bg-gray-800 border <?php echo !empty($errors['confirm_password']) ? 'border-red-500' : 'border-gray-700'; ?> rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50">
-                            <?php if (!empty($errors['confirm_password'])): ?><p class="text-xs text-red-400 mt-1"><?php echo htmlspecialchars($errors['confirm_password']); ?></p><?php endif; ?>
+                            <input id="prof-confirm-password" type="password" name="confirm_password" class="w-full px-4 py-3 bg-gray-800 border <?php echo !empty($errors['confirm_password']) ? 'border-red-500' : 'border-gray-700'; ?> rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50">
+                            <span id="prof-confirm-password-err" class="text-xs text-red-400 mt-1 block"><?php echo htmlspecialchars($errors['confirm_password'] ?? ''); ?></span>
                         </div>
                         <button type="submit" class="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition">Update Password</button>
                     </form>

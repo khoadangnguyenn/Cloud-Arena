@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="<?php echo URLROOT; ?>/admin_assets/css/styles.css">
     <link rel="stylesheet" href="<?php echo URLROOT; ?>/admin_assets/css/responsive.css">
     <link rel="stylesheet" href="<?php echo URLROOT; ?>/admin_assets/css/admin-modern.css?v=<?php echo filemtime(APPROOT . '/../public/admin_assets/css/admin-modern.css'); ?>">
+    <script>window.adminCsrfToken = '<?php echo htmlspecialchars($data['csrf_admin'] ?? '', ENT_QUOTES); ?>';</script>
 </head>
 <body class="body-bg admin-modern">
     <?php
@@ -37,7 +38,17 @@
     $newsBadge = max(0, (int) ($navBadges['news'] ?? 0));
     $usersBadge = max(0, (int) ($navBadges['users'] ?? 0));
     $notificationCount = max(0, (int) ($navBadges['notifications'] ?? ($ticketBadge + $usersBadge)));
+    $toastState = is_array($data['admin_notification_toast'] ?? null) ? $data['admin_notification_toast'] : [];
+    $showLoginToast = !empty($toastState['show']);
+    $loginToastCount = max(0, (int) ($toastState['count'] ?? 0));
     ?>
+    <div
+        id="adminLoginNotificationState"
+        class="d-none"
+        data-show="<?php echo $showLoginToast ? '1' : '0'; ?>"
+        data-count="<?php echo $loginToastCount; ?>"
+        aria-hidden="true"
+    ></div>
     <div id="preloader">
         <div class="loader"></div>
     </div>
@@ -137,12 +148,27 @@
                         <button type="button" class="btn btn-soft btn-icon" id="adminThemeToggle" title="Đổi giao diện sáng/tối" aria-label="Đổi giao diện sáng hoặc tối">
                             <i class="fa-solid fa-sun"></i>
                         </button>
-                        <button type="button" class="btn btn-soft btn-icon position-relative" title="Thông báo" aria-label="Thông báo">
-                            <i class="ti-bell"></i>
-                            <?php if ($notificationCount > 0): ?>
-                                <span class="admin-notify-count"><?php echo $notificationCount; ?></span>
-                            <?php endif; ?>
-                        </button>
+                        <div class="dropdown">
+                            <button
+                                type="button"
+                                class="btn btn-soft btn-icon position-relative"
+                                id="adminNotificationToggle"
+                                title="Thông báo"
+                                aria-label="Thông báo"
+                                aria-expanded="false"
+                            >
+                                <i class="ti-bell"></i>
+                                <span class="admin-notify-count <?php echo $notificationCount > 0 ? '' : 'd-none'; ?>" id="adminNotifyCount"><?php echo $notificationCount; ?></span>
+                            </button>
+                            <div class="admin-notification-menu" id="adminNotificationMenu" aria-hidden="true">
+                                <div class="admin-notification-menu-header">
+                                    <strong>Thông báo quản trị</strong>
+                                </div>
+                                <div class="admin-notification-list" id="adminNotificationList">
+                                    <div class="admin-notification-empty">Đang tải thông báo...</div>
+                                </div>
+                            </div>
+                        </div>
                         <div class="dropdown">
                             <button
                                 class="btn btn-soft btn-icon dropdown-toggle admin-profile-btn"

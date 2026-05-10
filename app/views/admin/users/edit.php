@@ -18,6 +18,7 @@ $errors = $data['errors'] ?? [];
                     </div>
 
                     <form method="POST" action="<?php echo URLROOT; ?>/admin/editUser/<?php echo (int) $user->id; ?>" novalidate>
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($data['csrf_admin'] ?? ''); ?>">
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label for="full_name" class="form-label">Họ và tên</label>

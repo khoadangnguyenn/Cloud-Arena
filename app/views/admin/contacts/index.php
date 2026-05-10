@@ -50,12 +50,17 @@ $priorityLabels = [
                         <?php echo htmlspecialchars($data['flash']['message']); ?>
                     </div>
                 <?php endif; ?>
+                <?php if (!empty($data['missing_ticket_notice'])): ?>
+                    <div class="alert alert-warning">
+                        <?php echo htmlspecialchars($data['missing_ticket_notice']); ?>
+                    </div>
+                <?php endif; ?>
 
                 <form method="GET" action="<?php echo URLROOT; ?>/admincontacts">
                     <div class="row g-2 align-items-end ticket-filter-row">
                         <div class="col-lg-3 col-md-6">
                             <label for="status" class="form-label">Trạng thái</label>
-                            <select name="status" id="status" class="form-select">
+                            <select name="status" id="status" class="form-select" data-admin-custom-select="true">
                                 <option value="">Tất cả</option>
                                 <?php foreach ($data['statuses'] as $status): ?>
                                     <option value="<?php echo htmlspecialchars($status); ?>" <?php echo $filters['status'] === $status ? 'selected' : ''; ?>>
@@ -67,7 +72,7 @@ $priorityLabels = [
 
                         <div class="col-lg-3 col-md-6">
                             <label for="priority" class="form-label">Độ ưu tiên</label>
-                            <select name="priority" id="priority" class="form-select">
+                            <select name="priority" id="priority" class="form-select" data-admin-custom-select="true">
                                 <option value="">Tất cả</option>
                                 <?php foreach ($data['priorities'] as $priority): ?>
                                     <option value="<?php echo htmlspecialchars($priority); ?>" <?php echo $filters['priority'] === $priority ? 'selected' : ''; ?>>
@@ -134,7 +139,7 @@ $priorityLabels = [
                                     $rowUrl = URLROOT . '/admincontacts?' . http_build_query($rowParams);
                                     $isSelected = $selectedContact && (int) $selectedContact->user_id === (int) $ticket->user_id && (int) $selectedContact->contact_id === (int) $ticket->contact_id;
                                     ?>
-                                    <tr class="ticket-row <?php echo $isSelected ? 'ticket-row-active' : ''; ?>">
+                                    <tr class="ticket-row <?php echo $isSelected ? 'ticket-row-active' : ''; ?> <?php echo $ticket->status === 'replied' ? 'ticket-row-replied' : ''; ?>">
                                         <td>
                                             <a
                                                 href="<?php echo $rowUrl; ?>"

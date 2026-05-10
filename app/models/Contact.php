@@ -42,10 +42,32 @@ class Contact {
     }
 
     private function getNextContactId($userId) {
-        $this->db->query('SELECT COALESCE(MAX(contact_id), 0) + 1 AS next_id FROM contacts WHERE user_id = :user_id');
-        $this->db->bind(':user_id', (int) $userId);
+        $this->db->query(
+            'SELECT
+                CASE
+                    WHEN NOT EXISTS (
+                        SELECT 1
+                        FROM contacts
+                        WHERE user_id = :user_id_check AND contact_id = 1
+                    ) THEN 1
+                    ELSE (
+                        SELECT MIN(c1.contact_id) + 1
+                        FROM contacts c1
+                        WHERE c1.user_id = :user_id_gap
+                          AND NOT EXISTS (
+                              SELECT 1
+                              FROM contacts c2
+                              WHERE c2.user_id = :user_id_gap_inner
+                                AND c2.contact_id = c1.contact_id + 1
+                          )
+                    )
+                END AS next_id'
+        );
+        $this->db->bind(':user_id_check', (int) $userId);
+        $this->db->bind(':user_id_gap', (int) $userId);
+        $this->db->bind(':user_id_gap_inner', (int) $userId);
         $row = $this->db->single();
-        return $row ? (int) $row->next_id : 1;
+        return ($row && (int) $row->next_id > 0) ? (int) $row->next_id : 1;
     }
 
     private function getMetaKey($userId, $contactId) {
@@ -161,10 +183,16 @@ class Contact {
         }
 
         $this->upsertMeta($userId, $contactId, 'normal', null, null);
+        $createdAt = '';
+        $createdRow = $this->getContactByKey($userId, $contactId);
+        if ($createdRow && !empty($createdRow->created_at)) {
+            $createdAt = (string) $createdRow->created_at;
+        }
 
         return [
             'user_id' => $userId,
-            'contact_id' => $contactId
+            'contact_id' => $contactId,
+            'created_at' => $createdAt
         ];
     }
 
@@ -180,7 +208,21 @@ class Contact {
                     ON s.key_name = CONCAT(:meta_prefix, c.user_id, '_', c.contact_id)
                 LEFT JOIN users u
                     ON u.id = c.user_id" . $filterSql . "
-                ORDER BY c.created_at DESC
+                ORDER BY
+                    CASE c.status
+                        WHEN 'unread' THEN 1
+                        WHEN 'read' THEN 2
+                        WHEN 'replied' THEN 3
+                        ELSE 4
+                    END ASC,
+                    CASE
+                        WHEN s.value LIKE '%\"priority\":\"urgent\"%' THEN 1
+                        WHEN s.value LIKE '%\"priority\":\"high\"%' THEN 2
+                        WHEN s.value LIKE '%\"priority\":\"normal\"%' THEN 3
+                        WHEN s.value LIKE '%\"priority\":\"low\"%' THEN 4
+                        ELSE 3
+                    END ASC,
+                    c.created_at DESC
                 LIMIT :limit OFFSET :offset";
 
         $this->db->query($sql);
@@ -303,5 +345,73 @@ class Contact {
         $this->db->bind(':user_id', (int) $userId);
         $this->db->bind(':contact_id', (int) $contactId);
         return $this->db->execute();
+    }
+
+    public function getTicketNotificationSummary($sinceTimestamp = null, $limit = 5) {
+        $safeSince = trim((string) $sinceTimestamp) !== '' ? trim((string) $sinceTimestamp) : '1970-01-01 00:00:00';
+        $safeLimit = max(1, (int) $limit);
+
+        $this->db->query(
+            'SELECT COUNT(*) AS total, MAX(created_at) AS latest_created_at
+             FROM contacts
+             WHERE created_at > :since_timestamp'
+        );
+        $this->db->bind(':since_timestamp', $safeSince);
+        $meta = $this->db->single();
+        $total = $meta ? (int) $meta->total : 0;
+        $latestCreatedAt = ($meta && !empty($meta->latest_created_at)) ? (string) $meta->latest_created_at : null;
+
+        $this->db->query(
+            'SELECT user_id, contact_id, name, email, subject, status, created_at
+             FROM contacts
+             WHERE created_at > :since_timestamp
+             ORDER BY created_at DESC
+             LIMIT :limit_rows'
+        );
+        $this->db->bind(':since_timestamp', $safeSince);
+        $this->db->bind(':limit_rows', $safeLimit);
+        $items = $this->db->resultSet();
+
+        return [
+            'count' => $total,
+            'latest_created_at' => $latestCreatedAt,
+            'items' => $items
+        ];
+    }
+
+    public function getLatestContactCreatedAt() {
+        $this->db->query(
+            'SELECT MAX(created_at) AS latest_created_at
+             FROM contacts'
+        );
+        $row = $this->db->single();
+        if (!$row || empty($row->latest_created_at)) {
+            return null;
+        }
+        return (string) $row->latest_created_at;
+    }
+
+    public function getRecentTicketNotifications($limit = 30) {
+        $safeLimit = max(1, (int) $limit);
+        $this->db->query(
+            'SELECT user_id, contact_id, name, email, subject, status, created_at
+             FROM contacts
+             ORDER BY created_at DESC
+             LIMIT :limit_rows'
+        );
+        $this->db->bind(':limit_rows', $safeLimit);
+        return $this->db->resultSet();
+    }
+
+    public function countNewTicketNotificationsSince($sinceTimestamp = null) {
+        $safeSince = trim((string) $sinceTimestamp) !== '' ? trim((string) $sinceTimestamp) : '1970-01-01 00:00:00';
+        $this->db->query(
+            'SELECT COUNT(*) AS total
+             FROM contacts
+             WHERE created_at > :since_timestamp'
+        );
+        $this->db->bind(':since_timestamp', $safeSince);
+        $row = $this->db->single();
+        return $row ? (int) $row->total : 0;
     }
 }

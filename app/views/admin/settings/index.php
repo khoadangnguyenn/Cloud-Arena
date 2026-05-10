@@ -23,6 +23,7 @@ $logoImageUrl = $logoImageFile !== '' ? URLROOT . '/uploads/branding/' . rawurle
                 <?php endif; ?>
 
                 <form action="<?php echo URLROOT; ?>/admin/settings" method="POST" enctype="multipart/form-data" novalidate>
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($data['csrf_admin'] ?? ''); ?>">
                     <div class="settings-section-header">
                         <h3>Phần A: Nhận diện thương hiệu</h3>
                         <p>Cấu hình nhận diện thương hiệu cho khu vực công khai.</p>

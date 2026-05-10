@@ -31,6 +31,10 @@ $isLoggedIn = !empty($data['is_logged_in']);
                 <?php endif; ?>
 
                 <form action="<?php echo URLROOT; ?>/pages/contact" method="POST" class="space-y-6" novalidate>
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($data['csrf_token'] ?? ''); ?>">
+                    <div style="position:absolute;left:-9999px;opacity:0;pointer-events:none;" aria-hidden="true">
+                        <input type="text" name="website" value="" tabindex="-1" autocomplete="off">
+                    </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label class="block text-sm font-medium text-gray-400 mb-2">Họ tên</label>
@@ -86,6 +90,7 @@ $isLoggedIn = !empty($data['is_logged_in']);
                             class="w-full px-4 py-3 bg-gray-800/50 border <?php echo !empty($data['errors']['message']) ? 'border-red-500' : 'border-gray-700'; ?> rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
                             placeholder="Mô tả chi tiết vấn đề của bạn..."
                             minlength="10"
+                            maxlength="5000"
                             required
                         ><?php echo htmlspecialchars($data['form']['message'] ?? ''); ?></textarea>
                         <?php if (!empty($data['errors']['message'])): ?>

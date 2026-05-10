@@ -44,6 +44,210 @@ function initCloudArenaUi() {
         });
     }
 
+    var initAdminCustomSelects = function(rootNode) {
+        var scope = rootNode && rootNode.querySelectorAll ? rootNode : document;
+        var selects = scope.querySelectorAll('select[data-admin-custom-select="true"]');
+        if (!selects.length) {
+            return;
+        }
+
+        var positionCustomSelectMenu = function(toggle, menu) {
+            var viewportPadding = 12;
+            var spacing = 6;
+            var toggleRect = toggle.getBoundingClientRect();
+            var targetWidth = Math.max(130, Math.round(toggleRect.width));
+
+            menu.style.position = 'fixed';
+            menu.style.margin = '0';
+            menu.style.left = '0px';
+            menu.style.top = '0px';
+            menu.style.right = 'auto';
+            menu.style.width = targetWidth + 'px';
+            menu.style.minWidth = targetWidth + 'px';
+            menu.style.maxWidth = targetWidth + 'px';
+            menu.style.zIndex = '9999';
+            menu.classList.remove('menu-dropup');
+
+            var menuRect = menu.getBoundingClientRect();
+            var left = toggleRect.left;
+            if (left + targetWidth > window.innerWidth - viewportPadding) {
+                left = window.innerWidth - targetWidth - viewportPadding;
+            }
+            if (left < viewportPadding) {
+                left = viewportPadding;
+            }
+
+            var top = toggleRect.bottom + spacing;
+            if (top + menuRect.height > window.innerHeight - viewportPadding) {
+                top = toggleRect.top - menuRect.height - spacing;
+                menu.classList.add('menu-dropup');
+            }
+            if (top < viewportPadding) {
+                top = Math.max(viewportPadding, window.innerHeight - menuRect.height - viewportPadding);
+            }
+
+            menu.style.left = Math.round(left) + 'px';
+            menu.style.top = Math.round(top) + 'px';
+        };
+
+        var closeCustomSelectMenus = function(exceptMenu) {
+            var openMenus = document.querySelectorAll('.admin-custom-select-menu.show');
+            openMenus.forEach(function(openMenu) {
+                if (exceptMenu && openMenu === exceptMenu) {
+                    return;
+                }
+                var ownerWrap = openMenu._adminSelectOwner;
+                if (ownerWrap) {
+                    var ownerToggle = ownerWrap.querySelector('.admin-custom-select-toggle');
+                    if (ownerToggle) {
+                        ownerToggle.setAttribute('aria-expanded', 'false');
+                    }
+                }
+                openMenu.classList.remove('show');
+                openMenu.classList.remove('menu-floating');
+                openMenu.classList.remove('menu-dropup');
+                openMenu.style.position = '';
+                openMenu.style.left = '';
+                openMenu.style.top = '';
+                openMenu.style.right = '';
+                openMenu.style.width = '';
+                openMenu.style.minWidth = '';
+                openMenu.style.maxWidth = '';
+                openMenu.style.margin = '';
+                openMenu.style.zIndex = '';
+                if (ownerWrap && openMenu.parentNode === document.body) {
+                    ownerWrap.appendChild(openMenu);
+                }
+            });
+        };
+
+        selects.forEach(function(select) {
+            if (select.getAttribute('data-admin-custom-select-bound') === '1') {
+                return;
+            }
+            select.setAttribute('data-admin-custom-select-bound', '1');
+
+            var customWrap = document.createElement('div');
+            customWrap.className = 'admin-custom-select';
+            var toggle = document.createElement('button');
+            toggle.type = 'button';
+            toggle.className = 'admin-custom-select-toggle';
+            toggle.setAttribute('aria-haspopup', 'listbox');
+            toggle.setAttribute('aria-expanded', 'false');
+            toggle.setAttribute('aria-label', 'Chọn giá trị');
+            var label = document.createElement('span');
+            label.className = 'admin-custom-select-label';
+            var chevron = document.createElement('i');
+            chevron.className = 'fa-solid fa-chevron-down';
+            chevron.setAttribute('aria-hidden', 'true');
+            toggle.appendChild(label);
+            toggle.appendChild(chevron);
+
+            var menu = document.createElement('div');
+            menu.className = 'admin-custom-select-menu';
+            menu.setAttribute('role', 'listbox');
+            menu._adminSelectOwner = customWrap;
+
+            var syncUi = function() {
+                var activeOption = select.options[select.selectedIndex] || select.options[0];
+                label.textContent = activeOption ? activeOption.textContent : 'Chọn';
+                var optionButtons = menu.querySelectorAll('.admin-custom-select-option');
+                optionButtons.forEach(function(btn) {
+                    var isActive = btn.getAttribute('data-value') === select.value;
+                    btn.classList.toggle('active', isActive);
+                    btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+                });
+                toggle.classList.toggle('is-disabled', !!select.disabled);
+                toggle.setAttribute('aria-disabled', select.disabled ? 'true' : 'false');
+            };
+
+            Array.prototype.forEach.call(select.options, function(option) {
+                var optionBtn = document.createElement('button');
+                optionBtn.type = 'button';
+                optionBtn.className = 'admin-custom-select-option';
+                optionBtn.setAttribute('role', 'option');
+                optionBtn.setAttribute('data-value', option.value);
+                optionBtn.textContent = option.textContent;
+                if (option.disabled) {
+                    optionBtn.disabled = true;
+                }
+                optionBtn.addEventListener('click', function() {
+                    syncUi();
+                    if (optionBtn.disabled || select.disabled) {
+                        return;
+                    }
+                    select.value = option.value;
+                    select.dispatchEvent(new Event('change', { bubbles: true }));
+                    syncUi();
+                    closeCustomSelectMenus();
+                });
+                menu.appendChild(optionBtn);
+            });
+
+            toggle.addEventListener('click', function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                syncUi();
+                if (select.disabled) {
+                    return;
+                }
+                var isOpen = menu.classList.contains('show');
+                closeCustomSelectMenus();
+                if (!isOpen) {
+                    document.body.appendChild(menu);
+                    menu.classList.add('show');
+                    menu.classList.add('menu-floating');
+                    positionCustomSelectMenu(toggle, menu);
+                    toggle.setAttribute('aria-expanded', 'true');
+                } else {
+                    toggle.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            select.addEventListener('change', syncUi);
+            select.classList.add('admin-custom-select-native');
+            select.setAttribute('tabindex', '-1');
+
+            customWrap.appendChild(toggle);
+            customWrap.appendChild(menu);
+            select.insertAdjacentElement('afterend', customWrap);
+            syncUi();
+        });
+
+        if (document.body.getAttribute('data-admin-custom-select-global-bound') !== '1') {
+            document.body.setAttribute('data-admin-custom-select-global-bound', '1');
+
+            document.addEventListener('click', function(event) {
+                if (!event.target.closest('.admin-custom-select') && !event.target.closest('.admin-custom-select-menu')) {
+                    closeCustomSelectMenus();
+                }
+            });
+
+            document.addEventListener('keydown', function(event) {
+                if (event.key !== 'Escape') {
+                    return;
+                }
+                closeCustomSelectMenus();
+            });
+
+            window.addEventListener('resize', function() {
+                closeCustomSelectMenus();
+            });
+            document.addEventListener('scroll', function() {
+                var openMenu = document.querySelector('.admin-custom-select-menu.show');
+                if (openMenu) {
+                    closeCustomSelectMenus();
+                }
+            }, true);
+        }
+    };
+
+    if (quickSearchForm) {
+        initAdminCustomSelects(quickSearchForm);
+    }
+
+    initAuthForms();
+
     // Admin shell interactions.
     if (document.body.classList.contains('admin-modern')) {
         var adminUiAlreadyBound = document.body.getAttribute('data-admin-ui-bound') === '1';
@@ -346,6 +550,25 @@ function initCloudArenaUi() {
                     }
                 }, 220);
             }, 2600);
+        };
+
+        var initAdminLoginNotificationToast = function() {
+            var stateNode = document.getElementById('adminLoginNotificationState');
+            if (!stateNode || stateNode.getAttribute('data-bound') === '1') {
+                return;
+            }
+            stateNode.setAttribute('data-bound', '1');
+
+            var shouldShow = (stateNode.getAttribute('data-show') || '') === '1';
+            var count = Math.max(0, parseInt(stateNode.getAttribute('data-count'), 10) || 0);
+            if (!shouldShow || count <= 0) {
+                return;
+            }
+
+            var label = count > 99 ? '99+' : String(count);
+            window.setTimeout(function() {
+                showAdminToast('Có ' + label + ' thông báo mới', 'success');
+            }, 350);
         };
 
         var initAdminAutoSaveForms = function(rootNode) {
@@ -673,6 +896,180 @@ function initCloudArenaUi() {
             });
         };
 
+        var initAdminNotificationBox = function() {
+            var notifyToggle = document.getElementById('adminNotificationToggle');
+            var notifyMenu = document.getElementById('adminNotificationMenu');
+            var notifyList = document.getElementById('adminNotificationList');
+            var notifyCount = document.getElementById('adminNotifyCount');
+            if (!notifyToggle || !notifyMenu || !notifyList || notifyToggle.getAttribute('data-admin-notification-bound') === '1') {
+                return;
+            }
+            if (typeof window.fetch !== 'function') {
+                return;
+            }
+            notifyToggle.setAttribute('data-admin-notification-bound', '1');
+
+            var setBadge = function(countValue) {
+                var total = Math.max(0, parseInt(countValue, 10) || 0);
+                if (!notifyCount) {
+                    return;
+                }
+                if (total > 0) {
+                    notifyCount.textContent = total > 99 ? '99+' : String(total);
+                    notifyCount.classList.remove('d-none');
+                } else {
+                    notifyCount.textContent = '0';
+                    notifyCount.classList.add('d-none');
+                }
+            };
+
+            var renderEmpty = function(message) {
+                notifyList.innerHTML = '';
+                var emptyNode = document.createElement('div');
+                emptyNode.className = 'admin-notification-empty';
+                emptyNode.textContent = message;
+                notifyList.appendChild(emptyNode);
+            };
+
+            var renderItems = function(items) {
+                notifyList.innerHTML = '';
+                if (!Array.isArray(items) || items.length === 0) {
+                    renderEmpty('Hiện chưa có thông báo mới.');
+                    return;
+                }
+
+                items.forEach(function(item) {
+                    var isLink = item && typeof item.href === 'string' && item.href !== '';
+                    var row = document.createElement(isLink ? 'a' : 'div');
+                    var isNew = !!(item && item.is_new);
+                    row.className = 'admin-notification-item ' + (isNew ? 'admin-notification-item-new' : 'admin-notification-item-read');
+                    if (isLink) {
+                        row.href = item.href;
+                    }
+
+                    var icon = document.createElement('span');
+                    icon.className = 'admin-notification-icon';
+                    var iconInner = document.createElement('i');
+                    iconInner.className = item && item.icon ? item.icon : 'ti-bell';
+                    icon.appendChild(iconInner);
+
+                    var content = document.createElement('div');
+                    content.className = 'admin-notification-content';
+
+                    var title = document.createElement('strong');
+                    title.textContent = item && item.title ? item.title : 'Thông báo';
+                    content.appendChild(title);
+
+                    var description = document.createElement('p');
+                    description.textContent = item && item.message ? item.message : '';
+                    content.appendChild(description);
+
+                    var timestamp = document.createElement('small');
+                    timestamp.className = 'admin-notification-time';
+                    timestamp.textContent = item && item.created_at_label ? item.created_at_label : '';
+                    content.appendChild(timestamp);
+
+                    row.appendChild(icon);
+                    row.appendChild(content);
+                    notifyList.appendChild(row);
+                });
+            };
+
+            var fetchNotifications = function(showLoading) {
+                if (showLoading) {
+                    renderEmpty('Đang tải thông báo...');
+                }
+
+                var endpoint = (window.URLROOT || '') + '/admin/notifications?ajax=1&_ts=' + Date.now();
+                return window.fetch(endpoint, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    cache: 'no-store'
+                }).then(function(response) {
+                    return response.json().then(function(payload) {
+                        return {
+                            ok: response.ok,
+                            payload: payload
+                        };
+                    });
+                }).then(function(result) {
+                    if (!result.ok || !result.payload || !result.payload.success) {
+                        throw new Error('Không thể tải thông báo.');
+                    }
+
+                    var unseen = parseInt(result.payload.unseen_count, 10) || 0;
+                    setBadge(unseen);
+                    renderItems(result.payload.items || []);
+                    return unseen;
+                }).catch(function() {
+                    renderEmpty('Không thể tải thông báo. Vui lòng thử lại.');
+                    return 0;
+                });
+            };
+
+            var markSeen = function() {
+                return window.fetch((window.URLROOT || '') + '/admin/markNotificationsSeen?ajax=1', {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                        'X-CSRF-Token': window.adminCsrfToken || ''
+                    }
+                }).then(function() {
+                    setBadge(0);
+                }).catch(function() {
+                    return null;
+                });
+            };
+
+            var closeMenu = function() {
+                notifyMenu.classList.remove('show');
+                notifyMenu.setAttribute('aria-hidden', 'true');
+                notifyToggle.setAttribute('aria-expanded', 'false');
+            };
+
+            var openMenu = function() {
+                notifyMenu.classList.add('show');
+                notifyMenu.setAttribute('aria-hidden', 'false');
+                notifyToggle.setAttribute('aria-expanded', 'true');
+                fetchNotifications(true).then(function(unseen) {
+                    if (unseen > 0) {
+                        markSeen();
+                    }
+                });
+            };
+
+            notifyToggle.addEventListener('click', function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                if (notifyMenu.classList.contains('show')) {
+                    closeMenu();
+                } else {
+                    openMenu();
+                }
+            });
+
+            document.addEventListener('click', function(event) {
+                if (event.target.closest('#adminNotificationToggle') || event.target.closest('#adminNotificationMenu')) {
+                    return;
+                }
+                closeMenu();
+            });
+
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') {
+                    closeMenu();
+                }
+            });
+
+            fetchNotifications(false);
+            window.setInterval(function() {
+                fetchNotifications(false);
+            }, 45000);
+        };
+
         var initTicketDetailSelection = function() {
             var detailContainer = document.getElementById('ticketDetailContainer');
             if (!detailContainer || document.body.getAttribute('data-ticket-delegate-bound') === '1') {
@@ -785,6 +1182,7 @@ function initCloudArenaUi() {
                     detailContainer.innerHTML = payload.html;
                     setActiveTicketRow(link);
                     initAdminAutoSaveForms(detailContainer);
+                    initAdminCustomSelects(detailContainer);
                     if (window.history && window.history.replaceState) {
                         var nextUrl = link.href;
                         if (typeof payload.query_string === 'string') {
@@ -815,12 +1213,248 @@ function initCloudArenaUi() {
         }
 
         initAdminAutoSaveForms();
+        initAdminCustomSelects();
         initAdminGlobalSearch();
         initBrandingUploadZone();
         initMapPreview();
         initUserActionDropdowns();
+        initAdminNotificationBox();
+        initAdminLoginNotificationToast();
         initAdminProfileDropdown();
         initTicketDetailSelection();
+        initResetPasswordModal();
+    }
+
+    function initAuthForms() {
+        // Shared helpers
+        function setError(input, span, msg) {
+            if (span) { span.textContent = msg; }
+            if (input) {
+                input.classList.add('border-red-500', 'bg-red-500/5');
+                input.classList.remove('border-gray-700');
+            }
+        }
+        function clearError(input, span) {
+            if (span) { span.textContent = ''; }
+            if (input) {
+                input.classList.remove('border-red-500', 'bg-red-500/5');
+            }
+        }
+
+        // Shared rule functions
+        var RULES = {
+            username: function(val, input, span) {
+                if (!val) {
+                    setError(input, span, 'Vui lòng nhập tên đăng nhập.'); return false;
+                }
+                if (val.length < 3 || val.length > 50) {
+                    setError(input, span, 'Tên đăng nhập phải từ 3 đến 50 ký tự.'); return false;
+                }
+                if (!/^[a-zA-Z0-9$@_!]+$/.test(val)) {
+                    setError(input, span, 'Tên đăng nhập chỉ dùng chữ cái, số và ký tự $ @ _ !'); return false;
+                }
+                return true;
+            },
+            fullName: function(val, input, span) {
+                if (!val) { return true; } // optional
+                if (val.length > 100) {
+                    setError(input, span, 'Tên hiển thị tối đa 100 ký tự.'); return false;
+                }
+                if (!/^[a-zA-ZÀ-ỹ\s]+$/.test(val)) {
+                    setError(input, span, 'Tên hiển thị chỉ được chứa chữ cái và khoảng cách.'); return false;
+                }
+                return true;
+            },
+            email: function(val, input, span) {
+                if (!val) {
+                    setError(input, span, 'Vui lòng nhập email.'); return false;
+                }
+                if (!/^[a-zA-Z0-9@.]+$/.test(val)) {
+                    setError(input, span, 'Email chỉ được chứa chữ cái, số, @ và dấu chấm.'); return false;
+                }
+                if (!/^[^@]+@[^@]+\.[^@]+$/.test(val)) {
+                    setError(input, span, 'Email không hợp lệ.'); return false;
+                }
+                return true;
+            },
+            password: function(val, input, span, label) {
+                label = label || 'Mật khẩu';
+                if (!val) {
+                    setError(input, span, 'Vui lòng nhập ' + label.toLowerCase() + '.'); return false;
+                }
+                if (val.length < 6) {
+                    setError(input, span, label + ' phải có ít nhất 6 ký tự.'); return false;
+                }
+                return true;
+            },
+            confirmPassword: function(pw, cpw, input, span) {
+                if (!cpw) {
+                    setError(input, span, 'Vui lòng xác nhận mật khẩu.'); return false;
+                }
+                if (pw !== cpw) {
+                    setError(input, span, 'Mật khẩu xác nhận không khớp.'); return false;
+                }
+                return true;
+            }
+        };
+
+        // ── Login ────────────────────────────────────────
+        var loginForm = document.getElementById('loginForm');
+        if (loginForm) {
+            loginForm.addEventListener('submit', function(e) {
+                var uInput = document.getElementById('username');
+                var pInput = document.getElementById('password');
+                var uErr   = document.getElementById('login-username-err');
+                var pErr   = document.getElementById('login-password-err');
+                clearError(uInput, uErr); clearError(pInput, pErr);
+                var valid = true;
+                if (!uInput || !uInput.value.trim()) { setError(uInput, uErr, 'Vui lòng nhập tên đăng nhập.'); valid = false; }
+                if (!pInput || !pInput.value)         { setError(pInput, pErr, 'Vui lòng nhập mật khẩu.');      valid = false; }
+                if (!valid) { e.preventDefault(); }
+            });
+        }
+
+        // ── Register ─────────────────────────────────────
+        var registerForm = document.getElementById('registerForm');
+        if (registerForm) {
+            registerForm.addEventListener('submit', function(e) {
+                var f = {
+                    username:        document.getElementById('reg-username'),
+                    fullName:        document.getElementById('reg-full-name'),
+                    email:           document.getElementById('reg-email'),
+                    password:        document.getElementById('reg-password'),
+                    confirmPassword: document.getElementById('reg-confirm-password')
+                };
+                var s = {
+                    username:        document.getElementById('reg-username-err'),
+                    fullName:        document.getElementById('reg-full-name-err'),
+                    email:           document.getElementById('reg-email-err'),
+                    password:        document.getElementById('reg-password-err'),
+                    confirmPassword: document.getElementById('reg-confirm-password-err')
+                };
+                Object.keys(f).forEach(function(k) { clearError(f[k], s[k]); });
+                var valid = true;
+                var pw = f.password ? f.password.value : '';
+                if (!RULES.username(f.username ? f.username.value.trim() : '', f.username, s.username))               { valid = false; }
+                if (!RULES.fullName(f.fullName ? f.fullName.value.trim() : '', f.fullName, s.fullName))               { valid = false; }
+                if (!RULES.email(f.email ? f.email.value.trim() : '', f.email, s.email))                             { valid = false; }
+                if (!RULES.password(pw, f.password, s.password, 'Mật khẩu'))                                         { valid = false; }
+                if (!RULES.confirmPassword(pw, f.confirmPassword ? f.confirmPassword.value : '', f.confirmPassword, s.confirmPassword)) { valid = false; }
+                if (!valid) { e.preventDefault(); }
+            });
+        }
+
+        // ── Profile: Personal Information ─────────────────
+        var profileInfoForm = document.getElementById('profileInfoForm');
+        if (profileInfoForm) {
+            profileInfoForm.addEventListener('submit', function(e) {
+                var fnInput = document.getElementById('prof-full-name');
+                var emInput = document.getElementById('prof-email');
+                var fnErr   = document.getElementById('prof-full-name-err');
+                var emErr   = document.getElementById('prof-email-err');
+                clearError(fnInput, fnErr); clearError(emInput, emErr);
+                var valid = true;
+                if (!RULES.fullName(fnInput ? fnInput.value.trim() : '', fnInput, fnErr)) { valid = false; }
+                if (!RULES.email(emInput ? emInput.value.trim() : '', emInput, emErr))    { valid = false; }
+                if (!valid) { e.preventDefault(); }
+            });
+        }
+
+        // ── Profile: Change Password ──────────────────────
+        var changePasswordForm = document.getElementById('changePasswordForm');
+        if (changePasswordForm) {
+            changePasswordForm.addEventListener('submit', function(e) {
+                var curInput = document.getElementById('prof-current-password');
+                var newInput = document.getElementById('prof-new-password');
+                var cfmInput = document.getElementById('prof-confirm-password');
+                var curErr   = document.getElementById('prof-current-password-err');
+                var newErr   = document.getElementById('prof-new-password-err');
+                var cfmErr   = document.getElementById('prof-confirm-password-err');
+                clearError(curInput, curErr); clearError(newInput, newErr); clearError(cfmInput, cfmErr);
+                var valid = true;
+                var npw = newInput ? newInput.value : '';
+                if (!curInput || !curInput.value) { setError(curInput, curErr, 'Vui lòng nhập mật khẩu hiện tại.'); valid = false; }
+                if (!RULES.password(npw, newInput, newErr, 'Mật khẩu mới'))                                      { valid = false; }
+                if (!RULES.confirmPassword(npw, cfmInput ? cfmInput.value : '', cfmInput, cfmErr))                { valid = false; }
+                if (!valid) { e.preventDefault(); }
+            });
+        }
+    }
+
+    function initResetPasswordModal() {
+        var overlay = document.getElementById('resetPasswordModal');
+        var confirmBtn = document.getElementById('resetPasswordConfirm');
+        var cancelBtn = document.getElementById('resetPasswordCancel');
+        var userNameEl = document.getElementById('resetPasswordUserName');
+        if (!overlay || !confirmBtn || !cancelBtn) {
+            return;
+        }
+
+        var targetUserId = null;
+
+        var closeModal = function() {
+            overlay.classList.remove('is-active');
+            overlay.setAttribute('aria-hidden', 'true');
+            targetUserId = null;
+        };
+
+        var openModal = function(userId, userName) {
+            targetUserId = userId;
+            if (userNameEl) {
+                userNameEl.textContent = userName ? 'Người dùng: ' + userName : '';
+            }
+            overlay.classList.add('is-active');
+            overlay.setAttribute('aria-hidden', 'false');
+        };
+
+        document.querySelectorAll('[data-reset-user-id]').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                openModal(
+                    btn.getAttribute('data-reset-user-id'),
+                    btn.getAttribute('data-reset-user-name')
+                );
+            });
+        });
+
+        cancelBtn.addEventListener('click', closeModal);
+
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) {
+                closeModal();
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        confirmBtn.addEventListener('click', function() {
+            if (!targetUserId) {
+                return;
+            }
+            confirmBtn.disabled = true;
+            fetch(window.URLROOT + '/admin/resetPassword/' + targetUserId, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-Token': window.adminCsrfToken || ''
+                }
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(result) {
+                closeModal();
+                showAdminToast(result.message || 'Reset mật khẩu thành công!', result.success ? 'success' : 'error');
+            })
+            .catch(function() {
+                closeModal();
+                showAdminToast('Có lỗi xảy ra. Vui lòng thử lại.', 'error');
+            })
+            .finally(function() {
+                confirmBtn.disabled = false;
+            });
+        });
     }
 }
 

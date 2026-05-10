@@ -162,7 +162,7 @@ if ($previousRevenue > 0) {
                         <p class="panel-muted">Biểu đồ xu hướng doanh thu theo tháng.</p>
                     </div>
                     <label class="d-flex align-items-center gap-2 m-0">
-                        <select id="dashboardRevenueFilter" class="form-select form-select-sm">
+                        <select id="dashboardRevenueFilter" class="form-select form-select-sm" data-admin-custom-select="true">
                             <option value="3">3 tháng gần nhất</option>
                             <option value="5" selected>5 tháng gần nhất</option>
                         </select>

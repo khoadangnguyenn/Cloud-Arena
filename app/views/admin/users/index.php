@@ -68,7 +68,7 @@ $resolveAvatarUrl = function ($avatarValue) {
                     </div>
                     <div class="col-lg-2 col-md-4">
                         <label for="status" class="form-label">Trạng thái</label>
-                        <select id="status" name="status" class="form-select">
+                        <select id="status" name="status" class="form-select" data-admin-custom-select="true">
                             <option value="">Tất cả trạng thái</option>
                             <option value="active" <?php echo $filters['status'] === 'active' ? 'selected' : ''; ?>>Hoạt động</option>
                             <option value="banned" <?php echo $filters['status'] === 'banned' ? 'selected' : ''; ?>>Đã khóa</option>
@@ -76,7 +76,7 @@ $resolveAvatarUrl = function ($avatarValue) {
                     </div>
                     <div class="col-lg-2 col-md-4">
                         <label for="role" class="form-label">Vai trò</label>
-                        <select id="role" name="role" class="form-select">
+                        <select id="role" name="role" class="form-select" data-admin-custom-select="true">
                             <option value="">Tất cả vai trò</option>
                             <option value="member" <?php echo $filters['role'] === 'member' ? 'selected' : ''; ?>>Thành viên</option>
                             <option value="admin" <?php echo $filters['role'] === 'admin' ? 'selected' : ''; ?>>Quản trị viên</option>
@@ -163,7 +163,8 @@ $resolveAvatarUrl = function ($avatarValue) {
                                                 data-admin-autosave="true"
                                                 data-toast-success="Vai trò đã cập nhật (tự động)."
                                             >
-                                                <select name="role" class="form-select form-select-sm" data-admin-autosave-input="true">
+                                                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($data['csrf_admin'] ?? ''); ?>">
+                                                <select name="role" class="form-select form-select-sm" data-admin-autosave-input="true" data-admin-custom-select="true">
                                                     <option value="member" <?php echo $user->role === 'member' ? 'selected' : ''; ?>>Thành viên</option>
                                                     <option value="admin" <?php echo $user->role === 'admin' ? 'selected' : ''; ?>>Quản trị viên</option>
                                                 </select>
@@ -192,9 +193,18 @@ $resolveAvatarUrl = function ($avatarValue) {
                                                             <span>Chỉnh sửa hồ sơ</span>
                                                         </a>
                                                     </li>
+                                                    <li>
+                                                        <button type="button" class="dropdown-item admin-dropdown-link"
+                                                            data-reset-user-id="<?php echo (int) $user->id; ?>"
+                                                            data-reset-user-name="<?php echo htmlspecialchars($displayName); ?>">
+                                                            <i class="ti-reload"></i>
+                                                            <span>Reset mật khẩu</span>
+                                                        </button>
+                                                    </li>
                                                     <li><hr class="dropdown-divider"></li>
                                                     <li>
                                                         <form action="<?php echo URLROOT; ?>/admin/toggleUserStatus/<?php echo (int) $user->id; ?>" method="POST" class="m-0">
+                                                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($data['csrf_admin'] ?? ''); ?>">
                                                             <input type="hidden" name="target_status" value="<?php echo $user->status === 'active' ? 'banned' : 'active'; ?>">
                                                             <button type="submit" class="dropdown-item admin-dropdown-link <?php echo $user->status === 'active' ? 'text-danger' : 'text-success'; ?>">
                                                                 <i class="<?php echo $user->status === 'active' ? 'ti-na' : 'ti-check'; ?>"></i>
@@ -204,6 +214,7 @@ $resolveAvatarUrl = function ($avatarValue) {
                                                     </li>
                                                     <li>
                                                         <form action="<?php echo URLROOT; ?>/admin/deleteUser/<?php echo (int) $user->id; ?>" method="POST" class="m-0" onsubmit="return confirm('Bạn có chắc chắn muốn xóa thành viên này?');">
+                                                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($data['csrf_admin'] ?? ''); ?>">
                                                             <button type="submit" class="dropdown-item admin-dropdown-link text-danger">
                                                                 <i class="ti-trash"></i>
                                                                 <span>Xóa thành viên</span>
@@ -241,6 +252,17 @@ $resolveAvatarUrl = function ($avatarValue) {
                 <?php endif; ?>
             </div>
         </section>
+    </div>
+</div>
+
+<div id="resetPasswordModal" class="admin-confirm-overlay" aria-hidden="true">
+    <div class="admin-confirm-box">
+        <p class="admin-confirm-message">Bạn có chắc muốn <strong>RESET mật khẩu</strong> cho người dùng này?</p>
+        <p class="admin-confirm-subtext" id="resetPasswordUserName"></p>
+        <div class="admin-confirm-actions">
+            <button type="button" id="resetPasswordCancel" class="btn btn-outline-light btn-sm">Hủy bỏ</button>
+            <button type="button" id="resetPasswordConfirm" class="btn btn-danger btn-sm">Xác nhận</button>
+        </div>
     </div>
 </div>
 

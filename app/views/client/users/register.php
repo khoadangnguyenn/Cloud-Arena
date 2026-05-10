@@ -19,31 +19,32 @@
         </a>
       </p>
     </div>
-    <form class="mt-8 space-y-4" action="<?php echo URLROOT; ?>/users/register" method="POST">
+    <form id="registerForm" class="mt-8 space-y-4" action="<?php echo URLROOT; ?>/users/register" method="POST" novalidate>
+      <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($data['csrf_token'] ?? ''); ?>">
       <div>
         <label class="block text-sm font-medium text-gray-400 mb-2">Tên đăng nhập</label>
-        <input name="username" type="text" class="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all <?php echo (!empty($data['username_err'])) ? 'border-red-500 bg-red-500/5' : ''; ?>" placeholder="Nhập tên đăng nhập" value="<?php echo $data['username']; ?>">
-        <span class="text-[10px] text-red-500 mt-1 block ml-1 uppercase font-bold"><?php echo $data['username_err']; ?></span>
+        <input id="reg-username" name="username" type="text" class="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all <?php echo (!empty($data['username_err'])) ? 'border-red-500 bg-red-500/5' : ''; ?>" placeholder="Nhập tên đăng nhập" value="<?php echo $data['username']; ?>">
+        <span id="reg-username-err" class="text-[10px] text-red-500 mt-1 block ml-1 uppercase font-bold"><?php echo $data['username_err']; ?></span>
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-400 mb-2">Tên hiển thị</label>
-        <input name="full_name" type="text" class="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all <?php echo (!empty($data['full_name_err'])) ? 'border-red-500 bg-red-500/5' : ''; ?>" placeholder="Ví dụ: Nguyễn Văn A" value="<?php echo $data['full_name'] ?? ''; ?>">
-        <span class="text-[10px] text-red-500 mt-1 block ml-1 uppercase font-bold"><?php echo $data['full_name_err'] ?? ''; ?></span>
+        <input id="reg-full-name" name="full_name" type="text" class="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all <?php echo (!empty($data['full_name_err'])) ? 'border-red-500 bg-red-500/5' : ''; ?>" placeholder="Ví dụ: Nguyễn Văn A" value="<?php echo $data['full_name'] ?? ''; ?>">
+        <span id="reg-full-name-err" class="text-[10px] text-red-500 mt-1 block ml-1 uppercase font-bold"><?php echo $data['full_name_err'] ?? ''; ?></span>
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-400 mb-2">Email</label>
-        <input name="email" type="email" class="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all <?php echo (!empty($data['email_err'])) ? 'border-red-500 bg-red-500/5' : ''; ?>" placeholder="example@email.com" value="<?php echo $data['email']; ?>">
-        <span class="text-[10px] text-red-500 mt-1 block ml-1 uppercase font-bold"><?php echo $data['email_err']; ?></span>
+        <input id="reg-email" name="email" type="email" class="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all <?php echo (!empty($data['email_err'])) ? 'border-red-500 bg-red-500/5' : ''; ?>" placeholder="example@email.com" value="<?php echo $data['email']; ?>">
+        <span id="reg-email-err" class="text-[10px] text-red-500 mt-1 block ml-1 uppercase font-bold"><?php echo $data['email_err']; ?></span>
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-400 mb-2">Mật khẩu</label>
-        <input name="password" type="password" class="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all <?php echo (!empty($data['password_err'])) ? 'border-red-500 bg-red-500/5' : ''; ?>" placeholder="••••••••">
-        <span class="text-[10px] text-red-500 mt-1 block ml-1 uppercase font-bold"><?php echo $data['password_err']; ?></span>
+        <input id="reg-password" name="password" type="password" class="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all <?php echo (!empty($data['password_err'])) ? 'border-red-500 bg-red-500/5' : ''; ?>" placeholder="••••••••">
+        <span id="reg-password-err" class="text-[10px] text-red-500 mt-1 block ml-1 uppercase font-bold"><?php echo $data['password_err']; ?></span>
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-400 mb-2">Xác nhận mật khẩu</label>
-        <input name="confirm_password" type="password" class="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all <?php echo (!empty($data['confirm_password_err'])) ? 'border-red-500 bg-red-500/5' : ''; ?>" placeholder="••••••••">
-        <span class="text-[10px] text-red-500 mt-1 block ml-1 uppercase font-bold"><?php echo $data['confirm_password_err']; ?></span>
+        <input id="reg-confirm-password" name="confirm_password" type="password" class="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all <?php echo (!empty($data['confirm_password_err'])) ? 'border-red-500 bg-red-500/5' : ''; ?>" placeholder="••••••••">
+        <span id="reg-confirm-password-err" class="text-[10px] text-red-500 mt-1 block ml-1 uppercase font-bold"><?php echo $data['confirm_password_err']; ?></span>
       </div>
 
       <div class="pt-4">

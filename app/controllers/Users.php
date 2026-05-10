@@ -22,18 +22,37 @@ class Users extends Controller {
             exit();
         }
 
+        if (empty($_SESSION['csrf_login'])) {
+            $_SESSION['csrf_login'] = bin2hex(random_bytes(32));
+        }
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $username = trim($_POST['username'] ?? '');
             $password = trim($_POST['password'] ?? '');
 
             $data = [
                 'title'        => 'Đăng nhập',
+                'csrf_token'   => $_SESSION['csrf_login'],
                 'username'     => htmlspecialchars($username),
                 'password'     => '',
                 'username_err' => '',
                 'password_err' => '',
                 'login_err'    => '',
             ];
+
+            $submittedToken = trim((string) ($_POST['csrf_token'] ?? ''));
+            if (!hash_equals((string) ($_SESSION['csrf_login'] ?? ''), $submittedToken)) {
+                $data['login_err'] = 'Yêu cầu không hợp lệ. Vui lòng tải lại trang.';
+                $this->view('client/users/login', $data);
+                return;
+            }
+
+            // Rate limiting sau lần đăng nhập sai gần nhất
+            if ((time() - (int) ($_SESSION['login_last_submit'] ?? 0)) < 10) {
+                $data['login_err'] = 'Bạn vừa thử đăng nhập. Vui lòng đợi ít nhất 10 giây trước khi thử lại.';
+                $this->view('client/users/login', $data);
+                return;
+            }
 
             if (empty($username)) {
                 $data['username_err'] = 'Vui lòng nhập tên đăng nhập.';
@@ -57,6 +76,8 @@ class Users extends Controller {
                     $_SESSION['user_name'] = $loggedInUser->full_name ?: $loggedInUser->username;
                     $_SESSION['user_role'] = $loggedInUser->role;
                     $_SESSION['user_avatar'] = $loggedInUser->avatar ?? '';
+                    session_regenerate_id(true);
+                    unset($_SESSION['login_last_submit']);
 
                     if ($loggedInUser->role === 'admin') {
                         header('Location: ' . URLROOT . '/admin');
@@ -66,6 +87,7 @@ class Users extends Controller {
                     exit();
                 } else {
                     $data['login_err'] = 'Tên đăng nhập hoặc mật khẩu không đúng.';
+                    $_SESSION['login_last_submit'] = time();
                 }
             }
 
@@ -76,6 +98,7 @@ class Users extends Controller {
         // GET — show blank form
         $data = [
             'title'        => 'Đăng nhập',
+            'csrf_token'   => $_SESSION['csrf_login'],
             'username'     => '',
             'password'     => '',
             'username_err' => '',
@@ -93,6 +116,10 @@ class Users extends Controller {
             exit();
         }
 
+        if (empty($_SESSION['csrf_register'])) {
+            $_SESSION['csrf_register'] = bin2hex(random_bytes(32));
+        }
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $username         = trim($_POST['username'] ?? '');
             $fullName         = trim($_POST['full_name'] ?? '');
@@ -102,6 +129,7 @@ class Users extends Controller {
 
             $data = [
                 'title'                => 'Đăng ký',
+                'csrf_token'           => $_SESSION['csrf_register'],
                 'username'             => htmlspecialchars($username),
                 'full_name'            => htmlspecialchars($fullName),
                 'email'                => htmlspecialchars($email),
@@ -114,11 +142,20 @@ class Users extends Controller {
                 'confirm_password_err' => '',
             ];
 
+            $submittedToken = trim((string) ($_POST['csrf_token'] ?? ''));
+            if (!hash_equals((string) ($_SESSION['csrf_register'] ?? ''), $submittedToken)) {
+                $data['username_err'] = 'Yêu cầu không hợp lệ. Vui lòng tải lại trang.';
+                $this->view('client/users/register', $data);
+                return;
+            }
+
             // Validate username
             if (empty($username)) {
                 $data['username_err'] = 'Vui lòng nhập tên đăng nhập.';
             } elseif (strlen($username) < 3 || strlen($username) > 50) {
                 $data['username_err'] = 'Tên đăng nhập phải từ 3 đến 50 ký tự.';
+            } elseif (!preg_match('/^[a-zA-Z0-9$@_!]+$/', $username)) {
+                $data['username_err'] = 'Tên đăng nhập chỉ dùng chữ cái, số và ký tự $ @ _ !';
             } elseif ($this->userModel->findUserByUsername($username)) {
                 $data['username_err'] = 'Tên đăng nhập đã tồn tại.';
             }
@@ -126,6 +163,8 @@ class Users extends Controller {
             // Validate email
             if (empty($email)) {
                 $data['email_err'] = 'Vui lòng nhập email.';
+            } elseif (!preg_match('/^[a-zA-Z0-9@.]+$/', $email)) {
+                $data['email_err'] = 'Email chỉ được chứa chữ cái, số, @ và dấu chấm.';
             } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 $data['email_err'] = 'Email không hợp lệ.';
             } elseif ($this->userModel->findUserByEmail($email)) {
@@ -133,8 +172,12 @@ class Users extends Controller {
             }
 
             // Validate optional display name
-            if ($fullName !== '' && strlen($fullName) > 100) {
-                $data['full_name_err'] = 'Tên hiển thị tối đa 100 ký tự.';
+            if ($fullName !== '') {
+                if (strlen($fullName) > 100) {
+                    $data['full_name_err'] = 'Tên hiển thị tối đa 100 ký tự.';
+                } elseif (!preg_match('/^[a-zA-ZÀ-ỹ\s]+$/u', $fullName)) {
+                    $data['full_name_err'] = 'Tên hiển thị chỉ được chứa chữ cái và khoảng cách.';
+                }
             }
 
             // Validate password
@@ -165,11 +208,12 @@ class Users extends Controller {
                 ];
 
                 if ($this->userModel->register($registerData)) {
+                    unset($_SESSION['csrf_register']);
                     $_SESSION['register_success'] = 'Đăng ký thành công! Vui lòng đăng nhập.';
                     header('Location: ' . URLROOT . '/users/login');
                     exit();
                 } else {
-                    die('Có lỗi xảy ra khi đăng ký tài khoản.');
+                    $data['username_err'] = 'Có lỗi xảy ra khi đăng ký. Vui lòng thử lại.';
                 }
             }
 
@@ -180,6 +224,7 @@ class Users extends Controller {
         // GET — show blank form
         $data = [
             'title'                => 'Đăng ký',
+            'csrf_token'           => $_SESSION['csrf_register'],
             'username'             => '',
             'full_name'            => '',
             'email'                => '',
@@ -210,6 +255,10 @@ class Users extends Controller {
             exit();
         }
 
+        if (empty($_SESSION['csrf_profile'])) {
+            $_SESSION['csrf_profile'] = bin2hex(random_bytes(32));
+        }
+
         $errors = [
             'full_name' => '',
             'email' => '',
@@ -222,16 +271,39 @@ class Users extends Controller {
         unset($_SESSION['profile_success']);
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $submittedToken = trim((string) ($_POST['csrf_token'] ?? ''));
+            if (!hash_equals((string) ($_SESSION['csrf_profile'] ?? ''), $submittedToken)) {
+                $successMessage = '';
+                $errors['full_name'] = 'Yêu cầu không hợp lệ. Vui lòng tải lại trang.';
+                $this->view('client/users/profile', [
+                    'title'           => 'Hồ sơ người dùng',
+                    'csrf_token'      => $_SESSION['csrf_profile'],
+                    'user'            => $currentUser,
+                    'errors'          => $errors,
+                    'success_message' => ''
+                ]);
+                return;
+            }
+
             $action = trim($_POST['action'] ?? '');
 
             if ($action === 'profile_info') {
                 $fullName = trim($_POST['full_name'] ?? '');
-                $email = trim($_POST['email'] ?? '');
+                $email    = trim($_POST['email'] ?? '');
 
                 if ($fullName === '') {
                     $errors['full_name'] = 'Họ và tên không được để trống.';
+                } elseif (strlen($fullName) > 100) {
+                    $errors['full_name'] = 'Tên hiển thị tối đa 100 ký tự.';
+                } elseif (!preg_match('/^[a-zA-ZÀ-ỹ\s]+$/u', $fullName)) {
+                    $errors['full_name'] = 'Tên hiển thị chỉ được chứa chữ cái và khoảng cách.';
                 }
-                if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+
+                if (empty($email)) {
+                    $errors['email'] = 'Vui lòng nhập email.';
+                } elseif (!preg_match('/^[a-zA-Z0-9@.]+$/', $email)) {
+                    $errors['email'] = 'Email chỉ được chứa chữ cái, số, @ và dấu chấm.';
+                } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                     $errors['email'] = 'Email không hợp lệ.';
                 } elseif ($email !== $currentUser->email && $this->userModel->findUserByEmail($email)) {
                     $errors['email'] = 'Email đã được sử dụng.';
@@ -240,7 +312,8 @@ class Users extends Controller {
                 if ($errors['full_name'] === '' && $errors['email'] === '') {
                     $updated = $this->userModel->updateProfile((int) $_SESSION['user_id'], $fullName, $email);
                     if ($updated) {
-                        $_SESSION['user_name'] = $fullName;
+                        $_SESSION['user_name']      = $fullName;
+                        $_SESSION['csrf_profile']   = bin2hex(random_bytes(32));
                         $_SESSION['profile_success'] = 'Đã cập nhật thông tin cá nhân.';
                         header('Location: ' . URLROOT . '/users/profile');
                         exit();
@@ -269,6 +342,7 @@ class Users extends Controller {
                 if ($errors['current_password'] === '' && $errors['new_password'] === '' && $errors['confirm_password'] === '') {
                     $updated = $this->userModel->updatePassword((int) $_SESSION['user_id'], password_hash($newPassword, PASSWORD_DEFAULT));
                     if ($updated) {
+                        $_SESSION['csrf_profile']    = bin2hex(random_bytes(32));
                         $_SESSION['profile_success'] = 'Đã cập nhật mật khẩu.';
                         header('Location: ' . URLROOT . '/users/profile');
                         exit();
@@ -279,43 +353,35 @@ class Users extends Controller {
             if ($action === 'upload_avatar') {
                 if (!empty($_FILES['avatar']['name'])) {
                     $uploadDir = APPROOT . '/../public/uploads/avatars/';
-                    if (!is_dir($uploadDir)) {
-                        @mkdir($uploadDir, 0755, true);
-                    }
-
-                    $extension = strtolower(pathinfo($_FILES['avatar']['name'], PATHINFO_EXTENSION));
-                    $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-                    if (!in_array($extension, $allowed, true)) {
-                        $errors['avatar'] = 'Chỉ hỗ trợ ảnh JPG, PNG, GIF hoặc WEBP.';
-                    } elseif ($_FILES['avatar']['size'] > 2 * 1024 * 1024) {
-                        $errors['avatar'] = 'Dung lượng ảnh tối đa là 2MB.';
+                    $stored = SecureUpload::storeRasterUpload(
+                        $_FILES['avatar'],
+                        $uploadDir,
+                        'av_',
+                        SecureUpload::DEFAULT_MAX_BYTES
+                    );
+                    if (!$stored['ok']) {
+                        $errors['avatar'] = $stored['message'] ?? 'Không thể tải ảnh lên. Vui lòng thử lại.';
                     } else {
-                        $safeUsername = strtolower((string) ($currentUser->username ?? 'user' . (int) $_SESSION['user_id']));
-                        $safeUsername = preg_replace('/[^a-z0-9_-]+/i', '-', $safeUsername);
-                        $safeUsername = trim((string) $safeUsername, '-_');
-                        if ($safeUsername === '') {
-                            $safeUsername = 'user' . (int) $_SESSION['user_id'];
-                        }
-
-                        $avatarFileName = $safeUsername . '.' . $extension;
-                        $avatarRelativeUrl = '/uploads/avatars/' . $avatarFileName;
-                        $target = $uploadDir . $avatarFileName;
-
-                        foreach ($allowed as $oldExt) {
-                            $oldCandidate = $uploadDir . $safeUsername . '.' . $oldExt;
-                            if (is_file($oldCandidate) && $oldCandidate !== $target) {
-                                @unlink($oldCandidate);
+                        $oldRel = (string) ($currentUser->avatar ?? '');
+                        if ($oldRel !== '') {
+                            $oldPath = '';
+                            if (strpos($oldRel, '/uploads/avatars/') === 0) {
+                                $oldPath = APPROOT . '/../public' . $oldRel;
+                            } elseif (preg_match('#^uploads/avatars/[^/]+$#i', $oldRel)) {
+                                $oldPath = APPROOT . '/../public/' . $oldRel;
+                            }
+                            if ($oldPath !== '' && is_file($oldPath)) {
+                                @unlink($oldPath);
                             }
                         }
 
-                        if (move_uploaded_file($_FILES['avatar']['tmp_name'], $target)) {
-                            $this->userModel->updateAvatar((int) $_SESSION['user_id'], $avatarRelativeUrl);
-                            $_SESSION['user_avatar'] = $avatarRelativeUrl;
-                            $_SESSION['profile_success'] = 'Đã cập nhật ảnh đại diện.';
-                            header('Location: ' . URLROOT . '/users/profile');
-                            exit();
-                        }
-                        $errors['avatar'] = 'Không thể tải ảnh lên. Vui lòng thử lại.';
+                        $avatarRelativeUrl = '/uploads/avatars/' . $stored['filename'];
+                        $this->userModel->updateAvatar((int) $_SESSION['user_id'], $avatarRelativeUrl);
+                        $_SESSION['user_avatar']      = $avatarRelativeUrl;
+                        $_SESSION['csrf_profile']     = bin2hex(random_bytes(32));
+                        $_SESSION['profile_success'] = 'Đã cập nhật ảnh đại diện.';
+                        header('Location: ' . URLROOT . '/users/profile');
+                        exit();
                     }
                 } else {
                     $errors['avatar'] = 'Vui lòng chọn ảnh đại diện.';
@@ -328,9 +394,10 @@ class Users extends Controller {
             $_SESSION['user_avatar'] = $user->avatar ?? '';
         }
         $data = [
-            'title' => 'Hồ sơ người dùng',
-            'user' => $user,
-            'errors' => $errors,
+            'title'           => 'Hồ sơ người dùng',
+            'csrf_token'      => $_SESSION['csrf_profile'],
+            'user'            => $user,
+            'errors'          => $errors,
             'success_message' => $successMessage
         ];
         $this->view('client/users/profile', $data);

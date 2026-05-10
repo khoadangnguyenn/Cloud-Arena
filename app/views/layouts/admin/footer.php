@@ -1,6 +1,6 @@
             </main>
             <footer class="admin-footer">
-                <p class="mb-0 admin-footer-note">© <?php echo date('Y'); ?> <?php echo SITENAME; ?>. Bảng quản trị nâng cấp.</p>
+                <p class="mb-0 admin-footer-note">© <?php echo date('Y'); ?> <?php echo SITENAME; ?>. Khu vực quản trị của Cloud Arena.</p>
             </footer>
         </div>
     </div>

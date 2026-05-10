@@ -35,17 +35,18 @@
             </div>
         <?php endif; ?>
 
-        <form class="mt-8 space-y-6" action="<?php echo URLROOT; ?>/users/login" method="POST">
+        <form id="loginForm" class="mt-8 space-y-6" action="<?php echo URLROOT; ?>/users/login" method="POST" novalidate>
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($data['csrf_token'] ?? ''); ?>">
             <div class="space-y-4">
                 <div>
                     <label for="username" class="block text-sm font-medium text-gray-400 mb-2">Tên đăng nhập</label>
                     <input id="username" name="username" type="text" class="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all <?php echo (!empty($data['username_err'])) ? 'border-red-500 bg-red-500/5' : ''; ?>" placeholder="Nhập tên đăng nhập" value="<?php echo $data['username']; ?>">
-                    <span class="text-[10px] text-red-500 mt-1 block ml-1 uppercase font-bold"><?php echo $data['username_err']; ?></span>
+                    <span id="login-username-err" class="text-[10px] text-red-500 mt-1 block ml-1 uppercase font-bold"><?php echo $data['username_err']; ?></span>
                 </div>
                 <div>
                     <label for="password" class="block text-sm font-medium text-gray-400 mb-2">Mật khẩu</label>
                     <input id="password" name="password" type="password" class="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all <?php echo (!empty($data['password_err'])) ? 'border-red-500 bg-red-500/5' : ''; ?>" placeholder="••••••••">
-                    <span class="text-[10px] text-red-500 mt-1 block ml-1 uppercase font-bold"><?php echo $data['password_err']; ?></span>
+                    <span id="login-password-err" class="text-[10px] text-red-500 mt-1 block ml-1 uppercase font-bold"><?php echo $data['password_err']; ?></span>
                 </div>
             </div>
 

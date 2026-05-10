@@ -5,6 +5,7 @@ class Admin extends Controller {
     private $productModel;
     private $orderModel;
     private $contactModel;
+    private $adminNotificationModel;
 
     public function __construct() {
         $this->requireAdmin();
@@ -13,6 +14,7 @@ class Admin extends Controller {
         $this->productModel = $this->model('Product');
         $this->orderModel = $this->model('Order');
         $this->contactModel = $this->model('Contact');
+        $this->adminNotificationModel = $this->model('AdminNotification');
     }
 
     private function requireAdmin() {
@@ -23,14 +25,51 @@ class Admin extends Controller {
     }
 
     private function getNavBadges() {
-        $ticketCount = $this->contactModel->countContacts(['status' => 'unread']);
-        $newUsers = $this->userModel->countNewUsersSince(30);
+        return $this->getAdminNavBadges();
+    }
+
+    private function getNotificationStateKey() {
+        return 'admin_notification_state_' . (int) ($_SESSION['user_id'] ?? 0);
+    }
+
+    private function getNotificationState() {
+        $raw = $this->settingModel->getValueByKey($this->getNotificationStateKey(), '');
+        $decoded = json_decode((string) $raw, true);
+        if (!is_array($decoded)) {
+            $decoded = [];
+        }
+
+        $lastOpenedId = (int) ($decoded['last_opened_id'] ?? 0);
+        $lastOpenedAt = trim((string) ($decoded['last_opened_at'] ?? ''));
+        if ($lastOpenedAt === '') {
+            $ticketSeenAt = trim((string) ($decoded['ticket_last_seen_at'] ?? ''));
+            $orderSeenAt = trim((string) ($decoded['order_last_seen_at'] ?? ''));
+            $lastOpenedAt = max($ticketSeenAt, $orderSeenAt);
+        }
+
+        if ($lastOpenedId <= 0 && $lastOpenedAt !== '' && $lastOpenedAt !== '1970-01-01 00:00:00') {
+            try {
+                $lastOpenedId = (int) $this->adminNotificationModel->getLatestNotificationIdByCreatedAt($lastOpenedAt);
+            } catch (Throwable $error) {
+                $lastOpenedId = 0;
+            }
+        }
+
         return [
-            'tickets' => $ticketCount,
-            'users' => $newUsers,
-            'news' => 0,
-            'notifications' => $ticketCount + $newUsers
+            'last_opened_id' => max(0, $lastOpenedId),
+            'last_opened_at' => $lastOpenedAt !== '' ? $lastOpenedAt : '1970-01-01 00:00:00'
         ];
+    }
+
+    private function saveNotificationState($lastOpenedAt, $lastOpenedId = 0) {
+        $payload = json_encode([
+            'last_opened_id' => max(0, (int) $lastOpenedId),
+            'last_opened_at' => trim((string) $lastOpenedAt) !== '' ? trim((string) $lastOpenedAt) : '1970-01-01 00:00:00'
+        ]);
+        if ($payload === false) {
+            return false;
+        }
+        return $this->settingModel->upsertValue($this->getNotificationStateKey(), $payload);
     }
 
     private function isAjaxRequest() {
@@ -46,6 +85,81 @@ class Admin extends Controller {
         exit();
     }
 
+    public function notifications() {
+        try {
+            $this->adminNotificationModel->syncRecentTicketNotifications(200);
+            $this->adminNotificationModel->syncCompletedOrderNotifications(200);
+            $state = $this->getNotificationState();
+            $lastOpenedId = (int) ($state['last_opened_id'] ?? 0);
+            $lastOpenedAt = $state['last_opened_at'];
+            $rows = $this->adminNotificationModel->getRecentNotifications(40);
+
+            $items = [];
+            foreach ($rows as $row) {
+                $createdAt = (string) ($row->created_at ?? '');
+                $relativeUrl = trim((string) ($row->url ?? ''));
+                $href = $relativeUrl !== '' ? (URLROOT . '/' . ltrim($relativeUrl, '/')) : (URLROOT . '/admin');
+                $icon = $row->type === 'revenue' ? 'ti-wallet' : 'ti-email';
+                $notificationId = (int) ($row->id ?? 0);
+                $items[] = [
+                    'type' => (string) ($row->type ?? 'ticket'),
+                    'icon' => $icon,
+                    'title' => (string) ($row->title ?? 'Thông báo'),
+                    'message' => (string) ($row->message ?? ''),
+                    'href' => $href,
+                    'created_at' => $createdAt,
+                    'created_at_label' => $createdAt !== '' ? date('d/m/Y H:i', strtotime($createdAt)) : '',
+                    'is_new' => $lastOpenedId > 0
+                        ? ($notificationId > $lastOpenedId)
+                        : ($createdAt !== '' ? ($createdAt > $lastOpenedAt) : false)
+                ];
+            }
+            $unseenCount = $lastOpenedId > 0
+                ? $this->adminNotificationModel->countUnreadSinceId($lastOpenedId)
+                : $this->adminNotificationModel->countUnreadSince($lastOpenedAt);
+        } catch (Throwable $error) {
+            $items = [];
+            $unseenCount = 0;
+        }
+
+        $this->respondJson([
+            'success' => true,
+            'unseen_count' => (int) $unseenCount,
+            'items' => $items
+        ]);
+    }
+
+    public function markNotificationsSeen() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->respondJson([
+                'success' => false,
+                'message' => 'Phương thức không hợp lệ.'
+            ], 405);
+        }
+
+        if (!$this->verifyCsrf('csrf_admin')) {
+            $this->respondJson(['success' => false, 'message' => 'Yêu cầu không hợp lệ.'], 403);
+        }
+
+        try {
+            $this->adminNotificationModel->syncRecentTicketNotifications(200);
+            $this->adminNotificationModel->syncCompletedOrderNotifications(200);
+            $latestNotificationCreatedAt = $this->adminNotificationModel->getLatestNotificationCreatedAt();
+            $latestNotificationId = $this->adminNotificationModel->getLatestNotificationId();
+            $openedAt = date('Y-m-d H:i:s');
+            if (!empty($latestNotificationCreatedAt) && strcmp((string) $latestNotificationCreatedAt, $openedAt) > 0) {
+                $openedAt = (string) $latestNotificationCreatedAt;
+            }
+            $saved = $this->saveNotificationState($openedAt, $latestNotificationId);
+        } catch (Throwable $error) {
+            $saved = false;
+        }
+
+        $this->respondJson([
+            'success' => (bool) $saved
+        ], $saved ? 200 : 500);
+    }
+
     private function uploadBrandingAsset($currentFileName = '') {
         if (
             !isset($_FILES['branding_asset']) ||
@@ -55,66 +169,8 @@ class Admin extends Controller {
             return ['success' => true, 'filename' => $currentFileName, 'message' => ''];
         }
 
-        $file = $_FILES['branding_asset'];
-        $uploadError = (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE);
-        if ($uploadError !== UPLOAD_ERR_OK) {
-            return ['success' => false, 'filename' => $currentFileName, 'message' => 'Không thể tải logo lên. Vui lòng thử lại.'];
-        }
-
-        $size = (int) ($file['size'] ?? 0);
-        if ($size <= 0 || $size > (2 * 1024 * 1024)) {
-            return ['success' => false, 'filename' => $currentFileName, 'message' => 'Logo phải nhỏ hơn hoặc bằng 2MB.'];
-        }
-
-        $originalName = trim((string) ($file['name'] ?? ''));
-        $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
-        $allowedExtensions = ['png', 'svg', 'ico'];
-        if (!in_array($extension, $allowedExtensions, true)) {
-            return ['success' => false, 'filename' => $currentFileName, 'message' => 'Chỉ chấp nhận tệp PNG, SVG hoặc ICO.'];
-        }
-
-        if ($extension === 'svg') {
-            $svgContent = @file_get_contents($file['tmp_name']);
-            $normalizedSvg = strtolower((string) $svgContent);
-            if (
-                $svgContent === false ||
-                strpos($normalizedSvg, '<script') !== false ||
-                strpos($normalizedSvg, 'onload=') !== false ||
-                strpos($normalizedSvg, 'javascript:') !== false
-            ) {
-                return ['success' => false, 'filename' => $currentFileName, 'message' => 'Tệp SVG không an toàn. Vui lòng chọn tệp khác.'];
-            }
-        }
-
         $uploadDir = APPROOT . '/../public/uploads/branding/';
-        if (!is_dir($uploadDir) && !@mkdir($uploadDir, 0755, true) && !is_dir($uploadDir)) {
-            return ['success' => false, 'filename' => $currentFileName, 'message' => 'Không thể tạo thư mục lưu logo.'];
-        }
-
-        $uniqueSuffix = (string) mt_rand(100000, 999999);
-        if (function_exists('random_bytes')) {
-            try {
-                $uniqueSuffix = bin2hex(random_bytes(4));
-            } catch (Throwable $error) {
-                $uniqueSuffix = (string) mt_rand(100000, 999999);
-            }
-        }
-        $newFileName = 'brand_logo_' . date('YmdHis') . '_' . $uniqueSuffix . '.' . $extension;
-        $targetPath = $uploadDir . $newFileName;
-
-        if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
-            return ['success' => false, 'filename' => $currentFileName, 'message' => 'Không thể lưu logo lên máy chủ.'];
-        }
-
-        $oldFile = basename((string) $currentFileName);
-        if ($oldFile !== '' && $oldFile !== $newFileName) {
-            $oldPath = $uploadDir . $oldFile;
-            if (is_file($oldPath)) {
-                @unlink($oldPath);
-            }
-        }
-
-        return ['success' => true, 'filename' => $newFileName, 'message' => ''];
+        return SecureUpload::storeBrandingUpload($_FILES['branding_asset'], $uploadDir, $currentFileName);
     }
 
     public function index() {
@@ -247,6 +303,12 @@ class Admin extends Controller {
         ];
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!$this->verifyCsrf('csrf_admin')) {
+                $_SESSION['admin_users_flash'] = ['type' => 'danger', 'message' => 'Yêu cầu không hợp lệ.'];
+                header('Location: ' . URLROOT . '/admin/users');
+                exit();
+            }
+
             $fullName = trim($_POST['full_name'] ?? '');
             $email = trim($_POST['email'] ?? '');
             $role = trim($_POST['role'] ?? '');
@@ -304,6 +366,15 @@ class Admin extends Controller {
             exit();
         }
 
+        if (!$this->verifyCsrf('csrf_admin')) {
+            if ($this->isAjaxRequest()) {
+                $this->respondJson(['success' => false, 'message' => 'Yêu cầu không hợp lệ.'], 403);
+            }
+            $_SESSION['admin_users_flash'] = ['type' => 'danger', 'message' => 'Yêu cầu không hợp lệ.'];
+            header('Location: ' . URLROOT . '/admin/users');
+            exit();
+        }
+
         $role = trim($_POST['role'] ?? '');
         $updated = $this->userModel->updateRole((int) $userId, $role);
         if ($this->isAjaxRequest()) {
@@ -327,6 +398,12 @@ class Admin extends Controller {
             exit();
         }
 
+        if (!$this->verifyCsrf('csrf_admin')) {
+            $_SESSION['admin_users_flash'] = ['type' => 'danger', 'message' => 'Yêu cầu không hợp lệ.'];
+            header('Location: ' . URLROOT . '/admin/users');
+            exit();
+        }
+
         $targetStatus = trim($_POST['target_status'] ?? '');
         $updated = $this->userModel->updateStatus((int) $userId, $targetStatus);
         $_SESSION['admin_users_flash'] = [
@@ -340,8 +417,48 @@ class Admin extends Controller {
         exit();
     }
 
+    public function resetPassword($userId = 0) {
+        header('Content-Type: application/json; charset=utf-8');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Phương thức không hợp lệ.']);
+            exit();
+        }
+
+        if (!$this->verifyCsrf('csrf_admin')) {
+            echo json_encode(['success' => false, 'message' => 'Yêu cầu không hợp lệ.']);
+            exit();
+        }
+
+        $userId = (int) $userId;
+        $targetUser = $this->userModel->getUserById($userId);
+        if (!$targetUser) {
+            echo json_encode(['success' => false, 'message' => 'Không tìm thấy người dùng.']);
+            exit();
+        }
+
+        if ((int) $_SESSION['user_id'] === $userId) {
+            echo json_encode(['success' => false, 'message' => 'Không thể reset mật khẩu tài khoản đang đăng nhập.']);
+            exit();
+        }
+
+        $hashed = password_hash('resetpassword', PASSWORD_DEFAULT);
+        if ($this->userModel->updatePassword($userId, $hashed)) {
+            echo json_encode(['success' => true, 'message' => 'Reset mật khẩu thành công!']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Không thể reset mật khẩu. Vui lòng thử lại.']);
+        }
+        exit();
+    }
+
     public function deleteUser($userId = 0) {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: ' . URLROOT . '/admin/users');
+            exit();
+        }
+
+        if (!$this->verifyCsrf('csrf_admin')) {
+            $_SESSION['admin_users_flash'] = ['type' => 'danger', 'message' => 'Yêu cầu không hợp lệ.'];
             header('Location: ' . URLROOT . '/admin/users');
             exit();
         }
@@ -391,6 +508,12 @@ class Admin extends Controller {
 
     public function settings() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!$this->verifyCsrf('csrf_admin')) {
+                $_SESSION['admin_settings_flash'] = ['type' => 'danger', 'message' => 'Yêu cầu không hợp lệ.'];
+                header('Location: ' . URLROOT . '/admin/settings');
+                exit();
+            }
+
             $existingSettings = $this->settingModel->getPublicSettings();
             $formData = [
                 'site_logo_text' => trim($_POST['site_logo_text'] ?? ''),

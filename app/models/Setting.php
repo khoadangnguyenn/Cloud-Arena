@@ -62,4 +62,30 @@ class Setting {
 
         return true;
     }
+
+    public function getValueByKey($keyName, $defaultValue = '') {
+        $this->db->query(
+            'SELECT value
+             FROM settings
+             WHERE key_name = :key_name
+             LIMIT 1'
+        );
+        $this->db->bind(':key_name', trim((string) $keyName));
+        $row = $this->db->single();
+        if (!$row) {
+            return $defaultValue;
+        }
+        return (string) $row->value;
+    }
+
+    public function upsertValue($keyName, $value) {
+        $this->db->query(
+            'INSERT INTO settings (key_name, value)
+             VALUES (:key_name, :value)
+             ON DUPLICATE KEY UPDATE value = VALUES(value)'
+        );
+        $this->db->bind(':key_name', trim((string) $keyName));
+        $this->db->bind(':value', (string) $value);
+        return $this->db->execute();
+    }
 }

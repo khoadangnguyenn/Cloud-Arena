@@ -9,7 +9,7 @@ $siteAddress = $publicSettings['site_address'] ?? '268 Lý Thường Kiệt, Q10
 $siteAboutSnippet = $publicSettings['site_about_snippet'] ?? 'Nền tảng cho thuê Game Server hàng đầu Việt Nam. Cung cấp máy chủ chất lượng cao, ổn định và bảo mật tối đa cho cộng đồng game thủ.';
 ?>
     </main>
-    <footer class="bg-gray-900 border-t border-gray-800 text-white mt-auto">
+    <footer class="bg-[#020817] border-t border-white/5 text-white mt-auto">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-12">
                 <div class="col-span-1 md:col-span-1">
@@ -68,7 +68,7 @@ $siteAboutSnippet = $publicSettings['site_about_snippet'] ?? 'Nền tảng cho t
                     </ul>
                 </div>
             </div>
-            <div class="border-t border-gray-800 mt-16 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-500">
+            <div class="border-t border-white/5 mt-16 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-500">
                 <p>&copy; <?php echo date('Y'); ?> <?php echo SITENAME; ?>. All rights reserved.</p>
                 <div class="flex gap-8">
                     <a href="#" class="hover:text-gray-300">Chính sách bảo mật</a>

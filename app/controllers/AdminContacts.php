@@ -18,12 +18,22 @@ class AdminContacts extends Controller {
         }
     }
 
-    private function getRedirectUrl() {
+    private function getRedirectUrl($clearTicketSelection = false) {
         $redirectQuery = trim($_POST['redirect_query'] ?? '');
         if ($redirectQuery === '') {
             return URLROOT . '/admincontacts';
         }
-        return URLROOT . '/admincontacts?' . ltrim($redirectQuery, '?');
+
+        $queryParams = [];
+        parse_str(ltrim($redirectQuery, '?'), $queryParams);
+        $queryParams = $this->sanitizeTicketQueryParams($queryParams);
+        if ($clearTicketSelection) {
+            unset($queryParams['user_id'], $queryParams['contact_id']);
+        }
+        if (empty($queryParams)) {
+            return URLROOT . '/admincontacts';
+        }
+        return URLROOT . '/admincontacts?' . http_build_query($queryParams);
     }
 
     private function setFlash($type, $message) {
@@ -77,20 +87,27 @@ class AdminContacts extends Controller {
     private function renderTicketDetailHtml($selectedContact, $queryString) {
         $statuses = $this->allowedStatuses;
         $priorities = $this->allowedPriorities;
+        $csrfToken = $_SESSION['csrf_admin'] ?? '';
         ob_start();
         require APPROOT . '/views/admin/contacts/partials/ticket_detail.php';
         return ob_get_clean();
     }
 
+    private function rejectTicketMutation($message, $statusCode = 422) {
+        if ($this->isAjaxRequest()) {
+            $this->respondJson([
+                'success' => false,
+                'message' => $message
+            ], $statusCode);
+        }
+
+        $this->setFlash('danger', $message);
+        header('Location: ' . $this->getRedirectUrl());
+        exit();
+    }
+
     private function getNavBadges() {
-        $ticketCount = $this->contactModel->countContacts(['status' => 'unread']);
-        $newUsers = $this->userModel->countNewUsersSince(30);
-        return [
-            'tickets' => $ticketCount,
-            'users' => $newUsers,
-            'news' => 0,
-            'notifications' => $ticketCount + $newUsers
-        ];
+        return $this->getAdminNavBadges();
     }
 
     public function index() {
@@ -119,9 +136,13 @@ class AdminContacts extends Controller {
         $selectedUserId = isset($_GET['user_id']) ? (int) $_GET['user_id'] : 0;
         $selectedContactId = isset($_GET['contact_id']) ? (int) $_GET['contact_id'] : 0;
         $selectedContact = null;
+        $missingTicketNotice = '';
 
         if ($selectedUserId > 0 && $selectedContactId > 0) {
             $selectedContact = $this->contactModel->getContactByKey($selectedUserId, $selectedContactId);
+            if (!$selectedContact) {
+                $missingTicketNotice = 'Không tìm thấy ticket: Ticket đã bị xóa.';
+            }
         } elseif (!empty($contacts)) {
             $selectedContact = $this->contactModel->getContactByKey($contacts[0]->user_id, $contacts[0]->contact_id);
         }
@@ -152,6 +173,7 @@ class AdminContacts extends Controller {
             ],
             'query_string' => $queryString,
             'flash' => $flash,
+            'missing_ticket_notice' => $missingTicketNotice,
             'nav_badges' => $this->getNavBadges()
         ];
 
@@ -172,7 +194,7 @@ class AdminContacts extends Controller {
 
         $selectedContact = $this->contactModel->getContactByKey($ticketUserId, $ticketContactId);
         if (!$selectedContact) {
-            $this->respondJson(['success' => false, 'message' => 'Không tìm thấy ticket.'], 404);
+            $this->respondJson(['success' => false, 'message' => 'Không tìm thấy ticket: Ticket đã bị xóa.'], 404);
         }
 
         $queryString = $this->buildTicketQueryString($ticketUserId, $ticketContactId);
@@ -188,6 +210,18 @@ class AdminContacts extends Controller {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('Location: ' . URLROOT . '/admincontacts');
             exit();
+        }
+
+        if (!$this->verifyCsrf('csrf_admin')) {
+            $this->rejectTicketMutation('Yêu cầu không hợp lệ.', 403);
+        }
+
+        $contact = $this->contactModel->getContactByKey((int) $userId, (int) $contactId);
+        if (!$contact) {
+            $this->rejectTicketMutation('Không tìm thấy ticket.', 404);
+        }
+        if (($contact->status ?? '') === 'replied') {
+            $this->rejectTicketMutation('Ticket đã phản hồi nên chỉ có thể xóa, không thể chỉnh sửa.');
         }
 
         $status = trim($_POST['status'] ?? '');
@@ -219,6 +253,18 @@ class AdminContacts extends Controller {
             exit();
         }
 
+        if (!$this->verifyCsrf('csrf_admin')) {
+            $this->rejectTicketMutation('Yêu cầu không hợp lệ.', 403);
+        }
+
+        $contact = $this->contactModel->getContactByKey((int) $userId, (int) $contactId);
+        if (!$contact) {
+            $this->rejectTicketMutation('Không tìm thấy ticket.', 404);
+        }
+        if (($contact->status ?? '') === 'replied') {
+            $this->rejectTicketMutation('Ticket đã phản hồi nên chỉ có thể xóa, không thể chỉnh sửa.');
+        }
+
         $priority = trim($_POST['priority'] ?? '');
         if (!in_array($priority, $this->allowedPriorities, true)) {
             if ($this->isAjaxRequest()) {
@@ -248,6 +294,20 @@ class AdminContacts extends Controller {
             exit();
         }
 
+        if (!$this->verifyCsrf('csrf_admin')) {
+            $this->setFlash('danger', 'Yêu cầu không hợp lệ.');
+            header('Location: ' . $this->getRedirectUrl());
+            exit();
+        }
+
+        $contact = $this->contactModel->getContactByKey((int) $userId, (int) $contactId);
+        if (!$contact) {
+            $this->rejectTicketMutation('Không tìm thấy ticket.', 404);
+        }
+        if (($contact->status ?? '') === 'replied') {
+            $this->rejectTicketMutation('Ticket đã phản hồi nên chỉ có thể xóa, không thể chỉnh sửa.');
+        }
+
         $replyMessage = trim($_POST['reply_message'] ?? '');
         if ($replyMessage === '') {
             $this->setFlash('danger', 'Nội dung phản hồi không được để trống.');
@@ -268,10 +328,16 @@ class AdminContacts extends Controller {
             exit();
         }
 
+        if (!$this->verifyCsrf('csrf_admin')) {
+            $this->setFlash('danger', 'Yêu cầu không hợp lệ.');
+            header('Location: ' . $this->getRedirectUrl(true));
+            exit();
+        }
+
         $deleted = $this->contactModel->deleteContact((int) $userId, (int) $contactId);
         $this->setFlash($deleted ? 'success' : 'danger', $deleted ? 'Đã xóa ticket liên hệ.' : 'Không thể xóa ticket.');
 
-        header('Location: ' . $this->getRedirectUrl());
+        header('Location: ' . $this->getRedirectUrl(true));
         exit();
     }
 }

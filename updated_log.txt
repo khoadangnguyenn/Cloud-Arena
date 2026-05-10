@@ -1,0 +1,27 @@
+1. updated ticket (admin): low-attention style for "replied", reorder ticket list followin stat -> prio -> time, unallow modify for "replied".
+2. implemented noti func: noti ticket + revenue, badge realtime, toast, keep his, **new table (admin_notifications) in db saving noti his, new module admin_notifications handle noti query**.
+3. Updated background homepage, footer admin, dropdown style
+4. Homepage updated: added quick search bar for news & products (need to check w real endpoint)
+5. Contact updated: msg maxlength, rate limit < 60 (pages), security applied
+6. user management updated: added resetpassword func (not allowed self-reset)
+7. pro5 updated: regex & security applied
+8. login/regis updated: regex & security applied, rate limit 10s
+9. init updated: security applied
+10. using .env to store credentials
+11. SecureUpload.php added: ava, logo, news upload hardening
+12. db err log rm on client side, only on server/log
+13. security headers added
+
+Security note:
+1. quick search: keyword has encodeURIComponent() in JS, resource_type only redirect /products & /news (no URLi), input maxlength, server-side: $_GET['keyword'] not be read (no SQLi).
+2. contact client page: sqli w pdo, xss output w htmlspecialchars(), server-side validate, logged-in user get from db not $_POST, honeypot w website field (silent success), csrf token (gen token in GET, check in POST, regen after success) w SOP (other sites cannot read token/cookie)
+3. login/regis/pro5/admin: CSRF token added
+4. init: set flags: httponly (prevent js read cookie via XSS), secure (w https - ensure cookie not be sent via http), SameSite: lax (CSRF mitigation)
+5. login: session regen id (avoid reuse levering to possess session), rate limit restrict spam.
+6. news: sanitize WYSIWYG w whitelist
+7. upload: finfo (get actual MIME) compare w getimagesize() (avoid dup ext, fake php), file name random (avoid guessing, path traversal), .htacess block php excution in /uploads, SVG via DOM (document object model) (remove script, on* attr)
+8. security headers: X-Content-Type-Options: nosniff (no guessing file type, reduce confusion), X-Frame-Options: SAMEORIGIN (restrict be embed iframe from other site), Referrer-Policy (control which be sent in Referrer when move to other site), Permissions-Policy (off nouse device/feature APIs), CSP (control script src, css, font, img, iframe --> avoid CSS + load malicious src)
+
+SEO note:
+1. normalize meta per page: title, meta description, keywords, canonical (show standard for content --> avoid dup, SEO decentralized), OpenGraph/Twitter (link w title, desc, preview)
+2. robots.txt (into robots.php --> allow bot gg/bing scan which section), sitemap.xml (into sitemap.php --> list important urls wanna let search engine detect & crawl effectively), unified URL per page (avoid dup/ambiguous)
