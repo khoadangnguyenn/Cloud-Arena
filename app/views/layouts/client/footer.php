@@ -77,6 +77,9 @@ $siteAboutSnippet = $publicSettings['site_about_snippet'] ?? 'Nền tảng cho t
             </div>
         </div>
     </footer>
+    <?php if (isset($isHomePage) && $isHomePage) : ?>
+    <script src="https://unpkg.com/aos@next/dist/aos.js" crossorigin="anonymous"></script>
+    <?php endif; ?>
     <script src="<?php echo URLROOT; ?>/js/main.js"></script>
 </body>
 </html>

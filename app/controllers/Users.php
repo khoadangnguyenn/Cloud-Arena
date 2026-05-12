@@ -270,13 +270,18 @@ class Users extends Controller {
         $successMessage = $_SESSION['profile_success'] ?? '';
         unset($_SESSION['profile_success']);
 
+        $pub = $this->getPublicSettings();
+        $profilePageTitle = trim($pub['profile_page_title'] ?? '') ?: 'Hồ sơ người dùng';
+        $profilePageDesc = trim($pub['profile_page_intro'] ?? '');
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $submittedToken = trim((string) ($_POST['csrf_token'] ?? ''));
             if (!hash_equals((string) ($_SESSION['csrf_profile'] ?? ''), $submittedToken)) {
                 $successMessage = '';
                 $errors['full_name'] = 'Yêu cầu không hợp lệ. Vui lòng tải lại trang.';
                 $this->view('client/users/profile', [
-                    'title'           => 'Hồ sơ người dùng',
+                    'title'           => $profilePageTitle,
+                    'description'    => $profilePageDesc,
                     'csrf_token'      => $_SESSION['csrf_profile'],
                     'user'            => $currentUser,
                     'errors'          => $errors,
@@ -394,7 +399,8 @@ class Users extends Controller {
             $_SESSION['user_avatar'] = $user->avatar ?? '';
         }
         $data = [
-            'title'           => 'Hồ sơ người dùng',
+            'title'           => $profilePageTitle,
+            'description'    => $profilePageDesc,
             'csrf_token'      => $_SESSION['csrf_profile'],
             'user'            => $user,
             'errors'          => $errors,

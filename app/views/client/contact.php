@@ -6,6 +6,9 @@ $siteHotline = $publicSettings['site_hotline'] ?? '0123 456 789';
 $siteEmail = $publicSettings['site_contact_email'] ?? 'contact@gameserver.vn';
 $siteAddress = $publicSettings['site_address'] ?? '268 Lý Thường Kiệt, Q10, TP.HCM';
 $siteMapEmbedUrl = $publicSettings['site_map_embed_url'] ?? 'https://www.google.com/maps?q=268+Ly+Thuong+Kiet+Q10+TPHCM&output=embed';
+$contactPageTitle = trim((string) ($publicSettings['contact_page_title'] ?? 'Liên Hệ'));
+$contactPageIntro = trim((string) ($publicSettings['contact_page_intro'] ?? ''));
+$contactSidebarTitle = trim((string) ($publicSettings['contact_sidebar_title'] ?? 'Thông tin liên hệ'));
 $isLoggedIn = !empty($data['is_logged_in']);
 ?>
 
@@ -14,8 +17,8 @@ $isLoggedIn = !empty($data['is_logged_in']);
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div class="lg:col-span-2 bg-gray-900/50 backdrop-blur-xl border border-white/5 rounded-3xl p-8 md:p-10">
                 <div class="mb-10">
-                    <h1 class="text-4xl font-extrabold text-white mb-3">Liên Hệ</h1>
-                    <p class="text-gray-400">Gửi ticket hỗ trợ cho chúng tôi. Đội ngũ sẽ phản hồi sớm nhất có thể.</p>
+                    <h1 class="text-4xl font-extrabold text-white mb-3"><?php echo htmlspecialchars($contactPageTitle); ?></h1>
+                    <p class="text-gray-400"><?php echo htmlspecialchars($contactPageIntro); ?></p>
                 </div>
 
                 <?php if (!empty($data['success_message'])): ?>
@@ -106,7 +109,7 @@ $isLoggedIn = !empty($data['is_logged_in']);
 
             <div class="space-y-6">
                 <div class="bg-gray-900/40 border border-white/5 rounded-3xl p-6">
-                    <h2 class="text-xl font-bold text-white mb-5">Thông tin liên hệ</h2>
+                    <h2 class="text-xl font-bold text-white mb-5"><?php echo htmlspecialchars($contactSidebarTitle); ?></h2>
                     <ul class="space-y-4 text-sm text-gray-300">
                         <li class="flex gap-3">
                             <i class="fa-solid fa-location-dot text-cyan-400 mt-1"></i>

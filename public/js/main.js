@@ -1,5 +1,23 @@
 // Custom JavaScript for the client side
 function initCloudArenaUi() {
+    if (typeof window.AOS !== 'undefined') {
+        var aosReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (!aosReduced) {
+            window.AOS.init({
+                duration: 700,
+                easing: 'ease-out-cubic',
+                once: true,
+                offset: 56,
+                anchorPlacement: 'top-bottom'
+            });
+            window.addEventListener('load', function() {
+                if (typeof window.AOS !== 'undefined') {
+                    window.AOS.refresh();
+                }
+            });
+        }
+    }
+
     var siteHeader = document.getElementById('site-header');
     if (siteHeader) {
         var updateHeaderState = function() {
@@ -13,6 +31,95 @@ function initCloudArenaUi() {
         window.addEventListener('scroll', updateHeaderState);
     }
 
+    // Homepage: sync nav underline with hero vs #about-us while scrolling.
+    (function initHomeNavScrollSpy() {
+        var headerEl = document.getElementById('site-header');
+        var aboutEl = document.getElementById('about-us');
+        if (!headerEl || !aboutEl || !headerEl.classList.contains('header-home')) {
+            return;
+        }
+        var homeLinks = document.querySelectorAll('a[data-nav-spy="home-top"]');
+        var aboutLinks = document.querySelectorAll('a[data-nav-spy="about-us"]');
+        if (!homeLinks.length || !aboutLinks.length) {
+            return;
+        }
+
+        var rafId = null;
+        var applySpy = function() {
+            rafId = null;
+            var headerH = headerEl.offsetHeight || 80;
+            var threshold = headerH + 40;
+            var inAbout = aboutEl.getBoundingClientRect().top <= threshold;
+            homeLinks.forEach(function(link) {
+                link.classList.toggle('is-active', !inAbout);
+            });
+            aboutLinks.forEach(function(link) {
+                link.classList.toggle('is-active', inAbout);
+            });
+        };
+
+        var scheduleSpy = function() {
+            if (rafId !== null) {
+                return;
+            }
+            rafId = window.requestAnimationFrame(applySpy);
+        };
+
+        applySpy();
+        window.addEventListener('scroll', scheduleSpy, { passive: true });
+        window.addEventListener('resize', scheduleSpy);
+        window.addEventListener('load', scheduleSpy);
+        window.addEventListener('hashchange', scheduleSpy);
+    })();
+
+    (function initClientMobileMenu() {
+        var toggle = document.getElementById('site-mobile-menu-toggle');
+        var panel = document.getElementById('site-mobile-menu');
+        var backdrop = document.getElementById('site-mobile-menu-backdrop');
+        if (!toggle || !panel || !backdrop) {
+            return;
+        }
+
+        var setMenuOpen = function(isOpen) {
+            toggle.classList.toggle('is-open', isOpen);
+            panel.classList.toggle('is-open', isOpen);
+            backdrop.classList.toggle('is-open', isOpen);
+            toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            toggle.setAttribute('aria-label', isOpen ? 'Đóng menu điều hướng' : 'Mở menu điều hướng');
+            panel.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+            backdrop.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+            document.body.classList.toggle('site-mobile-menu-open', isOpen);
+        };
+
+        toggle.addEventListener('click', function() {
+            setMenuOpen(!panel.classList.contains('is-open'));
+        });
+
+        backdrop.addEventListener('click', function() {
+            setMenuOpen(false);
+        });
+
+        panel.addEventListener('click', function(event) {
+            var anchor = event.target.closest('a');
+            if (anchor && anchor.getAttribute('href')) {
+                setMenuOpen(false);
+            }
+        });
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && panel.classList.contains('is-open')) {
+                setMenuOpen(false);
+            }
+        });
+
+        var closeIfDesktop = function() {
+            if (window.matchMedia && window.matchMedia('(min-width: 768px)').matches) {
+                setMenuOpen(false);
+            }
+        };
+        window.addEventListener('resize', closeIfDesktop);
+    })();
+
     var hero = document.getElementById('hero-parallax');
     if (hero) {
         var layers = hero.querySelectorAll('.parallax-layer');
@@ -23,6 +130,66 @@ function initCloudArenaUi() {
                 layer.style.transform = 'translate3d(0, ' + Math.round(scrollTop * speed) + 'px, 0)';
             });
         });
+    }
+
+    var heroTypewriter = document.getElementById('hero-typewriter');
+    if (heroTypewriter) {
+        var fullHeroTitle = heroTypewriter.getAttribute('data-typewriter') || '';
+        var cursorEl = heroTypewriter.parentNode
+            ? heroTypewriter.parentNode.querySelector('.hero-type-cursor')
+            : null;
+        var heroReducedMotion = window.matchMedia
+            && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        if (fullHeroTitle === '') {
+            if (cursorEl) {
+                cursorEl.style.visibility = 'hidden';
+            }
+        } else if (heroReducedMotion) {
+            heroTypewriter.textContent = fullHeroTitle;
+            if (cursorEl) {
+                cursorEl.style.display = 'none';
+            }
+        } else {
+            var visibleLen = 0;
+            var phase = 'forward';
+            var typeForwardMs = 52;
+            var typeBackwardMs = 38;
+            var pauseFullMs = 1800;
+            var pauseEmptyMs = 1500;
+
+            var applyHeroText = function() {
+                heroTypewriter.textContent = fullHeroTitle.slice(0, visibleLen);
+            };
+
+            var typeStep = function() {
+                if (phase === 'forward') {
+                    if (visibleLen < fullHeroTitle.length) {
+                        visibleLen += 1;
+                        applyHeroText();
+                        window.setTimeout(typeStep, typeForwardMs);
+                    } else {
+                        window.setTimeout(function() {
+                            phase = 'backward';
+                            typeStep();
+                        }, pauseFullMs);
+                    }
+                } else if (phase === 'backward') {
+                    if (visibleLen > 0) {
+                        visibleLen -= 1;
+                        applyHeroText();
+                        window.setTimeout(typeStep, typeBackwardMs);
+                    } else {
+                        window.setTimeout(function() {
+                            phase = 'forward';
+                            typeStep();
+                        }, pauseEmptyMs);
+                    }
+                }
+            };
+
+            window.setTimeout(typeStep, 280);
+        }
     }
 
     var quickSearchForm = document.getElementById('quick-resource-search');
@@ -641,7 +808,7 @@ function initCloudArenaUi() {
                 { keywords: ['ticket', 'support', 'liên hệ', 'lien he'], path: '/admincontacts' },
                 { keywords: ['tin tức', 'tin tuc', 'news'], path: '/adminnews' },
                 { keywords: ['người dùng', 'nguoi dung', 'thành viên', 'thanh vien', 'user'], path: '/admin/users' },
-                { keywords: ['cài đặt', 'cai dat', 'setting', 'settings'], path: '/admin/settings' }
+                { keywords: ['cài đặt', 'cai dat', 'setting', 'settings'], path: '/admin/settings/homepage' }
             ];
 
             searchForm.addEventListener('submit', function(event) {
@@ -702,6 +869,42 @@ function initCloudArenaUi() {
 
             input.addEventListener('change', updateLabel);
 
+            zone.addEventListener('dragover', function(event) {
+                event.preventDefault();
+                zone.classList.add('is-dragging');
+            });
+            zone.addEventListener('dragleave', function() {
+                zone.classList.remove('is-dragging');
+            });
+            zone.addEventListener('drop', function(event) {
+                event.preventDefault();
+                zone.classList.remove('is-dragging');
+                if (event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files.length) {
+                    input.files = event.dataTransfer.files;
+                    updateLabel();
+                }
+            });
+        };
+
+        var initHeroBgUploadZone = function() {
+            var zone = document.getElementById('heroBgUploadZone');
+            var input = document.getElementById('hero_bg_asset');
+            var browseButton = document.getElementById('heroBgUploadBrowse');
+            var fileLabel = document.getElementById('heroBgUploadFilename');
+            if (!zone || !input) {
+                return;
+            }
+            var updateLabel = function() {
+                if (fileLabel) {
+                    fileLabel.textContent = input.files && input.files.length ? input.files[0].name : '';
+                }
+            };
+            if (browseButton) {
+                browseButton.addEventListener('click', function() {
+                    input.click();
+                });
+            }
+            input.addEventListener('change', updateLabel);
             zone.addEventListener('dragover', function(event) {
                 event.preventDefault();
                 zone.classList.add('is-dragging');
@@ -1216,6 +1419,7 @@ function initCloudArenaUi() {
         initAdminCustomSelects();
         initAdminGlobalSearch();
         initBrandingUploadZone();
+        initHeroBgUploadZone();
         initMapPreview();
         initUserActionDropdowns();
         initAdminNotificationBox();
@@ -1455,6 +1659,139 @@ function initCloudArenaUi() {
                 confirmBtn.disabled = false;
             });
         });
+    }
+
+    var homeProductDeck = document.getElementById('home-product-deck');
+    if (homeProductDeck) {
+        var homeCards = homeProductDeck.querySelectorAll('[data-home-product-card]');
+        var reducedMotionHp = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        var pingEls = homeProductDeck.querySelectorAll('[data-home-product-ping]');
+
+        var tickHomePing = function() {
+            pingEls.forEach(function(el) {
+                var base = parseInt(el.getAttribute('data-ping-base') || '12', 10);
+                var jitter = Math.round((Math.random() - 0.5) * 5);
+                el.textContent = Math.max(8, base + jitter) + ' ms';
+            });
+        };
+        if (pingEls.length) {
+            tickHomePing();
+            if (!reducedMotionHp) {
+                window.setInterval(tickHomePing, 700);
+            }
+        }
+
+        var bwFineHover = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+        var bwPop = null;
+        var hideHomeBandwidthPop = function() {
+            if (bwPop) {
+                bwPop.classList.remove('is-visible');
+            }
+        };
+        var escapeHomeBwHtml = function(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        };
+        var showHomeBandwidthPop = function(clientX, clientY, bwText, accent) {
+            if (!bwPop) {
+                return;
+            }
+            bwPop.innerHTML =
+                '<strong>Băng thông gói</strong>' +
+                '<span>' + escapeHomeBwHtml(bwText) + '</span>';
+            if (accent) {
+                bwPop.style.setProperty('--bw-pop-accent', accent);
+            }
+            bwPop.classList.add('is-visible');
+            var tipRect = bwPop.getBoundingClientRect();
+            var left = clientX - tipRect.width / 2;
+            var top = clientY - tipRect.height - 14;
+            left = Math.max(10, Math.min(left, window.innerWidth - tipRect.width - 10));
+            if (top < 10) {
+                top = clientY + 14;
+            }
+            if (top + tipRect.height > window.innerHeight - 10) {
+                top = window.innerHeight - tipRect.height - 10;
+            }
+            bwPop.style.left = Math.round(left) + 'px';
+            bwPop.style.top = Math.round(top) + 'px';
+        };
+
+        if (bwFineHover && homeCards.length) {
+            bwPop = document.getElementById('home-product-bandwidth-pop');
+            if (!bwPop) {
+                bwPop = document.createElement('div');
+                bwPop.id = 'home-product-bandwidth-pop';
+                bwPop.className = 'home-product-bandwidth-pop';
+                bwPop.setAttribute('role', 'tooltip');
+                document.body.appendChild(bwPop);
+            }
+            var readCardAccent = function(card) {
+                try {
+                    return window.getComputedStyle(card).getPropertyValue('--rarity-accent').trim() || '#22d3ee';
+                } catch (err) {
+                    return '#22d3ee';
+                }
+            };
+            homeCards.forEach(function(card) {
+                var bwText = card.getAttribute('data-home-bandwidth') || '';
+                var onBwPointer = function(evt) {
+                    if (!evt.isPrimary) {
+                        return;
+                    }
+                    showHomeBandwidthPop(evt.clientX, evt.clientY, bwText, readCardAccent(card));
+                };
+                card.addEventListener('pointerenter', onBwPointer);
+                card.addEventListener('pointermove', onBwPointer);
+                card.addEventListener('pointerleave', hideHomeBandwidthPop);
+                card.addEventListener('pointercancel', hideHomeBandwidthPop);
+            });
+            document.addEventListener(
+                'scroll',
+                function() {
+                    if (bwPop && bwPop.classList.contains('is-visible')) {
+                        hideHomeBandwidthPop();
+                    }
+                },
+                true
+            );
+        }
+
+        if (!reducedMotionHp && homeCards.length) {
+            homeCards.forEach(function(card) {
+                var surface = card.querySelector('.home-product-card__surface');
+                if (!surface) {
+                    return;
+                }
+                var onMove = function(e) {
+                    if (!e.isPrimary) {
+                        return;
+                    }
+                    var rect = card.getBoundingClientRect();
+                    var x = e.clientX - rect.left;
+                    var y = e.clientY - rect.top;
+                    var px = Math.max(0, Math.min(1, x / rect.width));
+                    var py = Math.max(0, Math.min(1, y / rect.height));
+                    card.style.setProperty('--pointer-x', (px * 100).toFixed(2) + '%');
+                    card.style.setProperty('--pointer-y', (py * 100).toFixed(2) + '%');
+                    var tiltX = (py - 0.5) * -9;
+                    var tiltY = (px - 0.5) * 9;
+                    surface.style.transform =
+                        'perspective(820px) rotateX(' + tiltX + 'deg) rotateY(' + tiltY + 'deg) translateZ(0)';
+                };
+                var onLeave = function() {
+                    surface.style.transform = '';
+                    card.style.setProperty('--pointer-x', '50%');
+                    card.style.setProperty('--pointer-y', '42%');
+                };
+                card.addEventListener('pointermove', onMove);
+                card.addEventListener('pointerleave', onLeave);
+                card.addEventListener('pointercancel', onLeave);
+            });
+        }
     }
 }
 

@@ -6,6 +6,7 @@ class Admin extends Controller {
     private $orderModel;
     private $contactModel;
     private $adminNotificationModel;
+    private $commentModel;
 
     public function __construct() {
         $this->requireAdmin();
@@ -15,6 +16,7 @@ class Admin extends Controller {
         $this->orderModel = $this->model('Order');
         $this->contactModel = $this->model('Contact');
         $this->adminNotificationModel = $this->model('AdminNotification');
+        $this->commentModel = $this->model('Comment');
     }
 
     private function requireAdmin() {
@@ -171,6 +173,78 @@ class Admin extends Controller {
 
         $uploadDir = APPROOT . '/../public/uploads/branding/';
         return SecureUpload::storeBrandingUpload($_FILES['branding_asset'], $uploadDir, $currentFileName);
+    }
+
+    /**
+     * Hero background: raster images only (jpg/png/gif/webp), stored under uploads/branding/.
+     *
+     * @return array{success:bool,filename:string,message:string}
+     */
+    private function uploadHeroBackgroundAsset($currentFileName = '') {
+        if (
+            !isset($_FILES['hero_bg_asset']) ||
+            !is_array($_FILES['hero_bg_asset']) ||
+            (int) ($_FILES['hero_bg_asset']['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE
+        ) {
+            return ['success' => true, 'filename' => $currentFileName, 'message' => ''];
+        }
+
+        $uploadDir = APPROOT . '/../public/uploads/branding/';
+        $result = SecureUpload::storeRasterUpload($_FILES['hero_bg_asset'], $uploadDir, 'hero_bg_', 3145728);
+        if (empty($result['ok'])) {
+            return ['success' => false, 'filename' => $currentFileName, 'message' => (string) ($result['message'] ?? 'Không thể tải ảnh nền lên.')];
+        }
+
+        $newFile = (string) ($result['filename'] ?? '');
+        $oldFile = basename((string) $currentFileName);
+        if ($oldFile !== '' && $oldFile !== $newFile && is_file($uploadDir . $oldFile)) {
+            @unlink($uploadDir . $oldFile);
+        }
+
+        return ['success' => true, 'filename' => $newFile, 'message' => ''];
+    }
+
+    private function normalizeSettingsSection($section) {
+        $s = strtolower(trim((string) $section));
+        if ($s === 'about') {
+            return 'profile';
+        }
+        if (in_array($s, ['homepage', 'contact', 'profile'], true)) {
+            return $s;
+        }
+        return 'homepage';
+    }
+
+    private function buildHomeProductIdsFromPost() {
+        $slots = [];
+        for ($i = 1; $i <= 4; $i++) {
+            $raw = trim((string) ($_POST['home_product_slot_' . $i] ?? ''));
+            if ($raw === '') {
+                continue;
+            }
+            $id = (int) $raw;
+            if ($id > 0) {
+                $slots[] = $id;
+            }
+        }
+        return implode(',', $slots);
+    }
+
+    private function validateHomeProductIdsString($idsString, &$errors) {
+        if ($idsString === '') {
+            return;
+        }
+        $parts = array_filter(array_map('intval', explode(',', $idsString)), function ($id) {
+            return $id > 0;
+        });
+        $unique = array_unique($parts);
+        foreach ($unique as $pid) {
+            $rows = $this->productModel->getActiveProductsByIdsOrdered([$pid]);
+            if (empty($rows)) {
+                $errors['home_product_ids'] = 'Một hoặc nhiều sản phẩm được chọn không hợp lệ hoặc không còn hoạt động.';
+                return;
+            }
+        }
     }
 
     public function index() {
@@ -506,48 +580,166 @@ class Admin extends Controller {
         exit();
     }
 
-    public function settings() {
+    public function settings($section = 'homepage') {
+        $section = $this->normalizeSettingsSection($section);
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!$this->verifyCsrf('csrf_admin')) {
                 $_SESSION['admin_settings_flash'] = ['type' => 'danger', 'message' => 'Yêu cầu không hợp lệ.'];
-                header('Location: ' . URLROOT . '/admin/settings');
+                header('Location: ' . URLROOT . '/admin/settings/' . $section);
                 exit();
             }
 
+            $postedSection = $this->normalizeSettingsSection($_POST['settings_section'] ?? $section);
             $existingSettings = $this->settingModel->getPublicSettings();
-            $formData = [
-                'site_logo_text' => trim($_POST['site_logo_text'] ?? ''),
-                'site_hotline' => trim($_POST['site_hotline'] ?? ''),
-                'site_contact_email' => trim($_POST['site_contact_email'] ?? ''),
-                'site_address' => trim($_POST['site_address'] ?? ''),
-                'site_about_snippet' => trim($_POST['site_about_snippet'] ?? ''),
-                'site_map_embed_url' => trim($_POST['site_map_embed_url'] ?? ''),
-                'site_logo_image' => trim($existingSettings['site_logo_image'] ?? '')
-            ];
-
+            $formData = $existingSettings;
             $errors = [];
-            if ($formData['site_logo_text'] === '') {
-                $errors['site_logo_text'] = 'Tên hiển thị logo không được để trống.';
-            }
-            if ($formData['site_hotline'] === '') {
-                $errors['site_hotline'] = 'Hotline không được để trống.';
-            }
-            if (!filter_var($formData['site_contact_email'], FILTER_VALIDATE_EMAIL)) {
-                $errors['site_contact_email'] = 'Email liên hệ không hợp lệ.';
-            }
-            if ($formData['site_address'] === '') {
-                $errors['site_address'] = 'Địa chỉ không được để trống.';
-            }
-            if ($formData['site_map_embed_url'] !== '' && filter_var($formData['site_map_embed_url'], FILTER_VALIDATE_URL) === false) {
-                $errors['site_map_embed_url'] = 'URL bản đồ không hợp lệ.';
-            }
 
-            if (empty($errors)) {
-                $uploadResult = $this->uploadBrandingAsset($formData['site_logo_image']);
-                if (!$uploadResult['success']) {
-                    $errors['branding_asset'] = $uploadResult['message'];
-                } else {
-                    $formData['site_logo_image'] = $uploadResult['filename'];
+            if ($postedSection === 'homepage') {
+                $formData['site_logo_text'] = trim($_POST['site_logo_text'] ?? '');
+                $formData['home_hero_title_gradient'] = trim($_POST['home_hero_title_gradient'] ?? '');
+                $formData['home_hero_title_plain'] = trim($_POST['home_hero_title_plain'] ?? '');
+                $formData['home_hero_subtitle'] = trim($_POST['home_hero_subtitle'] ?? '');
+                $formData['home_card_tech_title'] = trim($_POST['home_card_tech_title'] ?? '');
+                $formData['home_about_kicker'] = trim($_POST['home_about_kicker'] ?? '');
+                $formData['home_about_heading'] = trim($_POST['home_about_heading'] ?? '');
+                $formData['home_about_lead'] = trim($_POST['home_about_lead'] ?? '');
+                $formData['home_about_feat1_title'] = trim($_POST['home_about_feat1_title'] ?? '');
+                $formData['home_about_feat1_text'] = trim($_POST['home_about_feat1_text'] ?? '');
+                $formData['home_about_feat2_title'] = trim($_POST['home_about_feat2_title'] ?? '');
+                $formData['home_about_feat2_text'] = trim($_POST['home_about_feat2_text'] ?? '');
+                $formData['home_about_feat3_title'] = trim($_POST['home_about_feat3_title'] ?? '');
+                $formData['home_about_feat3_text'] = trim($_POST['home_about_feat3_text'] ?? '');
+                $formData['home_product_ids'] = $this->buildHomeProductIdsFromPost();
+
+                $rk = trim((string) ($_POST['home_review_key'] ?? ''));
+                $formData['home_review_key'] = $rk;
+
+                if ($formData['site_logo_text'] === '') {
+                    $errors['site_logo_text'] = 'Tên hiển thị logo không được để trống.';
+                }
+                if ($formData['home_hero_title_gradient'] === '') {
+                    $errors['home_hero_title_gradient'] = 'Dòng tiêu đề gradient không được để trống.';
+                }
+                if ($formData['home_hero_title_plain'] === '') {
+                    $errors['home_hero_title_plain'] = 'Dòng tiêu đề phụ không được để trống.';
+                }
+                if ($formData['home_hero_subtitle'] === '') {
+                    $errors['home_hero_subtitle'] = 'Đoạn mô tả hero không được để trống.';
+                }
+
+                if ($rk !== '') {
+                    if (!preg_match('/^[1-9][0-9]*:[1-9][0-9]*$/', $rk)) {
+                        $errors['home_review_key'] = 'Giá trị review không hợp lệ.';
+                    } else {
+                        $parts = explode(':', $rk, 2);
+                        $found = $this->commentModel->getApprovedProductReviewByKey((int) $parts[0], (int) $parts[1]);
+                        if (!$found) {
+                            $errors['home_review_key'] = 'Không tìm thấy review đã duyệt tương ứng.';
+                        }
+                    }
+                }
+
+                $this->validateHomeProductIdsString($formData['home_product_ids'], $errors);
+
+                $formData['site_logo_image'] = trim($existingSettings['site_logo_image'] ?? '');
+                $formData['home_hero_bg_image'] = trim($existingSettings['home_hero_bg_image'] ?? '');
+
+                if (!empty($_POST['clear_hero_bg'])) {
+                    $oldBg = basename($formData['home_hero_bg_image']);
+                    $formData['home_hero_bg_image'] = '';
+                    if ($oldBg !== '') {
+                        $bgPath = APPROOT . '/../public/uploads/branding/' . $oldBg;
+                        if (is_file($bgPath)) {
+                            @unlink($bgPath);
+                        }
+                    }
+                }
+
+                if (empty($errors)) {
+                    $uploadResult = $this->uploadBrandingAsset($formData['site_logo_image']);
+                    if (!$uploadResult['success']) {
+                        $errors['branding_asset'] = $uploadResult['message'];
+                    } else {
+                        $formData['site_logo_image'] = $uploadResult['filename'];
+                    }
+                }
+
+                if (empty($errors) && empty($_POST['clear_hero_bg'])) {
+                    $heroUpload = $this->uploadHeroBackgroundAsset($formData['home_hero_bg_image']);
+                    if (!$heroUpload['success']) {
+                        $errors['hero_bg_asset'] = $heroUpload['message'];
+                    } else {
+                        $formData['home_hero_bg_image'] = $heroUpload['filename'];
+                    }
+                }
+            } elseif ($postedSection === 'profile') {
+                $formData['profile_page_title'] = trim($_POST['profile_page_title'] ?? '');
+                $formData['profile_page_intro'] = trim($_POST['profile_page_intro'] ?? '');
+                $formData['profile_section_avatar_title'] = trim($_POST['profile_section_avatar_title'] ?? '');
+                $formData['profile_avatar_upload_label'] = trim($_POST['profile_avatar_upload_label'] ?? '');
+                $formData['profile_avatar_hint'] = trim($_POST['profile_avatar_hint'] ?? '');
+                $formData['profile_section_personal_title'] = trim($_POST['profile_section_personal_title'] ?? '');
+                $formData['profile_section_password_title'] = trim($_POST['profile_section_password_title'] ?? '');
+                $formData['profile_label_display_name'] = trim($_POST['profile_label_display_name'] ?? '');
+                $formData['profile_label_email'] = trim($_POST['profile_label_email'] ?? '');
+                $formData['profile_label_current_password'] = trim($_POST['profile_label_current_password'] ?? '');
+                $formData['profile_label_new_password'] = trim($_POST['profile_label_new_password'] ?? '');
+                $formData['profile_label_confirm_password'] = trim($_POST['profile_label_confirm_password'] ?? '');
+                $formData['profile_btn_save'] = trim($_POST['profile_btn_save'] ?? '');
+                $formData['profile_btn_update_password'] = trim($_POST['profile_btn_update_password'] ?? '');
+
+                $req = [
+                    'profile_page_title' => 'Tiêu đề trang hồ sơ không được để trống.',
+                    'profile_page_intro' => 'Mô tả đầu trang không được để trống.',
+                    'profile_section_avatar_title' => 'Tiêu đề khối ảnh đại diện không được để trống.',
+                    'profile_avatar_upload_label' => 'Nhãn nút tải ảnh không được để trống.',
+                    'profile_avatar_hint' => 'Ghi chú định dạng ảnh không được để trống.',
+                    'profile_section_personal_title' => 'Tiêu đề khối thông tin không được để trống.',
+                    'profile_section_password_title' => 'Tiêu đề khối mật khẩu không được để trống.',
+                    'profile_label_display_name' => 'Nhãn họ tên không được để trống.',
+                    'profile_label_email' => 'Nhãn email không được để trống.',
+                    'profile_label_current_password' => 'Nhãn mật khẩu hiện tại không được để trống.',
+                    'profile_label_new_password' => 'Nhãn mật khẩu mới không được để trống.',
+                    'profile_label_confirm_password' => 'Nhãn xác nhận mật khẩu không được để trống.',
+                    'profile_btn_save' => 'Nhãn nút lưu không được để trống.',
+                    'profile_btn_update_password' => 'Nhãn nút cập nhật mật khẩu không được để trống.'
+                ];
+                foreach ($req as $field => $msg) {
+                    if ($formData[$field] === '') {
+                        $errors[$field] = $msg;
+                    }
+                }
+            } elseif ($postedSection === 'contact') {
+                $formData['site_hotline'] = trim($_POST['site_hotline'] ?? '');
+                $formData['site_contact_email'] = trim($_POST['site_contact_email'] ?? '');
+                $formData['site_address'] = trim($_POST['site_address'] ?? '');
+                $formData['site_about_snippet'] = trim($_POST['site_about_snippet'] ?? '');
+                $formData['site_map_embed_url'] = trim($_POST['site_map_embed_url'] ?? '');
+                $formData['contact_page_title'] = trim($_POST['contact_page_title'] ?? '');
+                $formData['contact_page_intro'] = trim($_POST['contact_page_intro'] ?? '');
+                $formData['contact_sidebar_title'] = trim($_POST['contact_sidebar_title'] ?? '');
+
+                if ($formData['site_hotline'] === '') {
+                    $errors['site_hotline'] = 'Hotline không được để trống.';
+                }
+                if (!filter_var($formData['site_contact_email'], FILTER_VALIDATE_EMAIL)) {
+                    $errors['site_contact_email'] = 'Email liên hệ không hợp lệ.';
+                }
+                if ($formData['site_address'] === '') {
+                    $errors['site_address'] = 'Địa chỉ không được để trống.';
+                }
+                if ($formData['site_map_embed_url'] !== '' && filter_var($formData['site_map_embed_url'], FILTER_VALIDATE_URL) === false) {
+                    $errors['site_map_embed_url'] = 'URL bản đồ không hợp lệ.';
+                }
+                if ($formData['contact_page_title'] === '') {
+                    $errors['contact_page_title'] = 'Tiêu đề trang liên hệ không được để trống.';
+                }
+                if ($formData['contact_page_intro'] === '') {
+                    $errors['contact_page_intro'] = 'Phần giới thiệu ngắn không được để trống.';
+                }
+                if ($formData['contact_sidebar_title'] === '') {
+                    $errors['contact_sidebar_title'] = 'Tiêu đề khối thông tin không được để trống.';
                 }
             }
 
@@ -555,17 +747,19 @@ class Admin extends Controller {
                 $saved = $this->settingModel->updatePublicSettings($formData);
                 $_SESSION['admin_settings_flash'] = [
                     'type' => $saved ? 'success' : 'danger',
-                    'message' => $saved ? 'Đã cập nhật thông tin công khai thành công.' : 'Không thể lưu cài đặt. Vui lòng thử lại.'
+                    'message' => $saved ? 'Đã lưu cài đặt.' : 'Không thể lưu cài đặt. Vui lòng thử lại.'
                 ];
-
-                header('Location: ' . URLROOT . '/admin/settings');
+                header('Location: ' . URLROOT . '/admin/settings/' . $postedSection);
                 exit();
             }
 
             $data = [
-                'title' => 'Cài đặt hệ thống',
+                'title' => 'Cài đặt giao diện công khai',
                 'subtitle' => '',
+                'settings_section' => $postedSection,
                 'settings' => $formData,
+                'picker_products' => $this->productModel->getProductPickerList(),
+                'picker_reviews' => $this->commentModel->listApprovedProductReviewsForPicker(120),
                 'errors' => $errors,
                 'flash' => [
                     'type' => 'danger',
@@ -581,9 +775,12 @@ class Admin extends Controller {
         unset($_SESSION['admin_settings_flash']);
 
         $data = [
-            'title' => 'Cài đặt hệ thống',
+            'title' => 'Cài đặt giao diện công khai',
             'subtitle' => '',
+            'settings_section' => $section,
             'settings' => $this->settingModel->getPublicSettings(),
+            'picker_products' => $this->productModel->getProductPickerList(),
+            'picker_reviews' => $this->commentModel->listApprovedProductReviewsForPicker(120),
             'errors' => [],
             'flash' => $flash,
             'nav_badges' => $this->getNavBadges()

@@ -16,19 +16,46 @@ class Pages extends Controller {
     }
 
     public function index() {
+        $settings = $this->getPublicSettings();
         $featuredProducts = [];
         $featuredReview = null;
 
-        try {
-            $featuredProducts = $this->productModel->getHomepagePackages(4);
-        } catch (Throwable $error) {
-            $featuredProducts = [];
+        $idsRaw = trim($settings['home_product_ids'] ?? '');
+        if ($idsRaw !== '') {
+            $idList = array_values(array_filter(array_map('intval', explode(',', $idsRaw)), function ($n) {
+                return (int) $n > 0;
+            }));
+            if (!empty($idList)) {
+                try {
+                    $featuredProducts = $this->productModel->getActiveProductsByIdsOrdered($idList);
+                } catch (Throwable $error) {
+                    $featuredProducts = [];
+                }
+            }
+        }
+        if (empty($featuredProducts)) {
+            try {
+                $featuredProducts = $this->productModel->getHomepagePackages(4);
+            } catch (Throwable $error) {
+                $featuredProducts = [];
+            }
         }
 
-        try {
-            $featuredReview = $this->commentModel->getLatestFiveStarProductReview();
-        } catch (Throwable $error) {
-            $featuredReview = null;
+        $reviewKey = trim($settings['home_review_key'] ?? '');
+        if ($reviewKey !== '' && preg_match('/^[1-9][0-9]*:[1-9][0-9]*$/', $reviewKey)) {
+            $rkParts = explode(':', $reviewKey, 2);
+            try {
+                $featuredReview = $this->commentModel->getApprovedProductReviewByKey((int) $rkParts[0], (int) $rkParts[1]);
+            } catch (Throwable $error) {
+                $featuredReview = null;
+            }
+        }
+        if (!$featuredReview) {
+            try {
+                $featuredReview = $this->commentModel->getLatestFiveStarProductReview();
+            } catch (Throwable $error) {
+                $featuredReview = null;
+            }
         }
 
         $data = [
@@ -40,12 +67,10 @@ class Pages extends Controller {
         $this->view('client/pages/index', $data);
     }
 
+    /** Legacy URL — nội dung Giới thiệu nằm tại trang chủ (#about-us). */
     public function about() {
-        $data = [
-            'title' => 'Giới thiệu',
-            'description' => 'Lịch sử hình thành, sứ mệnh và đội ngũ kỹ sư ' . SITENAME . ' — nền tảng game hosting & modpack.'
-        ];
-        $this->view('client/about', $data);
+        header('Location: ' . URLROOT . '/#about-us', true, 302);
+        exit();
     }
 
     public function contact() {

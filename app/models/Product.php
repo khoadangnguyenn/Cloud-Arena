@@ -109,6 +109,48 @@ class Product {
         return $this->db->resultSet();
     }
 
+    /**
+     * @param int[] $ids
+     * @return object[]
+     */
+    public function getActiveProductsByIdsOrdered(array $ids) {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), function ($id) {
+            return $id > 0;
+        })));
+        if (empty($ids)) {
+            return [];
+        }
+        $ids = array_slice($ids, 0, 4);
+
+        $placeholders = [];
+        foreach ($ids as $i => $id) {
+            $placeholders[] = ':id' . $i;
+        }
+        $inSql = implode(',', $placeholders);
+        $orderSql = 'FIELD(id,' . implode(',', array_map('intval', $ids)) . ')';
+
+        $this->db->query(
+            "SELECT id, name, slug, description, price, ram_mb, cpu_cores, disk_gb
+             FROM products
+             WHERE status = :status AND id IN ($inSql)
+             ORDER BY $orderSql"
+        );
+        $this->db->bind(':status', 'active');
+        foreach ($ids as $i => $id) {
+            $this->db->bind(':id' . $i, $id);
+        }
+
+        return $this->db->resultSet();
+    }
+
+    public function getProductPickerList() {
+        $this->db->query(
+            'SELECT id, name FROM products WHERE status = :status ORDER BY name ASC'
+        );
+        $this->db->bind(':status', 'active');
+        return $this->db->resultSet();
+    }
+
     public function deletePackage($id) {
         $this->db->query('DELETE FROM products WHERE id = :id');
         $this->db->bind(':id', (int) $id);

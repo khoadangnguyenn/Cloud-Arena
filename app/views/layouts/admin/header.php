@@ -19,6 +19,7 @@
     <?php
     $currentUrl = trim($_GET['url'] ?? 'admin', '/');
     $activeSection = 'dashboard';
+    $settingsNav = '';
     if ($currentUrl === 'admin' || strpos($currentUrl, 'admin/index') === 0) {
         $activeSection = 'dashboard';
     } elseif (strpos($currentUrl, 'adminproducts') === 0 || strpos($currentUrl, 'admin/services') === 0) {
@@ -31,6 +32,11 @@
         $activeSection = 'users';
     } elseif (strpos($currentUrl, 'admin/settings') === 0) {
         $activeSection = 'settings';
+        $parts = explode('/', $currentUrl);
+        $settingsNav = isset($parts[2]) ? strtolower((string) $parts[2]) : 'homepage';
+        if (!in_array($settingsNav, ['homepage', 'contact', 'profile'], true)) {
+            $settingsNav = 'homepage';
+        }
     }
     $pageTitle = $data['title'] ?? 'Bảng điều khiển';
     $navBadges = $data['nav_badges'] ?? [];
@@ -90,9 +96,18 @@
                     <span class="admin-link-text">Người dùng</span>
                     <span class="admin-nav-badge admin-nav-badge-success"><?php echo $usersBadge; ?></span>
                 </a>
-                <a class="admin-nav-link <?php echo $activeSection === 'settings' ? 'active' : ''; ?>" href="<?php echo URLROOT; ?>/admin/settings">
-                    <i class="ti-settings"></i>
-                    <span class="admin-link-text">Cài đặt</span>
+                <div class="admin-nav-heading">Quản lý giao diện</div>
+                <a class="admin-nav-link <?php echo $activeSection === 'settings' && $settingsNav === 'homepage' ? 'active' : ''; ?>" href="<?php echo URLROOT; ?>/admin/settings/homepage">
+                    <i class="ti-layout-slider-alt"></i>
+                    <span class="admin-link-text">Trang chủ</span>
+                </a>
+                <a class="admin-nav-link admin-nav-sublink <?php echo $activeSection === 'settings' && $settingsNav === 'profile' ? 'active' : ''; ?>" href="<?php echo URLROOT; ?>/admin/settings/profile">
+                    <i class="ti-user"></i>
+                    <span class="admin-link-text">Trang hồ sơ</span>
+                </a>
+                <a class="admin-nav-link admin-nav-sublink <?php echo $activeSection === 'settings' && $settingsNav === 'contact' ? 'active' : ''; ?>" href="<?php echo URLROOT; ?>/admin/settings/contact">
+                    <i class="ti-map-alt"></i>
+                    <span class="admin-link-text">Trang liên hệ</span>
                 </a>
 
                 <div class="admin-nav-heading">Hệ thống</div>

@@ -1,0 +1,4 @@
+1. admin panel updated: public UI management added (home,user,contact).
+2. homepage updated: can upload gif < 3MB, animations, btn effects, product cards update concept
+3. mobile homepage updated: menu added
+(added hover-min.css & aos.js lib)

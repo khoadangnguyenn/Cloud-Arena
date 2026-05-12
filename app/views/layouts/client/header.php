@@ -96,33 +96,42 @@ $navItems = [
     [
         'label' => 'Trang chủ',
         'href' => URLROOT . '/',
-        'is_active' => $isHomePage
+        'is_active' => $isHomePage,
+        'nav_spy' => $isHomePage ? 'home-top' : null,
     ],
     [
         'label' => 'Sản phẩm',
         'href' => URLROOT . '/products',
-        'is_active' => $currentController === 'products'
+        'is_active' => $currentController === 'products',
+        'nav_spy' => null,
     ],
     [
         'label' => 'Tin tức',
         'href' => URLROOT . '/news',
-        'is_active' => $currentController === 'news'
+        'is_active' => $currentController === 'news',
+        'nav_spy' => null,
     ],
     [
         'label' => 'Chúng tôi',
         'href' => $aboutAnchorHref,
-        'is_active' => false
+        'is_active' => false,
+        'nav_spy' => $isHomePage ? 'about-us' : null,
     ],
     [
         'label' => 'Liên hệ',
         'href' => URLROOT . '/pages/contact',
-        'is_active' => $currentController === 'pages' && $currentMethod === 'contact'
+        'is_active' => $currentController === 'pages' && $currentMethod === 'contact',
+        'nav_spy' => null,
     ]
 ];
+
+$clientHoverMinPath = dirname(APPROOT) . '/public/admin_assets/css/hover-min.css';
+$clientHoverMinVer = is_readable($clientHoverMinPath) ? (string) filemtime($clientHoverMinPath) : '1';
 ?>
 <!DOCTYPE html>
 <html lang="vi" class="bg-black">
 <head>
+    <link rel="stylesheet" href="<?php echo URLROOT; ?>/admin_assets/css/themify-icons.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="<?php echo $hAttr($metaDescription); ?>">
@@ -160,6 +169,10 @@ $navItems = [
         }
     </script>
     <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/style.css?v=<?php echo filemtime(dirname(APPROOT) . '/public/css/style.css'); ?>">
+    <link rel="stylesheet" href="<?php echo URLROOT; ?>/admin_assets/css/hover-min.css?v=<?php echo htmlspecialchars($clientHoverMinVer, ENT_QUOTES, 'UTF-8'); ?>">
+    <?php if (!empty($isHomePage)) : ?>
+    <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" crossorigin="anonymous">
+    <?php endif; ?>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
@@ -252,6 +265,90 @@ $navItems = [
             transform: translateY(-1px);
             box-shadow: 0 0 22px rgba(34, 211, 238, 0.4);
         }
+
+        /* ── Mobile menu ───────────────────────────────── */
+        body.site-mobile-menu-open {
+            overflow: hidden;
+        }
+        .site-mobile-menu-toggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.75rem;
+            height: 2.75rem;
+            border-radius: 0.75rem;
+            color: #e2e8f0;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+        }
+        .site-mobile-menu-toggle:hover {
+            background: rgba(34, 211, 238, 0.12);
+            border-color: rgba(34, 211, 238, 0.35);
+            color: #fff;
+        }
+        .site-mobile-menu-backdrop {
+            position: fixed;
+            inset: 0;
+            top: 5rem;
+            z-index: 40;
+            background: rgba(0, 0, 0, 0.55);
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.22s ease, visibility 0.22s ease;
+        }
+        .site-mobile-menu-backdrop.is-open {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+        .site-mobile-menu-panel {
+            position: fixed;
+            left: 0;
+            right: 0;
+            top: 5rem;
+            z-index: 45;
+            max-height: min(70vh, calc(100dvh - 5rem));
+            overflow-y: auto;
+            background: rgba(2, 8, 23, 0.97);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+            transform: translateY(-0.5rem);
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: transform 0.22s ease, opacity 0.22s ease, visibility 0.22s ease;
+        }
+        .site-mobile-menu-panel.is-open {
+            transform: translateY(0);
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+        .site-mobile-menu-icon-close {
+            display: none;
+        }
+        .site-mobile-menu-toggle.is-open .site-mobile-menu-icon-bars {
+            display: none;
+        }
+        .site-mobile-menu-toggle.is-open .site-mobile-menu-icon-close {
+            display: inline-block;
+        }
+        .site-mobile-nav-link {
+            display: block;
+            padding: 0.85rem 0;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #cbd5e1;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .site-mobile-nav-link:last-child {
+            border-bottom: none;
+        }
+        .site-mobile-nav-link.is-active {
+            color: #22d3ee;
+        }
     </style>
     <script>
         window.URLROOT = '<?php echo URLROOT; ?>';
@@ -264,15 +361,15 @@ $navItems = [
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="h-20 grid grid-cols-[auto_1fr_auto] items-center gap-6">
                 <div class="flex items-center">
-                    <a href="<?php echo URLROOT; ?>" class="flex-shrink-0 flex items-center gap-3">
+                    <a href="<?php echo URLROOT; ?>" class="site-header-brand flex-shrink-0 flex items-center gap-3">
                         <?php if ($siteLogoImageUrl !== ''): ?>
-                            <img src="<?php echo htmlspecialchars($siteLogoImageUrl); ?>" alt="Logo thương hiệu" class="w-10 h-10 rounded-lg object-cover shadow-lg shadow-cyan-500/20">
+                            <img src="<?php echo htmlspecialchars($siteLogoImageUrl); ?>" alt="Logo thương hiệu" class="hvr-glow site-brand-logo-glow w-10 h-10 rounded-lg object-cover shadow-lg shadow-cyan-500/20">
                         <?php else: ?>
-                            <div class="w-10 h-10 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                            <div class="hvr-glow site-brand-logo-fallback w-10 h-10 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-cyan-500/20">
                                 <i class="fa-solid fa-server text-white text-xl"></i>
                             </div>
                         <?php endif; ?>
-                        <span class="font-bold text-2xl tracking-tighter bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+                        <span class="brand-sitename font-bold text-2xl tracking-tighter bg-gradient-to-r from-white via-violet-500 to-blue-600 bg-clip-text text-transparent inline-block">
                             <?php echo htmlspecialchars($siteLogoText); ?>
                         </span>
                     </a>
@@ -281,14 +378,38 @@ $navItems = [
                 <div class="hidden md:flex items-center justify-center">
                     <div class="site-nav-links flex items-center justify-center gap-8">
                         <?php foreach ($navItems as $item): ?>
-                            <a href="<?php echo htmlspecialchars($item['href']); ?>" class="site-nav-link <?php echo $item['is_active'] ? 'is-active' : ''; ?>">
+                            <?php
+                            $navSpy = isset($item['nav_spy']) && $item['nav_spy'] !== null && $item['nav_spy'] !== ''
+                                ? (string) $item['nav_spy']
+                                : '';
+                            ?>
+                            <a href="<?php echo htmlspecialchars($item['href']); ?>"
+                               class="site-nav-link <?php echo $item['is_active'] ? 'is-active' : ''; ?>"
+                               <?php if ($navSpy !== ''): ?>data-nav-spy="<?php echo htmlspecialchars($navSpy, ENT_QUOTES, 'UTF-8'); ?>"<?php endif; ?>>
                                 <?php echo htmlspecialchars($item['label']); ?>
                             </a>
                         <?php endforeach; ?>
                     </div>
                 </div>
 
-                <div class="hidden md:flex items-center justify-end gap-6">
+                <div class="flex items-center justify-end gap-2 sm:gap-3 md:gap-6">
+                    <div class="flex items-center gap-2 md:hidden">
+                        <a href="<?php echo URLROOT; ?>/cart" class="text-gray-300 hover:text-cyan-400 relative inline-flex p-2.5 rounded-xl border border-white/10 bg-white/[0.06] transition-colors" aria-label="Giỏ hàng">
+                            <i class="fa-solid fa-cart-shopping text-lg" aria-hidden="true"></i>
+                            <span class="absolute top-1 right-1 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center border-2 border-gray-950">0</span>
+                        </a>
+                        <button type="button"
+                                id="site-mobile-menu-toggle"
+                                class="site-mobile-menu-toggle"
+                                aria-expanded="false"
+                                aria-controls="site-mobile-menu"
+                                aria-label="Mở menu điều hướng">
+                            <i class="fa-solid fa-bars text-lg site-mobile-menu-icon-bars" aria-hidden="true"></i>
+                            <i class="fa-solid fa-xmark text-lg site-mobile-menu-icon-close" aria-hidden="true"></i>
+                        </button>
+                    </div>
+
+                    <div class="hidden md:flex items-center gap-6">
                     <?php if(isset($_SESSION['user_id'])) : ?>
                         <div class="flex items-center gap-4">
                             <a href="<?php echo URLROOT; ?>/users/profile" class="text-sm font-medium text-gray-300 hover:text-cyan-400 transition-colors flex items-center gap-2">
@@ -299,7 +420,7 @@ $navItems = [
                                         <i class="fa-solid fa-user text-xs"></i>
                                     </div>
                                 <?php endif; ?>
-                                <?php echo $_SESSION['user_name']; ?>
+                                <?php echo htmlspecialchars((string) ($_SESSION['user_name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
                             </a>
                             <?php if($_SESSION['user_role'] == 'admin') : ?>
                                 <a href="<?php echo URLROOT; ?>/admin" class="text-sm font-medium text-purple-400 hover:text-purple-300">
@@ -312,16 +433,68 @@ $navItems = [
                         </div>
                     <?php else : ?>
                         <a href="<?php echo URLROOT; ?>/users/login" class="text-sm font-medium text-gray-300 hover:text-white transition-colors">Đăng nhập</a>
-                        <a href="<?php echo URLROOT; ?>/users/register" class="cta-ghost-btn">
-                            <i class="fa-solid fa-rocket"></i>
-                            <span>Tham gia ngay</span>
+                        <a href="<?php echo URLROOT; ?>/users/register" class="hvr-ripple-in cta-register-ripple inline-flex items-center rounded-full">
+                            <span class="cta-ghost-btn">
+                                <i class="fa-solid fa-rocket"></i>
+                                <span>Tham gia ngay</span>
+                            </span>
                         </a>
                     <?php endif; ?>
-                    
+
                     <a href="<?php echo URLROOT; ?>/cart" class="text-gray-400 hover:text-cyan-400 relative p-2 transition-colors">
                         <i class="fa-solid fa-cart-shopping text-xl"></i>
                         <span class="absolute top-0 right-0 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center border-2 border-gray-950">0</span>
                     </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="site-mobile-menu-backdrop" class="site-mobile-menu-backdrop md:hidden" aria-hidden="true"></div>
+        <div id="site-mobile-menu"
+             class="site-mobile-menu-panel md:hidden"
+             role="region"
+             aria-label="Menu điều hướng"
+             aria-hidden="true">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6">
+                <div class="py-2">
+                    <?php foreach ($navItems as $item): ?>
+                        <?php
+                        $navSpy = isset($item['nav_spy']) && $item['nav_spy'] !== null && $item['nav_spy'] !== ''
+                            ? (string) $item['nav_spy']
+                            : '';
+                        ?>
+                        <a href="<?php echo htmlspecialchars($item['href']); ?>"
+                           class="site-mobile-nav-link <?php echo $item['is_active'] ? 'is-active' : ''; ?>"
+                           <?php if ($navSpy !== ''): ?>data-nav-spy="<?php echo htmlspecialchars($navSpy, ENT_QUOTES, 'UTF-8'); ?>"<?php endif; ?>>
+                            <?php echo htmlspecialchars($item['label']); ?>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+                <div class="border-t border-white/10 py-4 space-y-3">
+                    <?php if (isset($_SESSION['user_id'])) : ?>
+                        <a href="<?php echo URLROOT; ?>/users/profile" class="flex items-center gap-3 text-gray-200 hover:text-cyan-400 py-1">
+                            <?php if ($sessionAvatarUrl !== ''): ?>
+                                <img src="<?php echo htmlspecialchars($sessionAvatarUrl); ?>" alt="" class="w-10 h-10 rounded-full object-cover border border-gray-700">
+                            <?php else: ?>
+                                <div class="w-10 h-10 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center">
+                                    <i class="fa-solid fa-user text-sm text-gray-400"></i>
+                                </div>
+                            <?php endif; ?>
+                            <span class="font-medium"><?php echo htmlspecialchars((string) ($_SESSION['user_name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></span>
+                        </a>
+                        <?php if ($_SESSION['user_role'] == 'admin') : ?>
+                            <a href="<?php echo URLROOT; ?>/admin" class="block text-purple-400 hover:text-purple-300 py-1">
+                                <i class="fa-solid fa-shield mr-2"></i>Admin
+                            </a>
+                        <?php endif; ?>
+                        <a href="<?php echo URLROOT; ?>/users/logout" class="inline-flex items-center gap-2 text-gray-400 hover:text-white py-1">
+                            <i class="fa-solid fa-right-from-bracket"></i> Đăng xuất
+                        </a>
+                    <?php else : ?>
+                        <a href="<?php echo URLROOT; ?>/users/login" class="block w-full text-center py-3 rounded-xl border border-white/15 text-gray-200 font-medium hover:bg-white/5">Đăng nhập</a>
+                        <a href="<?php echo URLROOT; ?>/users/register" class="block w-full text-center py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-semibold hover:opacity-95">Tham gia ngay</a>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

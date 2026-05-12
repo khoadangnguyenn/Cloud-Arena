@@ -1746,6 +1746,27 @@ body.admin-modern.admin-theme-dark .user-handle {
     display: flex;
     justify-content: flex-end;
     gap: 0.55rem;
+    flex-wrap: wrap;
+}
+
+/* Match admin/users filter buttons (Áp dụng / Đặt lại) */
+.settings-actions .btn {
+    min-width: 132px;
+    height: var(--admin-filter-control-height);
+    min-height: var(--admin-filter-control-height);
+    font-size: 0.92rem;
+    line-height: 1.45;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+}
+
+.settings-actions .settings-actions-cancel:hover,
+.settings-actions .settings-actions-cancel:focus {
+    color: #ffffff !important;
+    background-color: var(--admin-danger) !important;
+    border-color: var(--admin-danger) !important;
 }
 
 .admin-floating-toast-container {
@@ -1966,10 +1987,6 @@ body.admin-modern.admin-theme-dark .admin-footer-note {
     pointer-events: none;
 }
 
-.settings-actions .btn {
-    min-width: 132px;
-}
-
 .map-preview-block iframe {
     min-height: 250px;
 }
@@ -2134,4 +2151,54 @@ body.admin-modern.admin-theme-dark .admin-footer-note {
     display: flex;
     gap: 0.6rem;
     justify-content: flex-end;
+}
+
+/* Settings: section tabs + sidebar sublinks */
+.settings-page-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+}
+.settings-page-tab {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.38rem 0.85rem;
+    border-radius: 999px;
+    font-size: 0.84rem;
+    font-weight: 600;
+    border: 1px solid var(--admin-border);
+    color: var(--admin-muted);
+    text-decoration: none;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.settings-page-tab:hover {
+    color: var(--admin-primary);
+    border-color: rgba(37, 99, 235, 0.45);
+    background: rgba(37, 99, 235, 0.06);
+}
+.settings-page-tab.is-active {
+    color: #fff;
+    background: linear-gradient(90deg, #2563eb, #3b82f6);
+    border-color: transparent;
+}
+.admin-nav-sublink {
+    padding-left: 2.35rem !important;
+    font-size: 0.88rem;
+}
+.admin-nav-sublink i {
+    opacity: 0.92;
+}
+
+/* Settings forms: theme-aware headings & hints (avoid Tailwind text-white / Bootstrap text-muted on admin shell) */
+.settings-field-group {
+    border: 1px solid var(--admin-border);
+}
+.settings-field-group-title {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--admin-text);
+}
+.settings-help-text {
+    color: var(--admin-muted);
 }
