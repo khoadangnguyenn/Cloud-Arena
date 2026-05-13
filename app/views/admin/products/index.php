@@ -47,7 +47,6 @@
                                             <td>
                                                 <?php if(!empty($product->image_url)): ?>
                                                     <?php 
-                                                        // Đảm bảo đường dẫn ghép đúng, loại bỏ dấu / thừa ở đầu (nếu có)
                                                         $imgPath = URLROOT . '/uploads/' . ltrim($product->image_url, '/'); 
                                                     ?>
                                                     <img src="<?php echo $imgPath; ?>" alt="img" class="img-fluid rounded" style="width: 60px; height: 60px; object-fit: cover;">

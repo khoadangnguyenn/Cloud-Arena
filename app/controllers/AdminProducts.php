@@ -64,15 +64,21 @@ class AdminProducts extends Controller {
             if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
                 $fileTmpPath = $_FILES['image']['tmp_name'];
                 $fileName = time() . '_' . $_FILES['image']['name']; 
-                $uploadFileDir = dirname(APPROOT) . '/public/media/'; 
+                $uploadFileDir = dirname(APPROOT) . '/public/uploads/'; 
                 $dest_path = $uploadFileDir . $fileName;
+
+                // Tự động tạo thư mục uploads nếu máy tính chưa có
+                if (!is_dir($uploadFileDir)) {
+                    mkdir($uploadFileDir, 0755, true);
+                }
 
                 $allowedfileExtensions = array('jpg', 'gif', 'png', 'jpeg', 'webp');
                 $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
 
                 if (in_array($fileExtension, $allowedfileExtensions)) {
                     if(move_uploaded_file($fileTmpPath, $dest_path)) {
-                        $data['image_url'] = 'media/' . $fileName; 
+                        // Chỉ lưu tên file vào database
+                        $data['image_url'] = $fileName;
                     } else {
                         $data['image_err'] = 'Có lỗi khi di chuyển file upload tới thư mục lưu trữ.';
                     }
@@ -155,15 +161,21 @@ class AdminProducts extends Controller {
             if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
                 $fileTmpPath = $_FILES['image']['tmp_name'];
                 $fileName = time() . '_' . $_FILES['image']['name']; 
-                $uploadFileDir = dirname(APPROOT) . '/public/media/'; 
+                $uploadFileDir = dirname(APPROOT) . '/public/uploads/'; 
                 $dest_path = $uploadFileDir . $fileName;
+
+                // Tự động tạo thư mục uploads nếu máy tính chưa có
+                if (!is_dir($uploadFileDir)) {
+                    mkdir($uploadFileDir, 0755, true);
+                }
 
                 $allowedfileExtensions = array('jpg', 'gif', 'png', 'jpeg', 'webp');
                 $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
 
                 if (in_array($fileExtension, $allowedfileExtensions)) {
                     if(move_uploaded_file($fileTmpPath, $dest_path)) {
-                        $data['image_url'] = 'media/' . $fileName; 
+                        // Chỉ lưu tên file vào database
+                        $data['image_url'] = $fileName;
                     } else {
                         $data['image_err'] = 'Có lỗi khi di chuyển file upload tới thư mục lưu trữ.';
                     }
