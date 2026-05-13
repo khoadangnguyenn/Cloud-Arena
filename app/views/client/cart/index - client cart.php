@@ -40,9 +40,8 @@
                     <td class="px-8 py-6 whitespace-nowrap">
                       <div class="flex items-center">
                         <div class="flex-shrink-0 h-12 w-12 rounded-xl overflow-hidden border border-gray-700">
-                          <?php if (!empty($item->image_url)): ?>
-                              <?php $imgPath = URLROOT . '/uploads/' . ltrim($item->image_url, '/'); ?>
-                              <img class="h-full w-full object-cover" src="<?php echo $imgPath; ?>" alt="<?php echo $item->name; ?>">
+                          <?php if($item->image_url): ?>
+                              <img class="h-full w-full object-cover" src="<?php echo URLROOT . '/' . $item->image_url; ?>" alt="">
                           <?php else: ?>
                               <div class="h-full w-full bg-gray-800 flex items-center justify-center">
                                   <i class="fa-solid fa-server text-gray-600"></i>
