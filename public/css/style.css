@@ -1,6 +1,266 @@
 /* Custom styles for the client side */
-/* Tailwind handles most utilities, but you can add custom CSS here */
+/* nav / header CSS lives in the inline <style> inside header.php */
+
+html {
+    scroll-behavior: smooth;
+}
+
 body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+}
+
+.landing-scene {
+    position: relative;
+    background: #020817;
+    overflow: hidden;
+}
+
+/* landing scene */
+.landing-scene__image,
+.landing-scene__fade {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.landing-scene__image {
+    opacity: 0.2;
+    background-image: url("dark.svg"); /* hoặc file của bạn */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.landing-scene__fade {
+    background: linear-gradient(
+        180deg,
+        transparent 0%,
+        rgba(2, 8, 23, 0.3) 55%,
+        #020817 100%
+    );
+}
+
+/* ── Hero scene ─────────────────────────────────────── */
+
+.hero-scene,
+#about-us{
+    position: relative;
+    z-index: 1;
+}
+
+/* ── Hero card position variables (chỉnh tại đây) ───── */
+:root {
+    --card-w:         320px;   /* chiều rộng mỗi card          */
+    --card-w-r:      350px;
+    --card-left-top:  6rem;    /* khoảng cách từ trên, card trái */
+    --card-right-top: 17rem;    /* khoảng cách từ trên, card phải */
+    --card-left-x:    -95px;     /* dịch ngang card trái (+ = vào trong) */
+    --card-right-x:   -80px;     /* dịch ngang card phải (+ = vào trong) */
+}
+/* Tablet/desktop vừa: giữ flow bình thường để tránh chồng lấn khi zoom */
+@media (min-width: 1024px) and (max-width: 1399.98px) {
+  .hero-cards-wrapper {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+  .hero-card-left,
+  .hero-card-right {
+    position: relative;
+    left: auto;
+    right: auto;
+    top: auto;
+    width: 100%;
+  }
+}
+/* Chỉ màn rất rộng mới cho card bay 2 bên */
+@media (min-width: 1400px) {
+  .hero-cards-wrapper {
+        display: contents; 
+    }
+    .hero-card-left {
+        position: absolute;
+        left:  var(--card-left-x);
+        top:   var(--card-left-top);
+        width: var(--card-w);
+    }
+    .hero-card-right {
+        position: absolute;
+        right: var(--card-right-x);
+        top:   var(--card-right-top);
+        width: var(--card-w-r);
+    }
+}
+
+/* ── Floating cards ─────────────────────────────────── */
+.hero-floating-card {
+    border: 3px solid rgba(34, 211, 238, 0.35);
+    background: rgba(6, 14, 38, 0.65);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 1rem;
+    padding: 1.25rem;
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.5),
+        0 0 28px rgba(34, 211, 238, 0.09),
+        inset 0 1px 0 rgba(255, 255, 255, 0.07);
+    animation: floatCard 4s ease-in-out infinite;
+}
+
+.hero-floating-card--delayed {
+    animation-delay: 1s;
+    border-color: rgba(139, 92, 246, 0.35);
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.5),
+        0 0 28px rgba(139, 92, 246, 0.09),
+        inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+/* ── Product preview cards ──────────────────────────── */
+
+/* hover glow per color tone */
+.product-card--cyan:hover {
+    border-color: rgba(34, 211, 238, 0.45) !important;
+    box-shadow: 0 0 30px rgba(34, 211, 238, 0.18);
+}
+.product-card--violet:hover {
+    border-color: rgba(139, 92, 246, 0.45) !important;
+    box-shadow: 0 0 30px rgba(139, 92, 246, 0.18);
+}
+.product-card--pink:hover {
+    border-color: rgba(236, 72, 153, 0.45) !important;
+    box-shadow: 0 0 30px rgba(236, 72, 153, 0.16);
+}
+.product-card--emerald:hover {
+    border-color: rgba(16, 185, 129, 0.45) !important;
+    box-shadow: 0 0 30px rgba(16, 185, 129, 0.16);
+}
+
+/* "Chi tiết" button — hidden by default, revealed on card hover */
+.product-detail-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin-top: 2rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.65rem;
+    border: 1px solid rgba(100, 116, 139, 0.4);
+    background: rgba(15, 23, 42, 0.9);
+    color: #e2e8f0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+    transition: border-color 0.22s ease-in-out, box-shadow 0.22s ease-in-out, background-color 0.22s ease-in-out;
+}
+.product-detail-btn:hover {
+    border-color: rgba(34, 211, 238, 0.5);
+    color: #f8fafc;
+}
+
+/* ── Custom select (dark client theme) ─────────────── */
+.admin-custom-select {
+    position: relative;
+}
+.admin-custom-select-native {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    margin: -1px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    clip: rect(0, 0, 0, 0) !important;
+    overflow: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+.site-client-body .admin-custom-select-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.6rem 0.875rem;
+    border-radius: 0.75rem;
+    border: 1px solid rgb(55 65 81);
+    background: #111827;
+    color: #e2e8f0;
+    font-size: 0.875rem;
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+.site-client-body .admin-custom-select-toggle:focus {
+    outline: none;
+    border-color: #22d3ee;
+    box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.12);
+}
+.site-client-body .admin-custom-select-toggle i {
+    font-size: 0.72rem;
+    color: #9ca3af;
+    flex-shrink: 0;
+    transition: transform 0.18s ease;
+}
+.site-client-body .admin-custom-select-toggle[aria-expanded="true"] i {
+    transform: rotate(180deg);
+}
+.admin-custom-select-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.site-client-body .admin-custom-select-menu {
+    display: none;
+    background: #111827;
+    border: 1px solid rgb(55 65 81);
+    border-radius: 0.75rem;
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.55);
+    padding: 0.35rem;
+    max-height: 200px;
+    overflow-y: auto;
+}
+.site-client-body .admin-custom-select-menu.show {
+    display: block;
+}
+.site-client-body .admin-custom-select-option {
+    color: #cbd5e1;
+    background: transparent;
+    border-radius: 0.45rem;
+    font-size: 0.875rem;
+    padding: 0.45rem 0.6rem;
+    transition: background-color 0.14s ease, color 0.14s ease;
+}
+.site-client-body .admin-custom-select-option:hover,
+.site-client-body .admin-custom-select-option:focus {
+    background: rgba(34, 211, 238, 0.1);
+    color: #22d3ee;
+    outline: none;
+}
+.site-client-body .admin-custom-select-option.active {
+    background: rgba(34, 211, 238, 0.15);
+    color: #22d3ee;
+}
+
+/* ── Utilities ──────────────────────────────────────── */
+.line-clamp-2 {
+    display: -webkit-box;
+    line-clamp: 2;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+#about-us {
+    scroll-margin-top: 88px;
+}
+
+/* ── Keyframes ──────────────────────────────────────── */
+@keyframes floatCard {
+    0%, 100% { transform: translateY(0); }
+    50%       { transform: translateY(-5px); }
 }
