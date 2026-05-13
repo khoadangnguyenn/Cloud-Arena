@@ -1,0 +1,62 @@
+1. stick to spec n reqs:
+ - php + mysql + mvc ok, csrf (controller, token form[contact/login/regis/pro5/admin). 
+   + sqli: PDO prepared. 
+   + session: httponly, samesite, secure (https in app/init); session regen id after login success in Users.php. 
+   + Validate PHP: contact/login/regis/pro5 OK; validate JS: contact mostly UI + disable send btn, **no validate complete logic on JS (already fixed).**
+ - Homepage: hero parallax, content block+about in settings; form quick search + resource_keyword in pages/index.php, match main.js
+ - Contact: fields enough + ticket flow; map/settings; honeypot; rate limit 60s, CSRF, get user/email from DB for logged user
+ - login/regis/pro5: flows enough, hash pass, csrf; pro5 modify/pass/ava
+ - admin panel: srtdash + pagination
+   +Dashboard: server status, new mem, revenue
+   +ticket: thread+csrf in partial ticket, priority, status, delete; AJAX detail in main.js w token
+   +Users: ban/role/del; resetpass + verify CSRF (still using fixed pass)
+   +settings: outstanding
+
+2. vulns / risks left:
+ - already: csrf, safe cookie, regen session, security headers + csp in public/.htaccess, db error no explicitly on UI in Database.php, username escape in header, brute-force login mitigation
+ - need to fix:
+   + admin resetpass (ticket) w fixed pass ==> force to change 4 da next login
+   + stored xss on news content/title (news/* - not htmlspecialchars yet) ==> escape every text; html news only after whitelist (htmlpurifier)
+   + upload (ava, branding, news img): fifo + getimagesize, random filename
+   + csp contains unsafe-inline / unsafe-eval (need for tailwind cdn, ckeditor, ...) ==> can accept for dev, production build tailwind + nonce/hash script to tighten
+
+3. SEO: more than spec
+ - already: meta description, canonical, open graph + twitter card in client/header.php;
+   + robots.php + sitemap.php + rewrite in public/.htaccess
+   + canonical_url, meta_keywords, og:image in news.php
+ - not enough if wanna competitive / fully technical:
+   + news url need slug
+   + structured data (json-ld article, organization, breadcrumblist) not in view
+   + no plug Search Console / GA4 in code (layout or env)
+
+4. Tech Stack - pros & cons
+ - php (custom mvc): in app/core, controller, models
+   + pros: lightweight, stick to spec, ez to host shared
+   + cons: must take responsibility 4 auth, csrf, validation all edge cases
+ - mysql + pdo: in models, database.php
+   + pros: standard, prepared statements
+   + cons: manage migration/schema urself
+ - .env + load_env.php: in config.php
+   + pros: no hardcode secret in repo
+   + cons: need deploy procedure
+ - tailwind css (cdn): in client layout
+   + pros: fast ui, responsive
+   + cons: cdn + jit runtime ==> wide CSP, no optimize bundle production
+ - font awesome, gg fonts, themify (client): in header
+   + pros: icon/typo abundant
+   + cons: add 3rd-party request, rely on CDN
+ - AOS (homepage) : in header w cond (isHomePage)
+   + pros: lightweight animation
+   + cons: add dependency + csp
+ - GSAP/Typed.js: in Contact
+   + pros: impressive UX
+   + cons: heavy js, need to control mobile performance
+ - SRTDash + Bootstrap + jQuery: in admin panel
+   + pros: correct templete w spec, many component
+   + cons: old ver, technical debt w time
+ - Fetch API + main.js: in admin autosave, noti, ticket AJAX
+   + pros: modern, no axios nedded
+   + cons: long logic in 1 file, hard to detach modules
+ - Apache mod_headers + CSP: in .htaccess
+   + pros: less XSS/clickjacking/MIME sniff
+   + cons: CSP loosen w unsafe-inline/eval since CKEditor/CDN    

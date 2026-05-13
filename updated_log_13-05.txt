@@ -1,4 +1,9 @@
 1. admin panel updated: public UI management updated (home,contact).
 2. contact updated: ui update, 2 page in 1, effect use gsap & typed.js, category added, discord link.
 3. admin contact updated: category filter added, format detail updated, 
-render priority update directly.  
+render priority update directly. 
+
+(cont.)
+4. modify network topology card for tablet
+5. admin contact updated: extra field 4 per ticket added to detail
+6. homepage updated: wrap price, specs, bandwidth, spacer, launch in one.

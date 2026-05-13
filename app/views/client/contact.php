@@ -216,6 +216,8 @@ foreach ($categories as $ck => $_cl) {
                             <input type="text" name="website" value="" tabindex="-1" autocomplete="off">
                         </div>
 
+                        <div id="support-client-error-banner" class="mb-4 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-red-300 text-sm hidden" role="alert"></div>
+
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-xs font-medium text-cyan-500/90 uppercase tracking-wider mb-1.5"><?php echo $h($mainNameLbl); ?></label>
@@ -223,11 +225,11 @@ foreach ($categories as $ck => $_cl) {
                                 $nameClass = 'w-full px-3 py-2.5 rounded-lg text-sm border focus:outline-none focus:ring-1 focus:ring-cyan-500/50 ';
                                 $nameClass .= $isLoggedIn ? 'bg-gray-800/50 border-white/5 text-gray-400 cursor-not-allowed' : 'bg-black/40 text-white ' . (!empty($errors['name']) ? 'border-red-500' : 'border-white/10');
                                 ?>
-                                <input type="text" name="name" value="<?php echo $h($form['name'] ?? ''); ?>"
+                                <input id="support-field-name" type="text" name="name" value="<?php echo $h($form['name'] ?? ''); ?>"
                                     class="<?php echo $h($nameClass); ?>"
                                     <?php echo $isLoggedIn ? 'readonly' : ''; ?>
                                 >
-                                <?php if (!empty($errors['name'])): ?><p class="mt-1 text-xs text-red-400"><?php echo $h($errors['name']); ?></p><?php endif; ?>
+                                <p id="support-err-name" class="mt-1 text-xs text-red-400"><?php echo $h($errors['name'] ?? ''); ?></p>
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-cyan-500/90 uppercase tracking-wider mb-1.5"><?php echo $h($mainEmailLbl); ?></label>
@@ -235,11 +237,11 @@ foreach ($categories as $ck => $_cl) {
                                 $emailClass = 'w-full px-3 py-2.5 rounded-lg text-sm border focus:outline-none focus:ring-1 focus:ring-cyan-500/50 ';
                                 $emailClass .= $isLoggedIn ? 'bg-gray-800/50 border-white/5 text-gray-400 cursor-not-allowed' : 'bg-black/40 text-white ' . (!empty($errors['email']) ? 'border-red-500' : 'border-white/10');
                                 ?>
-                                <input type="email" name="email" value="<?php echo $h($form['email'] ?? ''); ?>"
+                                <input id="support-field-email" type="email" name="email" value="<?php echo $h($form['email'] ?? ''); ?>"
                                     class="<?php echo $h($emailClass); ?>"
                                     <?php echo $isLoggedIn ? 'readonly' : ''; ?>
                                 >
-                                <?php if (!empty($errors['email'])): ?><p class="mt-1 text-xs text-red-400"><?php echo $h($errors['email']); ?></p><?php endif; ?>
+                                <p id="support-err-email" class="mt-1 text-xs text-red-400"><?php echo $h($errors['email'] ?? ''); ?></p>
                             </div>
                         </div>
 
@@ -249,7 +251,7 @@ foreach ($categories as $ck => $_cl) {
                             <div class="text-xs font-mono text-cyan-300/80 border border-dashed border-cyan-500/25 rounded-lg px-3 py-2 bg-black/30">
                                 active_category = <span id="support-category-label"><?php echo $h($categories[$formCat] ?? $formCat); ?></span>
                             </div>
-                            <?php if (!empty($errors['ticket_category'])): ?><p class="mt-1 text-xs text-red-400"><?php echo $h($errors['ticket_category']); ?></p><?php endif; ?>
+                            <p id="support-err-ticket-cat" class="mt-1 text-xs text-red-400"><?php echo $h($errors['ticket_category'] ?? ''); ?></p>
                         </div>
 
                         <div data-support-panel="purchase_issue" class="<?php echo $formCat !== 'purchase_issue' ? 'hidden' : ''; ?>">
@@ -259,7 +261,7 @@ foreach ($categories as $ck => $_cl) {
                             <?php elseif (empty($pendingOrders)): ?>
                                 <p class="text-sm text-gray-500"><?php echo $h($formPurchaseEmpty); ?></p>
                             <?php else: ?>
-                                <select name="order_id" class="w-full px-3 py-2.5 bg-black/40 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50">
+                                <select name="order_id" id="support_pending_order" class="w-full px-3 py-2.5 bg-black/40 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50" data-admin-custom-select="true">
                                     <option value=""><?php echo $h($formPurchaseOpt); ?></option>
                                     <?php foreach ($pendingOrders as $o): ?>
                                         <?php
@@ -274,7 +276,7 @@ foreach ($categories as $ck => $_cl) {
                                     <?php endforeach; ?>
                                 </select>
                             <?php endif; ?>
-                            <?php if (!empty($errors['order_id'])): ?><p class="mt-1 text-xs text-red-400"><?php echo $h($errors['order_id']); ?></p><?php endif; ?>
+                            <p id="support-err-order" class="mt-1 text-xs text-red-400"><?php echo $h($errors['order_id'] ?? ''); ?></p>
                         </div>
 
                         <div data-support-panel="forgot_password" class="<?php echo $formCat !== 'forgot_password' ? 'hidden' : ''; ?>">
@@ -287,23 +289,23 @@ foreach ($categories as $ck => $_cl) {
                                     <i class="ti-eye" aria-hidden="true"></i>
                                 </button>
                             </div>
-                            <?php if (!empty($errors['previous_password'])): ?><p class="mt-1 text-xs text-red-400"><?php echo $h($errors['previous_password']); ?></p><?php endif; ?>
+                            <p id="support-err-prevpw" class="mt-1 text-xs text-red-400"><?php echo $h($errors['previous_password'] ?? ''); ?></p>
                         </div>
 
                         <div data-support-panel="banned" class="<?php echo $formCat !== 'banned' ? 'hidden' : ''; ?>">
                             <label class="block text-xs font-medium text-cyan-500/90 uppercase tracking-wider mb-1.5"><?php echo $h($formBannedUserLbl); ?></label>
-                            <input type="text" name="banned_username" value="<?php echo $h($form['banned_username'] ?? ''); ?>"
+                            <input id="support-field-banned-username" type="text" name="banned_username" value="<?php echo $h($form['banned_username'] ?? ''); ?>"
                                 class="w-full px-3 py-2.5 bg-black/40 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
                                 placeholder="<?php echo $h($formBannedUserPh); ?>">
-                            <?php if (!empty($errors['banned_username'])): ?><p class="mt-1 text-xs text-red-400"><?php echo $h($errors['banned_username']); ?></p><?php endif; ?>
+                            <p id="support-err-banned" class="mt-1 text-xs text-red-400"><?php echo $h($errors['banned_username'] ?? ''); ?></p>
                         </div>
 
                         <div>
                             <label class="block text-xs font-medium text-cyan-500/90 uppercase tracking-wider mb-1.5"><?php echo $h($mainMsgLbl); ?></label>
-                            <textarea name="message" rows="7" required minlength="10" maxlength="5000"
+                            <textarea id="support-field-message" name="message" rows="7" required minlength="10" maxlength="5000"
                                 class="support-terminal-field w-full px-3 py-3 bg-black/60 border rounded-lg text-sm <?php echo !empty($errors['message']) ? 'border-red-500' : 'border-emerald-500/30'; ?> text-emerald-100/95 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 leading-relaxed"
                                 placeholder="<?php echo $h($mainMsgPh); ?>"><?php echo $h($form['message'] ?? ''); ?></textarea>
-                            <?php if (!empty($errors['message'])): ?><p class="mt-1 text-xs text-red-400"><?php echo $h($errors['message']); ?></p><?php endif; ?>
+                            <p id="support-err-message" class="mt-1 text-xs text-red-400"><?php echo $h($errors['message'] ?? ''); ?></p>
                         </div>
 
                         <div class="flex flex-col sm:flex-row gap-3 pt-2 sm:items-center">

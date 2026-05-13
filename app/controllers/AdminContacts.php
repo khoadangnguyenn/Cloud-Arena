@@ -88,6 +88,28 @@ class AdminContacts extends Controller {
         $priorities = $this->allowedPriorities;
         $csrfToken = $this->getCsrfToken('csrf_admin');
         $ticketCategoryLabels = $this->contactModel->getSupportTicketCategories();
+        $purchaseComplaintOrderDisplay = '';
+        $bannedTicketUsernameDisplay = '';
+        if ($selectedContact) {
+            $complaintOid = Contact::purchaseComplaintOrderIdFromSubject((string) ($selectedContact->subject ?? ''));
+            if ($complaintOid > 0) {
+                $orderModel = $this->model('Order');
+                $orderRow = $orderModel->getOrderTicketSummaryByIdForUser($complaintOid, (int) $selectedContact->user_id);
+                if ($orderRow) {
+                    $purchaseComplaintOrderDisplay = '#' . (int) $orderRow->id
+                        . ' — ' . date('d/m/Y', strtotime((string) $orderRow->created_at))
+                        . ' — ' . number_format((float) $orderRow->total_amount, 0, ',', '.') . '₫';
+                    $itemsLbl = trim((string) ($orderRow->items_label ?? ''));
+                    if ($itemsLbl !== '') {
+                        $purchaseComplaintOrderDisplay .= ' — ' . $itemsLbl;
+                    }
+                } else {
+                    $purchaseComplaintOrderDisplay = 'Đơn #' . $complaintOid
+                        . ' — không tìm thấy đơn khớp khách hàng này trong CSDL.';
+                }
+            }
+            $bannedTicketUsernameDisplay = Contact::bannedTicketUsernameFromSubject((string) ($selectedContact->subject ?? ''));
+        }
         ob_start();
         require APPROOT . '/views/admin/contacts/partials/ticket_detail.php';
         return ob_get_clean();

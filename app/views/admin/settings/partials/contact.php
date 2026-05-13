@@ -6,7 +6,7 @@ $mapUrl = trim($s['site_map_embed_url'] ?? '');
 $showMapPreview = $mapUrl !== '' && filter_var($mapUrl, FILTER_VALIDATE_URL) !== false;
 ?>
 
-<form action="<?php echo URLROOT; ?>/admin/settings/contact" method="POST" novalidate>
+<form action="<?php echo URLROOT; ?>/admin/settings/contact" method="POST" novalidate data-admin-settings-form="true">
     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($data['csrf_admin'] ?? ''); ?>">
     <input type="hidden" name="settings_section" value="contact">
 

@@ -61,10 +61,23 @@ $customerMessageDisplay = $selectedContact
             $slug = $m[1];
             $lab = isset($ticketCategoryLabels[$slug]) ? $ticketCategoryLabels[$slug] : $slug;
             ?>
-            <div class="mt-2 small text-muted">
-                <strong>Loại ticket:</strong> <?php echo htmlspecialchars($lab); ?>
+            <div class="mt-2 small ticket-detail-ticket-type">
+                <span class="ticket-detail-field-label d-block mb-1">Loại ticket</span>
+                <span class="ticket-detail-ticket-type-value"><?php echo htmlspecialchars($lab); ?></span>
             </div>
         <?php } ?>
+        <?php if (!empty($purchaseComplaintOrderDisplay)): ?>
+            <div class="mt-3">
+                <span class="ticket-detail-field-label d-block mb-1 small">Đơn hàng khiếu nại</span>
+                <div class="ticket-purchase-order-display" role="status"><?php echo htmlspecialchars($purchaseComplaintOrderDisplay); ?></div>
+            </div>
+        <?php endif; ?>
+        <?php if (!empty($bannedTicketUsernameDisplay)): ?>
+            <div class="mt-3">
+                <span class="ticket-detail-field-label d-block mb-1 small">Tên người dùng</span>
+                <div class="ticket-purchase-order-display" role="status"><?php echo htmlspecialchars($bannedTicketUsernameDisplay); ?></div>
+            </div>
+        <?php endif; ?>
         <?php
         $pwdHash = isset($selectedContact->previous_password_bcrypt) ? trim((string) $selectedContact->previous_password_bcrypt) : '';
         if ($pwdHash !== '' && Contact::isStoredPasswordHashFormat($pwdHash)):

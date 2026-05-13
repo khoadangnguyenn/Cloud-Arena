@@ -370,12 +370,19 @@ body {
     will-change: transform;
 }
 
+/* Giá / specs / Launch: một khối đẩy xuống đáy khi các card cùng hàng có chiều cao khác nhau */
+.home-product-card__lower {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin-top: auto;
+    flex-shrink: 0;
+    min-height: 0;
+}
+
 @media (min-width: 1024px) {
     .home-product-card__surface {
         min-height: 22rem;
-    }
-    .home-product-card__price {
-        margin-top: auto;
     }
 }
 
@@ -406,7 +413,6 @@ body {
     }
 
     .home-product-card__price {
-        margin-top: 0.65rem;
         font-size: clamp(0.95rem, 4.2vw, 1.25rem);
         line-height: 1.15;
     }
@@ -663,6 +669,7 @@ body {
 /* ── Custom select (dark client theme) ─────────────── */
 .admin-custom-select {
     position: relative;
+    width: 100%;
 }
 .admin-custom-select-native {
     position: absolute !important;
@@ -714,6 +721,8 @@ body {
 }
 .site-client-body .admin-custom-select-menu {
     display: none;
+    flex-direction: column;
+    gap: 0.15rem;
     background: #111827;
     border: 1px solid rgb(55 65 81);
     border-radius: 0.75rem;
@@ -721,11 +730,17 @@ body {
     padding: 0.35rem;
     max-height: 200px;
     overflow-y: auto;
+    overflow-x: hidden;
 }
 .site-client-body .admin-custom-select-menu.show {
-    display: block;
+    display: flex;
 }
 .site-client-body .admin-custom-select-option {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: left;
+    border: 0;
     color: #cbd5e1;
     background: transparent;
     border-radius: 0.45rem;

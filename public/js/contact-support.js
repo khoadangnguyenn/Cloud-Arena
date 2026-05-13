@@ -318,8 +318,169 @@
         syncCaret();
     }
 
+    function isValidSupportEmail(em) {
+        if (!em) {
+            return false;
+        }
+        if (!/^[a-zA-Z0-9@.]+$/.test(em)) {
+            return false;
+        }
+        return /^[^@]+@[^@]+\.[^@]+$/.test(em);
+    }
+
+    function markSupportFieldBorder(input, hasErr) {
+        if (!input || input.readOnly) {
+            return;
+        }
+        if (input.id === 'support-field-message' || (input.classList && input.classList.contains('support-terminal-field'))) {
+            if (hasErr) {
+                input.classList.add('border-red-500');
+                input.classList.remove('border-emerald-500/30');
+            } else {
+                input.classList.remove('border-red-500');
+                input.classList.add('border-emerald-500/30');
+            }
+            return;
+        }
+        if (hasErr) {
+            input.classList.add('border-red-500');
+            input.classList.remove('border-white/10');
+        } else {
+            input.classList.remove('border-red-500');
+            input.classList.add('border-white/10');
+        }
+    }
+
+    function clearSupportTicketClientErrors(formEl) {
+        var f = formEl || document.getElementById('support-ticket-form');
+        ['support-err-name', 'support-err-email', 'support-err-ticket-cat', 'support-err-order', 'support-err-prevpw', 'support-err-banned', 'support-err-message'].forEach(function (id) {
+            var n = document.getElementById(id);
+            if (n) {
+                n.textContent = '';
+            }
+        });
+        var ban = document.getElementById('support-client-error-banner');
+        if (ban) {
+            ban.textContent = '';
+            ban.classList.add('hidden');
+        }
+        if (!f) {
+            return;
+        }
+        markSupportFieldBorder(f.querySelector('#support-field-name'), false);
+        markSupportFieldBorder(f.querySelector('#support-field-email'), false);
+        markSupportFieldBorder(f.querySelector('#support-field-banned-username'), false);
+        markSupportFieldBorder(f.querySelector('#support-field-message'), false);
+        markSupportFieldBorder(document.getElementById('support_previous_password'), false);
+        var ord = f.querySelector('select[name="order_id"]');
+        if (ord) {
+            ord.classList.remove('border-red-500');
+        }
+    }
+
+    function validateSupportTicketForm(formEl, cfgObj) {
+        clearSupportTicketClientErrors(formEl);
+        var hp = formEl.querySelector('input[name="website"]');
+        if (hp && String(hp.value || '').trim() !== '') {
+            return true;
+        }
+
+        var catInputEl = document.getElementById('ticket_category');
+        var cat = catInputEl ? String(catInputEl.value || '').trim() : '';
+        var ok = true;
+        var firstBad = null;
+
+        function lineErr(id, msg, input) {
+            var span = document.getElementById(id);
+            if (span) {
+                span.textContent = msg;
+            }
+            if (input) {
+                markSupportFieldBorder(input, true);
+                if (!firstBad) {
+                    firstBad = input;
+                }
+            }
+            ok = false;
+        }
+
+        if (!cfgObj.isLoggedIn) {
+            var nameI = document.getElementById('support-field-name');
+            var nameV = nameI ? nameI.value.trim() : '';
+            if (nameV === '') {
+                lineErr('support-err-name', 'Vui lòng nhập họ tên.', nameI);
+            } else if (nameV.length > 100) {
+                lineErr('support-err-name', 'Họ tên tối đa 100 ký tự.', nameI);
+            }
+            var emI = document.getElementById('support-field-email');
+            var emV = emI ? emI.value.trim() : '';
+            if (emV === '') {
+                lineErr('support-err-email', 'Vui lòng nhập email.', emI);
+            } else if (emV.length > 100) {
+                lineErr('support-err-email', 'Email tối đa 100 ký tự.', emI);
+            } else if (!isValidSupportEmail(emV)) {
+                lineErr('support-err-email', 'Email không đúng định dạng.', emI);
+            }
+        }
+
+        if (cat === 'purchase_issue' && !cfgObj.isLoggedIn) {
+            lineErr('support-err-ticket-cat', 'Vấn đề đơn hàng yêu cầu đăng nhập.', null);
+        }
+
+        if (cat === 'purchase_issue' && cfgObj.isLoggedIn) {
+            var orderSel = formEl.querySelector('select[name="order_id"]');
+            if (orderSel && (!orderSel.value || String(orderSel.value).trim() === '')) {
+                orderSel.classList.add('border-red-500');
+                lineErr('support-err-order', 'Vui lòng chọn đơn hàng liên quan.', orderSel);
+            }
+        }
+
+        if (cat === 'banned') {
+            var banI = document.getElementById('support-field-banned-username');
+            var banV = banI ? banI.value.trim() : '';
+            if (banV === '') {
+                lineErr('support-err-banned', 'Vui lòng nhập tên đăng nhập (username) cần hỗ trợ.', banI);
+            } else if (banV.length > 50 || !/^[a-zA-Z0-9._-]+$/.test(banV)) {
+                lineErr('support-err-banned', 'Username không hợp lệ (tối đa 50 ký tự, chỉ chữ, số, . _ -).', banI);
+            }
+        }
+
+        if (cat === 'forgot_password') {
+            var prevI = document.getElementById('support_previous_password');
+            var prevV = prevI ? String(prevI.value || '') : '';
+            if (prevV !== '') {
+                if (prevV.length < 6) {
+                    lineErr('support-err-prevpw', 'Mật khẩu trước đó tối thiểu 6 ký tự (nếu nhập).', prevI);
+                } else if (prevV.length > 128) {
+                    lineErr('support-err-prevpw', 'Mật khẩu trước đó tối đa 128 ký tự.', prevI);
+                }
+            }
+        }
+
+        var msgI = document.getElementById('support-field-message');
+        var msgV = msgI ? msgI.value.trim() : '';
+        if (msgV === '') {
+            lineErr('support-err-message', 'Vui lòng nhập nội dung.', msgI);
+        } else if (msgV.length < 10) {
+            lineErr('support-err-message', 'Nội dung tối thiểu 10 ký tự.', msgI);
+        } else if (msgV.length > 5000) {
+            lineErr('support-err-message', 'Nội dung tối đa 5000 ký tự.', msgI);
+        }
+
+        if (!ok && firstBad && typeof firstBad.focus === 'function') {
+            try {
+                firstBad.focus();
+            } catch (ignoreFocus) { /* empty */ }
+        }
+        return ok;
+    }
+
     if (form) {
-        form.addEventListener('submit', function () {
+        form.addEventListener('submit', function (e) {
+            if (!validateSupportTicketForm(form, cfg)) {
+                e.preventDefault();
+                return;
+            }
             var submitBtn = form.querySelector('[type="submit"]');
             if (submitBtn) {
                 submitBtn.classList.add('support-btn-loading');
@@ -331,6 +492,11 @@
         if (resetBtn) {
             resetBtn.addEventListener('click', function () {
                 form.reset();
+                clearSupportTicketClientErrors(form);
+                var orderSel = form.querySelector('select[name="order_id"]');
+                if (orderSel) {
+                    orderSel.dispatchEvent(new Event('change', { bubbles: true }));
+                }
                 resetForgotPasswordVisibility();
                 var def = cfg.defaultCategory || 'bugs_technical';
                 if (catInput) catInput.value = def;

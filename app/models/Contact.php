@@ -24,6 +24,36 @@ class Contact {
     }
 
     /**
+     * Mã đơn trong subject ticket "Vấn đề đơn hàng" (định dạng … Đơn #123).
+     *
+     * @return int 0 nếu không áp dụng
+     */
+    public static function purchaseComplaintOrderIdFromSubject($subject) {
+        $s = (string) $subject;
+        if ($s === '' || !preg_match('/^CA:purchase_issue\|/', $s)) {
+            return 0;
+        }
+        if (preg_match('/Đơn\s*#\s*(\d+)/u', $s, $m)) {
+            return (int) $m[1];
+        }
+        return 0;
+    }
+
+    /**
+     * Username trong subject ticket "Khóa tài khoản" (định dạng … — @username).
+     */
+    public static function bannedTicketUsernameFromSubject($subject) {
+        $s = (string) $subject;
+        if ($s === '' || !preg_match('/^CA:banned\|/', $s)) {
+            return '';
+        }
+        if (preg_match('/ — @([a-zA-Z0-9._-]{1,50})$/u', $s, $m)) {
+            return $m[1];
+        }
+        return '';
+    }
+
+    /**
      * Nội dung hiển thị trong luồng khách: bỏ khối meta cũ (--- SUPPORT META --- ... --- NỘI DUNG ---).
      */
     public static function customerMessageBodyForDisplay($storedMessage) {

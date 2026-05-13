@@ -19,7 +19,7 @@ for ($i = 0; $i < 4; $i++) {
 $reviewKey = trim((string) ($s['home_review_key'] ?? ''));
 ?>
 
-<form action="<?php echo URLROOT; ?>/admin/settings/homepage" method="POST" enctype="multipart/form-data" novalidate>
+<form action="<?php echo URLROOT; ?>/admin/settings/homepage" method="POST" enctype="multipart/form-data" novalidate data-admin-settings-form="true">
     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($data['csrf_admin'] ?? ''); ?>">
     <input type="hidden" name="settings_section" value="homepage">
 

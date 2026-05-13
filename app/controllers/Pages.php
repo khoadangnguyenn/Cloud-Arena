@@ -254,6 +254,12 @@ class Pages extends Controller {
             if ($slug === 'purchase_issue' && $verifiedOrder) {
                 $subjectTail = $categoryLabel . ' — Đơn #' . (int) $verifiedOrder->id;
             }
+            if ($slug === 'banned' && empty($data['errors']['banned_username'])) {
+                $buBanned = trim((string) ($data['form']['banned_username'] ?? ''));
+                if ($buBanned !== '') {
+                    $subjectTail = $categoryLabel . ' — @' . $buBanned;
+                }
+            }
             $subjectLine = $pfx . $slug . '|' . $subjectTail;
             if (strlen($subjectLine) > 255) {
                 $subjectLine = substr($subjectLine, 0, 252) . '...';

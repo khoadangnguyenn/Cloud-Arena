@@ -276,24 +276,26 @@ if (function_exists('mb_strlen') && mb_strlen($reviewComment) > 140) {
                                         </div>
                                         <h3 class="home-product-card__title mt-3 text-base font-bold text-white leading-tight"><?php echo htmlspecialchars((string) $product->name); ?></h3>
                                         <p class="home-product-card__desc mt-1.5 text-xs text-gray-300 leading-relaxed line-clamp-2"><?php echo htmlspecialchars((string) $product->description); ?></p>
-                                        <div class="home-product-card__price mt-3 text-xl font-black text-white">
-                                            <?php echo number_format((float) $product->price, 0, ',', '.'); ?>đ
-                                            <span class="home-product-card__price-suffix text-xs text-gray-300 font-medium">/tháng</span>
+                                        <div class="home-product-card__lower">
+                                            <div class="home-product-card__price text-xl font-black text-white">
+                                                <?php echo number_format((float) $product->price, 0, ',', '.'); ?>đ
+                                                <span class="home-product-card__price-suffix text-xs text-gray-300 font-medium">/tháng</span>
+                                            </div>
+                                            <div class="home-product-card__specs mt-2.5 grid grid-cols-3 gap-2 text-[12px] text-gray-300 font-medium border-t border-gray-700/80 pt-2.5 text-left">
+                                                <span><?php echo (int) $product->cpu_cores; ?> vCPU</span>
+                                                <span><?php echo $ramGb; ?> GB RAM</span>
+                                                <span><?php echo (int) $product->disk_gb; ?> GB SSD</span>
+                                            </div>
+                                            <p class="home-product-card__bandwidth home-product-card__bandwidth--static">
+                                                <span class="home-product-card__bandwidth-label">Băng thông gói</span>
+                                                <span class="home-product-card__bandwidth-value"><?php echo htmlspecialchars($bandwidthLabel, ENT_QUOTES, 'UTF-8'); ?></span>
+                                            </p>
+                                            <div class="home-product-card__foot-spacer" aria-hidden="true"></div>
+                                            <a href="<?php echo htmlspecialchars($detailUrl); ?>" class="product-detail-btn">
+                                                <i class="ti-bolt text-yellow-400" style="margin-right: 0.45em;" aria-hidden="true"></i>
+                                                Launch
+                                            </a>
                                         </div>
-                                        <div class="home-product-card__specs mt-2.5 grid grid-cols-3 gap-2 text-[12px] text-gray-300 font-medium border-t border-gray-700/80 pt-2.5 text-left">
-                                            <span><?php echo (int) $product->cpu_cores; ?> vCPU</span>
-                                            <span><?php echo $ramGb; ?> GB RAM</span>
-                                            <span><?php echo (int) $product->disk_gb; ?> GB SSD</span>
-                                        </div>
-                                        <p class="home-product-card__bandwidth home-product-card__bandwidth--static">
-                                            <span class="home-product-card__bandwidth-label">Băng thông gói</span>
-                                            <span class="home-product-card__bandwidth-value"><?php echo htmlspecialchars($bandwidthLabel, ENT_QUOTES, 'UTF-8'); ?></span>
-                                        </p>
-                                        <div class="home-product-card__foot-spacer" aria-hidden="true"></div>
-                                        <a href="<?php echo htmlspecialchars($detailUrl); ?>" class="product-detail-btn">
-		        <i class="ti-bolt text-yellow-400" style="margin-right: 0.45em;" aria-hidden="true"></i>
-                                            Launch
-                                        </a>
                                         <div class="home-product-card__spin" aria-hidden="true"></div>
                                     </div>
                                 </div>

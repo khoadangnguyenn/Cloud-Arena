@@ -147,4 +147,31 @@ class Order {
         $row = $this->db->single();
         return $row ?: null;
     }
+
+    /**
+     * Tóm tắt đơn (mọi trạng thái) khi đối chiếu ticket — chỉ khi đúng chủ sở hữu.
+     */
+    public function getOrderTicketSummaryByIdForUser($orderId, $userId) {
+        $oid = (int) $orderId;
+        $uid = (int) $userId;
+        if ($oid <= 0 || $uid <= 0) {
+            return null;
+        }
+
+        $this->db->query(
+            "SELECT o.id, o.total_amount, o.created_at, o.status,
+                    COALESCE(GROUP_CONCAT(CONCAT(p.name, ' ×', oi.quantity) ORDER BY oi.id SEPARATOR ', '), '') AS items_label
+             FROM orders o
+             LEFT JOIN order_items oi ON oi.order_id = o.id
+             LEFT JOIN products p ON p.id = oi.product_id
+             WHERE o.id = :order_id AND o.user_id = :user_id
+             GROUP BY o.id, o.total_amount, o.created_at, o.status
+             LIMIT 1"
+        );
+        $this->db->bind(':order_id', $oid);
+        $this->db->bind(':user_id', $uid);
+
+        $row = $this->db->single();
+        return $row ?: null;
+    }
 }
