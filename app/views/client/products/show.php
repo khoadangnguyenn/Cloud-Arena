@@ -11,8 +11,8 @@
     <div class="bg-gray-900/50 backdrop-blur-xl border border-white/5 rounded-[40px] overflow-hidden shadow-2xl">
       <div class="lg:flex">
         <div class="lg:w-1/2 p-8 lg:p-12 flex items-center justify-center bg-gray-800/30">
-            <?php if($data['product']->image): ?>
-                <img src="<?php echo URLROOT; ?>/uploads/<?php echo $data['product']->image; ?>" alt="<?php echo $data['product']->name; ?>" class="w-full h-auto object-cover rounded-[32px] shadow-2xl transition-transform hover:scale-105 duration-700">
+            <?php if(isset($data['product']->image) && $data['product']->image): ?>
+                <img src="<?php echo htmlspecialchars(URLROOT, ENT_QUOTES, 'UTF-8'); ?>/uploads/<?php echo htmlspecialchars($data['product']->image, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($data['product']->name, ENT_QUOTES, 'UTF-8'); ?>" class="w-full h-auto object-cover rounded-[32px] shadow-2xl transition-transform hover:scale-105 duration-700">
             <?php else: ?>
                 <div class="w-full aspect-square bg-gray-800/50 rounded-[32px] flex items-center justify-center border border-white/5">
                     <i class="fa-solid fa-server text-9xl text-gray-700"></i>
@@ -24,7 +24,7 @@
             Dịch vụ lưu trữ
           </div>
           <h2 class="text-4xl lg:text-5xl font-black text-white mb-6 tracking-tight leading-tight">
-            <?php echo $data['product']->name; ?>
+            <?php echo htmlspecialchars($data['product']->name, ENT_QUOTES, 'UTF-8'); ?>
           </h2>
           
           <div class="flex items-baseline gap-2 mb-10">
@@ -33,11 +33,11 @@
           </div>
           
           <div class="prose prose-invert prose-cyan text-gray-400 leading-relaxed mb-10">
-            <?php echo nl2br($data['product']->description); ?>
+            <?php echo nl2br(htmlspecialchars($data['product']->description, ENT_QUOTES, 'UTF-8')); ?>
           </div>
 
           <div class="flex flex-col sm:flex-row items-center gap-4 mb-10">
-            <form action="<?php echo URLROOT; ?>/cart/add/<?php echo $data['product']->id; ?>" method="POST" class="w-full flex gap-4">
+            <form action="<?php echo htmlspecialchars(URLROOT, ENT_QUOTES, 'UTF-8'); ?>/cart/add/<?php echo htmlspecialchars($data['product']->id, ENT_QUOTES, 'UTF-8'); ?>" method="POST" class="w-full flex gap-4">
               <input type="number" name="quantity" min="1" max="100" value="1" class="w-24 bg-gray-800 border border-gray-700 rounded-xl px-4 py-4 text-white text-center font-bold focus:ring-2 focus:ring-cyan-500/50 outline-none">
               <button type="submit" class="flex-1 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold py-4 px-8 rounded-xl transition-all shadow-lg shadow-cyan-500/25 active:scale-[0.98] flex items-center justify-center gap-3">
                 <i class="fa-solid fa-cart-plus"></i> Thuê ngay bây giờ

@@ -3,6 +3,7 @@ class Database {
     private $host = DB_HOST;
     private $user = DB_USER;
     private $pass = DB_PASS;
+    private $port = DB_PORT;
     private $dbname = DB_NAME;
 
     private $dbh;
@@ -10,7 +11,7 @@ class Database {
     private $error;
 
     public function __construct() {
-        $dsn = 'mysql:host=' . $this->host . ';dbname=' . $this->dbname;
+        $dsn = 'mysql:host=' . $this->host . ';port=' . $this->port . ';dbname=' . $this->dbname;
         $options = array(
             PDO::ATTR_PERSISTENT => true,
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
@@ -20,7 +21,15 @@ class Database {
             $this->dbh = new PDO($dsn, $this->user, $this->pass, $options);
         } catch (PDOException $e) {
             $this->error = $e->getMessage();
-            echo $this->error;
+            error_log('[CloudArena DB] Connection failed: ' . $e->getMessage());
+            if (PHP_SAPI !== 'cli' && !headers_sent()) {
+                http_response_code(503);
+                header('Content-Type: text/html; charset=UTF-8');
+            }
+            if (PHP_SAPI !== 'cli') {
+                echo '<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><title>Không khả dụng</title></head><body><p>Hệ thống tạm thời không khả dụng. Vui lòng thử lại sau.</p></body></html>';
+            }
+            exit(1);
         }
     }
 
@@ -63,5 +72,9 @@ class Database {
 
     public function rowCount() {
         return $this->stmt->rowCount();
+    }
+
+    public function lastInsertId() {
+        return $this->dbh->lastInsertId();
     }
 }
