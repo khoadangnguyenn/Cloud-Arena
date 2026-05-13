@@ -85,9 +85,9 @@ class AdminContacts extends Controller {
     }
 
     private function renderTicketDetailHtml($selectedContact, $queryString) {
-        $statuses = $this->allowedStatuses;
         $priorities = $this->allowedPriorities;
-        $csrfToken = $_SESSION['csrf_admin'] ?? '';
+        $csrfToken = $this->getCsrfToken('csrf_admin');
+        $ticketCategoryLabels = $this->contactModel->getSupportTicketCategories();
         ob_start();
         require APPROOT . '/views/admin/contacts/partials/ticket_detail.php';
         return ob_get_clean();
@@ -116,6 +116,7 @@ class AdminContacts extends Controller {
         $filters = [
             'status' => trim($_GET['status'] ?? ''),
             'priority' => trim($_GET['priority'] ?? ''),
+            'ticket_category' => trim($_GET['ticket_category'] ?? ''),
             'keyword' => trim($_GET['keyword'] ?? '')
         ];
 
@@ -124,6 +125,10 @@ class AdminContacts extends Controller {
         }
         if (!in_array($filters['priority'], $this->allowedPriorities, true)) {
             $filters['priority'] = '';
+        }
+        $allowedTicketCats = array_keys($this->contactModel->getSupportTicketCategories());
+        if ($filters['ticket_category'] !== '' && !in_array($filters['ticket_category'], $allowedTicketCats, true)) {
+            $filters['ticket_category'] = '';
         }
 
         $total = $this->contactModel->countContacts($filters);
@@ -143,8 +148,19 @@ class AdminContacts extends Controller {
             if (!$selectedContact) {
                 $missingTicketNotice = 'Không tìm thấy ticket: Ticket đã bị xóa.';
             }
-        } elseif (!empty($contacts)) {
-            $selectedContact = $this->contactModel->getContactByKey($contacts[0]->user_id, $contacts[0]->contact_id);
+        }
+
+        if ($selectedContact && ($selectedContact->status ?? '') === 'unread') {
+            if ($this->contactModel->updateStatus((int) $selectedContact->user_id, (int) $selectedContact->contact_id, 'read')) {
+                $selectedContact->status = 'read';
+                foreach ($contacts as $row) {
+                    if ((int) $row->user_id === (int) $selectedContact->user_id
+                        && (int) $row->contact_id === (int) $selectedContact->contact_id) {
+                        $row->status = 'read';
+                        break;
+                    }
+                }
+            }
         }
 
         $flash = $_SESSION['admin_contact_flash'] ?? null;
@@ -165,6 +181,7 @@ class AdminContacts extends Controller {
             'filters' => $filters,
             'statuses' => $this->allowedStatuses,
             'priorities' => $this->allowedPriorities,
+            'ticket_category_labels' => $this->contactModel->getSupportTicketCategories(),
             'pagination' => [
                 'page' => $page,
                 'per_page' => $perPage,
@@ -197,12 +214,24 @@ class AdminContacts extends Controller {
             $this->respondJson(['success' => false, 'message' => 'Không tìm thấy ticket: Ticket đã bị xóa.'], 404);
         }
 
+        $statusUpdated = false;
+        if (($selectedContact->status ?? '') === 'unread') {
+            if ($this->contactModel->updateStatus($ticketUserId, $ticketContactId, 'read')) {
+                $selectedContact->status = 'read';
+                $statusUpdated = true;
+            }
+        }
+
         $queryString = $this->buildTicketQueryString($ticketUserId, $ticketContactId);
         $html = $this->renderTicketDetailHtml($selectedContact, $queryString);
         $this->respondJson([
             'success' => true,
             'html' => $html,
-            'query_string' => $queryString
+            'query_string' => $queryString,
+            'status_updated' => $statusUpdated,
+            'ticket_user_id' => $ticketUserId,
+            'ticket_contact_id' => $ticketContactId,
+            'new_status' => (string) ($selectedContact->status ?? '')
         ]);
     }
 
@@ -277,10 +306,14 @@ class AdminContacts extends Controller {
 
         $updated = $this->contactModel->updatePriority((int) $userId, (int) $contactId, $priority);
         if ($this->isAjaxRequest()) {
-            $this->respondJson([
+            $payload = [
                 'success' => (bool) $updated,
                 'message' => $updated ? 'Ưu tiên đã cập nhật (tự động).' : 'Không thể cập nhật mức ưu tiên.'
-            ], $updated ? 200 : 500);
+            ];
+            if ($updated) {
+                $payload['priority'] = $priority;
+            }
+            $this->respondJson($payload, $updated ? 200 : 500);
         }
         $this->setFlash($updated ? 'success' : 'danger', $updated ? 'Cập nhật mức ưu tiên thành công.' : 'Không thể cập nhật mức ưu tiên.');
 

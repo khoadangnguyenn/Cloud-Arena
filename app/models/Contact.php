@@ -5,6 +5,73 @@ class Contact {
     private $allowedPriorities = ['low', 'normal', 'high', 'urgent'];
     private $metaKeyPrefix = 'contact_ticket_meta_';
 
+    /** Prefix subject trong DB để lọc theo loại ticket (admin). */
+    public static function supportTicketSubjectPrefix() {
+        return 'CA:';
+    }
+
+    /**
+     * Nhãn loại ticket từ subject dạng CA:slug|...
+     */
+    public static function ticketTypeLabelFromSubject($subject) {
+        $s = (string) $subject;
+        if ($s === '' || !preg_match('/^CA:([^|]+)\|/', $s, $m)) {
+            return '';
+        }
+        $slug = $m[1];
+        $cats = (new self())->getSupportTicketCategories();
+        return isset($cats[$slug]) ? $cats[$slug] : $slug;
+    }
+
+    /**
+     * Nội dung hiển thị trong luồng khách: bỏ khối meta cũ (--- SUPPORT META --- ... --- NỘI DUNG ---).
+     */
+    public static function customerMessageBodyForDisplay($storedMessage) {
+        $raw = (string) $storedMessage;
+        if (strpos($raw, '--- SUPPORT META ---') === false) {
+            return trim($raw);
+        }
+        $marker = '--- NỘI DUNG ---';
+        $pos = strpos($raw, $marker);
+        if ($pos !== false) {
+            return trim(substr($raw, $pos + strlen($marker)));
+        }
+        return trim($raw);
+    }
+
+    /**
+     * Chuỗi hash mật khẩu trong meta (bcrypt hoặc argon2) — kiểm tra an toàn trước khi lưu / hiển thị admin.
+     */
+    public static function isStoredPasswordHashFormat($value) {
+        $t = trim((string) $value);
+        if ($t === '' || strlen($t) > 500) {
+            return false;
+        }
+        if (preg_match('/^\$2[ayb]\$\d{2}\$/', $t)) {
+            return true;
+        }
+        if (strncmp($t, '$argon2id$', 11) === 0 || strncmp($t, '$argon2i$', 10) === 0) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Danh mục ticket (đồng bộ client + admin).
+     *
+     * @return array<string, string>
+     */
+    public function getSupportTicketCategories() {
+        return [
+            'purchase_issue' => 'Vấn đề đơn hàng',
+            'forgot_password' => 'Quên mật khẩu',
+            'bugs_technical' => 'Lỗi / Vấn đề kỹ thuật',
+            'banned' => 'Khóa tài khoản / Blacklist',
+            'billing_payment' => 'Thanh toán & Hóa đơn',
+            'others' => 'Khác',
+        ];
+    }
+
     public function __construct() {
         $this->db = new Database;
     }
@@ -78,7 +145,8 @@ class Contact {
         $defaultMeta = [
             'priority' => 'normal',
             'admin_reply' => null,
-            'replied_at' => null
+            'replied_at' => null,
+            'previous_password_bcrypt' => null
         ];
 
         if (empty($metaValue)) {
@@ -94,10 +162,19 @@ class Contact {
             ? $decoded['priority']
             : 'normal';
 
+        $prevBcrypt = null;
+        if (!empty($decoded['previous_password_bcrypt']) && is_string($decoded['previous_password_bcrypt'])) {
+            $h = trim($decoded['previous_password_bcrypt']);
+            if (self::isStoredPasswordHashFormat($h)) {
+                $prevBcrypt = $h;
+            }
+        }
+
         return [
             'priority' => $priority,
             'admin_reply' => isset($decoded['admin_reply']) ? $decoded['admin_reply'] : null,
-            'replied_at' => isset($decoded['replied_at']) ? $decoded['replied_at'] : null
+            'replied_at' => isset($decoded['replied_at']) ? $decoded['replied_at'] : null,
+            'previous_password_bcrypt' => $prevBcrypt
         ];
     }
 
@@ -110,18 +187,46 @@ class Contact {
         $contact->priority = $meta['priority'];
         $contact->admin_reply = $meta['admin_reply'];
         $contact->replied_at = $meta['replied_at'];
+        $contact->previous_password_bcrypt = $meta['previous_password_bcrypt'];
         unset($contact->meta_value);
 
         return $contact;
     }
 
-    private function upsertMeta($userId, $contactId, $priority = 'normal', $adminReply = null, $repliedAt = null) {
+    private function fetchMetaArray($userId, $contactId) {
+        $this->db->query(
+            'SELECT value FROM settings WHERE key_name = :key_name LIMIT 1'
+        );
+        $this->db->bind(':key_name', $this->getMetaKey($userId, $contactId));
+        $row = $this->db->single();
+        $raw = ($row && isset($row->value)) ? (string) $row->value : '';
+        return $this->normalizeMeta($raw !== '' ? $raw : null);
+    }
+
+    /**
+     * @param array<string, mixed> $metaOverrides Chỉ truyền key cần ghi đè, ví dụ previous_password_bcrypt khi tạo ticket.
+     */
+    private function upsertMeta($userId, $contactId, $priority = 'normal', $adminReply = null, $repliedAt = null, array $metaOverrides = []) {
+        $cur = $this->fetchMetaArray($userId, $contactId);
         $safePriority = in_array($priority, $this->allowedPriorities, true) ? $priority : 'normal';
+
+        $prevBcrypt = $cur['previous_password_bcrypt'] ?? null;
+        if (array_key_exists('previous_password_bcrypt', $metaOverrides)) {
+            $v = $metaOverrides['previous_password_bcrypt'];
+            if ($v === null || $v === '') {
+                $prevBcrypt = null;
+            } elseif (is_string($v)) {
+                $t = trim($v);
+                $prevBcrypt = self::isStoredPasswordHashFormat($t) ? $t : null;
+            }
+        }
+
         $metaKey = $this->getMetaKey($userId, $contactId);
         $metaValue = json_encode([
             'priority' => $safePriority,
             'admin_reply' => $adminReply !== null ? trim((string) $adminReply) : null,
-            'replied_at' => $repliedAt
+            'replied_at' => $repliedAt,
+            'previous_password_bcrypt' => $prevBcrypt
         ]);
 
         $this->db->query(
@@ -154,6 +259,15 @@ class Contact {
             $params[':keyword'] = '%' . trim($filters['keyword']) . '%';
         }
 
+        $ticketCat = isset($filters['ticket_category']) ? trim((string) $filters['ticket_category']) : '';
+        if ($ticketCat !== '') {
+            $allowed = array_keys($this->getSupportTicketCategories());
+            if (in_array($ticketCat, $allowed, true)) {
+                $conditions[] = 'c.subject LIKE :ticket_cat_like';
+                $params[':ticket_cat_like'] = self::supportTicketSubjectPrefix() . $ticketCat . '|%';
+            }
+        }
+
         if (empty($conditions)) {
             return '';
         }
@@ -182,7 +296,11 @@ class Contact {
             return false;
         }
 
-        $this->upsertMeta($userId, $contactId, 'normal', null, null);
+        $metaOverrides = [];
+        if (!empty($data['previous_password_bcrypt']) && is_string($data['previous_password_bcrypt'])) {
+            $metaOverrides['previous_password_bcrypt'] = trim($data['previous_password_bcrypt']);
+        }
+        $this->upsertMeta($userId, $contactId, 'normal', null, null, $metaOverrides);
         $createdAt = '';
         $createdRow = $this->getContactByKey($userId, $contactId);
         if ($createdRow && !empty($createdRow->created_at)) {

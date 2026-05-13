@@ -1,14 +1,24 @@
 <?php require APPROOT . '/views/layouts/admin/header.php'; ?>
 
 <?php
-$filters = $data['filters'] ?? ['status' => '', 'priority' => '', 'keyword' => ''];
+$filters = $data['filters'] ?? ['status' => '', 'priority' => '', 'ticket_category' => '', 'keyword' => ''];
 $pagination = $data['pagination'] ?? ['page' => 1, 'last_page' => 1, 'total' => 0];
 $selectedContact = $data['selected_contact'] ?? null;
 $queryString = $data['query_string'] ?? '';
 $statuses = $data['statuses'] ?? [];
 $priorities = $data['priorities'] ?? [];
+$ticketCatLabels = $data['ticket_category_labels'] ?? [];
 $baseParams = $_GET;
 unset($baseParams['user_id'], $baseParams['contact_id'], $baseParams['page']);
+
+$ticketTypeFromSubject = static function ($subject) use ($ticketCatLabels) {
+    $s = (string) $subject;
+    if ($s !== '' && preg_match('/^CA:([^|]+)\|/', $s, $m)) {
+        $slug = $m[1];
+        return isset($ticketCatLabels[$slug]) ? $ticketCatLabels[$slug] : $slug;
+    }
+    return '—';
+};
 
 $statusClasses = [
     'unread' => 'pill-status-unread',
@@ -58,7 +68,7 @@ $priorityLabels = [
 
                 <form method="GET" action="<?php echo URLROOT; ?>/admincontacts">
                     <div class="row g-2 align-items-end ticket-filter-row">
-                        <div class="col-lg-3 col-md-6">
+                        <div class="col-xl-2 col-lg-4 col-md-6">
                             <label for="status" class="form-label">Trạng thái</label>
                             <select name="status" id="status" class="form-select" data-admin-custom-select="true">
                                 <option value="">Tất cả</option>
@@ -70,7 +80,7 @@ $priorityLabels = [
                             </select>
                         </div>
 
-                        <div class="col-lg-3 col-md-6">
+                        <div class="col-xl-2 col-lg-4 col-md-6">
                             <label for="priority" class="form-label">Độ ưu tiên</label>
                             <select name="priority" id="priority" class="form-select" data-admin-custom-select="true">
                                 <option value="">Tất cả</option>
@@ -82,7 +92,19 @@ $priorityLabels = [
                             </select>
                         </div>
 
-                        <div class="col-lg-4 col-md-8">
+                        <div class="col-xl-2 col-lg-4 col-md-6">
+                            <label for="ticket_category" class="form-label">Loại ticket</label>
+                            <select name="ticket_category" id="ticket_category" class="form-select" data-admin-custom-select="true">
+                                <option value="">Tất cả</option>
+                                <?php foreach ($ticketCatLabels as $slug => $lab): ?>
+                                    <option value="<?php echo htmlspecialchars($slug); ?>" <?php echo ($filters['ticket_category'] ?? '') === $slug ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($lab); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <div class="col-xl-4 col-lg-8 col-md-12">
                             <label for="keyword" class="form-label">Từ khóa</label>
                             <input
                                 type="text"
@@ -90,11 +112,11 @@ $priorityLabels = [
                                 name="keyword"
                                 class="form-control"
                                 value="<?php echo htmlspecialchars($filters['keyword']); ?>"
-                                placeholder="Tên, email, chủ đề..."
+                                placeholder="Tên, email, nội dung..."
                             >
                         </div>
 
-                        <div class="col-lg-2 col-md-4 d-flex align-items-end gap-2">
+                        <div class="col-xl-2 col-lg-4 col-md-6 d-flex align-items-end gap-2">
                             <button type="submit" class="btn btn-primary w-100">Lọc</button>
                             <a href="<?php echo URLROOT; ?>/admincontacts" class="btn btn-outline-light w-100">Đặt lại</a>
                         </div>
@@ -107,7 +129,7 @@ $priorityLabels = [
 
 <div class="row g-3">
     <div class="col-lg-7">
-        <section class="card panel-card">
+        <section class="card panel-card ticket-list-panel">
             <div class="card-body">
                 <div class="panel-header">
                     <h2 class="panel-title">Danh sách ticket</h2>
@@ -119,7 +141,7 @@ $priorityLabels = [
                         <thead>
                             <tr>
                                 <th>Người gửi</th>
-                                <th>Chủ đề</th>
+                                <th>Loại ticket</th>
                                 <th>Trạng thái</th>
                                 <th>Ưu tiên</th>
                                 <th>Thời gian</th>
@@ -128,7 +150,7 @@ $priorityLabels = [
                         <tbody>
                             <?php if (empty($data['contacts'])): ?>
                                 <tr>
-                                    <td colspan="5" class="text-center text-muted">Chưa có ticket phù hợp.</td>
+                                    <td colspan="5" class="text-center ticket-list-empty">Chưa có ticket phù hợp.</td>
                                 </tr>
                             <?php else: ?>
                                 <?php foreach ($data['contacts'] as $ticket): ?>
@@ -139,7 +161,11 @@ $priorityLabels = [
                                     $rowUrl = URLROOT . '/admincontacts?' . http_build_query($rowParams);
                                     $isSelected = $selectedContact && (int) $selectedContact->user_id === (int) $ticket->user_id && (int) $selectedContact->contact_id === (int) $ticket->contact_id;
                                     ?>
-                                    <tr class="ticket-row <?php echo $isSelected ? 'ticket-row-active' : ''; ?> <?php echo $ticket->status === 'replied' ? 'ticket-row-replied' : ''; ?>">
+                                    <tr
+                                        class="ticket-row <?php echo $isSelected ? 'ticket-row-active' : ''; ?> <?php echo $ticket->status === 'replied' ? 'ticket-row-replied' : ''; ?>"
+                                        data-ticket-user-id="<?php echo (int) $ticket->user_id; ?>"
+                                        data-ticket-contact-id="<?php echo (int) $ticket->contact_id; ?>"
+                                    >
                                         <td>
                                             <a
                                                 href="<?php echo $rowUrl; ?>"
@@ -155,12 +181,12 @@ $priorityLabels = [
                                         <td>
                                             <a
                                                 href="<?php echo $rowUrl; ?>"
-                                                class="text-decoration-none ticket-row-link"
+                                                class="text-decoration-none ticket-row-link ticket-type-cell"
                                                 data-ticket-select="true"
                                                 data-ticket-user-id="<?php echo (int) $ticket->user_id; ?>"
                                                 data-ticket-contact-id="<?php echo (int) $ticket->contact_id; ?>"
                                             >
-                                                <?php echo htmlspecialchars($ticket->subject ?: '(Không có chủ đề)'); ?>
+                                                <?php echo htmlspecialchars($ticketTypeFromSubject($ticket->subject ?? '')); ?>
                                             </a>
                                         </td>
                                         <td>
@@ -206,7 +232,10 @@ $priorityLabels = [
     <div class="col-lg-5">
         <section class="card panel-card ticket-detail-card">
             <div class="card-body" id="ticketDetailContainer">
-                <?php require APPROOT . '/views/admin/contacts/partials/ticket_detail.php'; ?>
+                <?php
+                $ticketCategoryLabels = $data['ticket_category_labels'] ?? [];
+                require APPROOT . '/views/admin/contacts/partials/ticket_detail.php';
+                ?>
             </div>
         </section>
     </div>

@@ -235,6 +235,8 @@ function initCloudArenaUi() {
             menu.style.zIndex = '9999';
             menu.classList.remove('menu-dropup');
 
+            void menu.offsetHeight;
+
             var menuRect = menu.getBoundingClientRect();
             var left = toggleRect.left;
             if (left + targetWidth > window.innerWidth - viewportPadding) {
@@ -351,6 +353,10 @@ function initCloudArenaUi() {
                 menu.appendChild(optionBtn);
             });
 
+            menu.addEventListener('wheel', function(ev) {
+                ev.stopPropagation();
+            }, { passive: true });
+
             toggle.addEventListener('click', function(event) {
                 event.preventDefault();
                 event.stopPropagation();
@@ -364,7 +370,11 @@ function initCloudArenaUi() {
                     document.body.appendChild(menu);
                     menu.classList.add('show');
                     menu.classList.add('menu-floating');
-                    positionCustomSelectMenu(toggle, menu);
+                    window.requestAnimationFrame(function() {
+                        window.requestAnimationFrame(function() {
+                            positionCustomSelectMenu(toggle, menu);
+                        });
+                    });
                     toggle.setAttribute('aria-expanded', 'true');
                 } else {
                     toggle.setAttribute('aria-expanded', 'false');
@@ -384,7 +394,7 @@ function initCloudArenaUi() {
         if (document.body.getAttribute('data-admin-custom-select-global-bound') !== '1') {
             document.body.setAttribute('data-admin-custom-select-global-bound', '1');
 
-            document.addEventListener('click', function(event) {
+            document.addEventListener('mousedown', function(event) {
                 if (!event.target.closest('.admin-custom-select') && !event.target.closest('.admin-custom-select-menu')) {
                     closeCustomSelectMenus();
                 }
@@ -400,11 +410,16 @@ function initCloudArenaUi() {
             window.addEventListener('resize', function() {
                 closeCustomSelectMenus();
             });
-            document.addEventListener('scroll', function() {
+            document.addEventListener('scroll', function(event) {
                 var openMenu = document.querySelector('.admin-custom-select-menu.show');
-                if (openMenu) {
-                    closeCustomSelectMenus();
+                if (!openMenu) {
+                    return;
                 }
+                var t = event.target;
+                if (t && (t === openMenu || openMenu.contains(t))) {
+                    return;
+                }
+                closeCustomSelectMenus();
             }, true);
         }
     };
@@ -761,29 +776,82 @@ function initCloudArenaUi() {
                     var oldValue = input.getAttribute('data-prev-value') || '';
                     input.disabled = true;
 
-                    window.fetch(form.action, {
+                    var actionUrl = form.action;
+                    try {
+                        actionUrl = new URL(form.getAttribute('action') || form.action, window.location.href).href;
+                    } catch (ignoreUrl) {}
+
+                    window.fetch(actionUrl, {
                         method: 'POST',
                         body: formData,
+                        credentials: 'same-origin',
                         headers: {
                             'X-Requested-With': 'XMLHttpRequest',
                             'Accept': 'application/json'
                         }
                     }).then(function(response) {
-                        return response.json().then(function(payload) {
+                        return response.text().then(function(text) {
+                            var payload = null;
+                            if (text) {
+                                try {
+                                    payload = JSON.parse(text);
+                                } catch (parseErr) {
+                                    payload = null;
+                                }
+                            }
                             return {
                                 ok: response.ok,
-                                payload: payload
+                                status: response.status,
+                                payload: payload,
+                                text: text
                             };
                         });
                     }).then(function(result) {
                         if (!result.ok || !result.payload || !result.payload.success) {
-                            throw new Error((result.payload && result.payload.message) ? result.payload.message : 'Auto-save failed');
+                            var msg = (result.payload && result.payload.message) ? result.payload.message : '';
+                            if (!msg) {
+                                if (result.status === 403) {
+                                    msg = 'Yêu cầu không hợp lệ.';
+                                } else {
+                                    msg = 'Lỗi ' + result.status + (result.text ? ': ' + String(result.text).slice(0, 160) : '');
+                                }
+                            }
+                            throw new Error(msg);
                         }
                         input.setAttribute('data-prev-value', input.value);
                         showAdminToast(form.getAttribute('data-toast-success') || result.payload.message || 'Đã cập nhật tự động.', 'success');
+
+                        if (form.getAttribute('data-ticket-priority-list-sync') === '1' && result.payload && result.payload.priority) {
+                            var uid = form.getAttribute('data-ticket-user-id');
+                            var cid = form.getAttribute('data-ticket-contact-id');
+                            var pri = String(result.payload.priority || '');
+                            if (uid && cid && pri) {
+                                var rowMatch = document.querySelector(
+                                    '.ticket-row[data-ticket-user-id="' + uid + '"][data-ticket-contact-id="' + cid + '"]'
+                                );
+                                if (rowMatch) {
+                                    var priPill = rowMatch.querySelector('td:nth-child(4) .pill-badge');
+                                    if (priPill) {
+                                        var priLabels = { low: 'Thấp', normal: 'Bình thường', high: 'Cao', urgent: 'Khẩn cấp' };
+                                        var priClasses = {
+                                            low: 'pill-badge pill-priority-low',
+                                            normal: 'pill-badge pill-priority-normal',
+                                            high: 'pill-badge pill-priority-high',
+                                            urgent: 'pill-badge pill-priority-urgent'
+                                        };
+                                        priPill.textContent = priLabels[pri] || pri;
+                                        priPill.className = priClasses[pri] || 'pill-badge pill-priority-normal';
+                                    }
+                                }
+                            }
+                        }
                     }).catch(function(error) {
                         input.value = oldValue || input.value;
-                        showAdminToast(error.message || 'Không thể tự động cập nhật.', 'error');
+                        var em = (error && error.message) ? String(error.message) : '';
+                        if (em === 'Failed to fetch' || (error && error.name === 'TypeError')) {
+                            em = 'Không thể kết nối tới máy chủ. Kiểm tra URLROOT/.env (đường dẫn public) và thử lại.';
+                        }
+                        showAdminToast(em || 'Không thể tự động cập nhật.', 'error');
                     }).finally(function() {
                         input.disabled = false;
                     });
@@ -1213,13 +1281,16 @@ function initCloudArenaUi() {
             };
 
             var markSeen = function() {
+                var tok = encodeURIComponent((window.adminCsrfToken || '').trim());
                 return window.fetch((window.URLROOT || '') + '/admin/markNotificationsSeen?ajax=1', {
                     method: 'POST',
+                    credentials: 'same-origin',
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
                         'Accept': 'application/json',
-                        'X-CSRF-Token': window.adminCsrfToken || ''
-                    }
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: 'csrf_token=' + tok
                 }).then(function() {
                     setBadge(0);
                 }).catch(function() {
@@ -1273,6 +1344,33 @@ function initCloudArenaUi() {
             }, 45000);
         };
 
+        var closeFloatingAdminCustomSelectMenus = function() {
+            document.querySelectorAll('.admin-custom-select-menu.show').forEach(function(openMenu) {
+                var ownerWrap = openMenu._adminSelectOwner;
+                if (ownerWrap) {
+                    var ownerToggle = ownerWrap.querySelector('.admin-custom-select-toggle');
+                    if (ownerToggle) {
+                        ownerToggle.setAttribute('aria-expanded', 'false');
+                    }
+                }
+                openMenu.classList.remove('show');
+                openMenu.classList.remove('menu-floating');
+                openMenu.classList.remove('menu-dropup');
+                openMenu.style.position = '';
+                openMenu.style.left = '';
+                openMenu.style.top = '';
+                openMenu.style.right = '';
+                openMenu.style.width = '';
+                openMenu.style.minWidth = '';
+                openMenu.style.maxWidth = '';
+                openMenu.style.margin = '';
+                openMenu.style.zIndex = '';
+                if (ownerWrap && openMenu.parentNode === document.body) {
+                    ownerWrap.appendChild(openMenu);
+                }
+            });
+        };
+
         var initTicketDetailSelection = function() {
             var detailContainer = document.getElementById('ticketDetailContainer');
             if (!detailContainer || document.body.getAttribute('data-ticket-delegate-bound') === '1') {
@@ -1281,12 +1379,58 @@ function initCloudArenaUi() {
             document.body.setAttribute('data-ticket-delegate-bound', '1');
             var activeTicketController = null;
 
-            var setActiveTicketRow = function(activeLink) {
+            var syncAdminCsrfFromDetail = function() {
+                var inp = detailContainer.querySelector('input[name="csrf_token"]');
+                if (inp && inp.value) {
+                    window.adminCsrfToken = inp.value;
+                }
+            };
+            syncAdminCsrfFromDetail();
+
+            document.addEventListener('submit', function(ev) {
+                var f = ev.target;
+                if (!f || f.tagName !== 'FORM' || String(f.method || '').toLowerCase() !== 'post') {
+                    return;
+                }
+                if (!detailContainer.contains(f)) {
+                    return;
+                }
+                var refTok = detailContainer.querySelector('input[name="csrf_token"]');
+                if (!refTok || !refTok.value) {
+                    return;
+                }
+                var fh = f.querySelector('input[name="csrf_token"]');
+                if (fh) {
+                    fh.value = refTok.value;
+                }
+            }, true);
+
+            document.addEventListener('submit', function(ev) {
+                var replyForm = ev.target.closest('form[data-ticket-reply-form="true"]');
+                if (!replyForm || !detailContainer.contains(replyForm)) {
+                    return;
+                }
+                var ta = replyForm.querySelector('textarea[name="reply_message"]');
+                if (ta && String(ta.value || '').trim() === '') {
+                    ev.preventDefault();
+                    showAdminToast('Vui lòng nhập nội dung phản hồi.', 'error');
+                }
+            });
+
+            var setActiveTicketRow = function(activeLink, optUserId, optContactId) {
                 var ticketRows = document.querySelectorAll('.ticket-row');
                 ticketRows.forEach(function(row) {
                     row.classList.remove('ticket-row-active');
                 });
-                var selectedRow = activeLink ? activeLink.closest('.ticket-row') : null;
+                var selectedRow = null;
+                if (activeLink) {
+                    selectedRow = activeLink.closest('.ticket-row');
+                }
+                if (!selectedRow && optUserId && optContactId) {
+                    selectedRow = document.querySelector(
+                        '.ticket-row[data-ticket-user-id="' + optUserId + '"][data-ticket-contact-id="' + optContactId + '"]'
+                    );
+                }
                 if (selectedRow) {
                     selectedRow.classList.add('ticket-row-active');
                 }
@@ -1302,23 +1446,69 @@ function initCloudArenaUi() {
                 return params.toString();
             };
 
-            document.addEventListener('click', function(event) {
-                var link = event.target.closest('[data-ticket-select="true"]');
-                if (!link) {
-                    return;
+            var parseTicketDetailResponse = function(rawText) {
+                var payload = null;
+                var text = String(rawText || '').trim();
+                if (text !== '') {
+                    try {
+                        payload = JSON.parse(text);
+                    } catch (parseError) {
+                        var firstBrace = text.indexOf('{');
+                        var lastBrace = text.lastIndexOf('}');
+                        if (firstBrace !== -1 && lastBrace > firstBrace) {
+                            try {
+                                payload = JSON.parse(text.substring(firstBrace, lastBrace + 1));
+                            } catch (secondParseError) {
+                                payload = null;
+                            }
+                        }
+                    }
                 }
-                if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
-                    return;
-                }
-                event.preventDefault();
+                return payload;
+            };
 
-                var userId = link.getAttribute('data-ticket-user-id');
-                var contactId = link.getAttribute('data-ticket-contact-id');
-                if (!userId || !contactId || typeof window.fetch !== 'function') {
-                    window.location.href = link.href;
-                    return;
+            var applyTicketDetailPayload = function(payload, activeLink) {
+                closeFloatingAdminCustomSelectMenus();
+                detailContainer.innerHTML = payload.html;
+                syncAdminCsrfFromDetail();
+                setActiveTicketRow(
+                    activeLink,
+                    String(payload.ticket_user_id || ''),
+                    String(payload.ticket_contact_id || '')
+                );
+                if (payload.status_updated && payload.new_status) {
+                    var uid = String(payload.ticket_user_id || '');
+                    var cid = String(payload.ticket_contact_id || '');
+                    var rowMatch = document.querySelector(
+                        '.ticket-row[data-ticket-user-id="' + uid + '"][data-ticket-contact-id="' + cid + '"]'
+                    );
+                    if (rowMatch) {
+                        var statusPill = rowMatch.querySelector('td:nth-child(3) .pill-badge');
+                        if (statusPill) {
+                            var st = String(payload.new_status || '');
+                            var statusLabels = { unread: 'Chưa đọc', read: 'Đã đọc', replied: 'Đã phản hồi' };
+                            var statusClasses = {
+                                unread: 'pill-badge pill-status-unread',
+                                read: 'pill-badge pill-status-read',
+                                replied: 'pill-badge pill-status-replied'
+                            };
+                            statusPill.textContent = statusLabels[st] || st;
+                            statusPill.className = statusClasses[st] || 'pill-badge pill-status-read';
+                        }
+                    }
                 }
+                initAdminCustomSelects(detailContainer);
+                initAdminAutoSaveForms(detailContainer);
+                if (window.history && window.history.replaceState) {
+                    var baseAdminContactsUrl = (window.URLROOT || '') + '/admincontacts';
+                    var nextUrl = typeof payload.query_string === 'string' && payload.query_string !== ''
+                        ? (baseAdminContactsUrl + '?' + payload.query_string)
+                        : baseAdminContactsUrl;
+                    window.history.replaceState(null, '', nextUrl);
+                }
+            };
 
+            var loadTicketDetail = function(userId, contactId, activeLink, fallbackHref) {
                 if (activeTicketController) {
                     activeTicketController.abort();
                 }
@@ -1355,26 +1545,10 @@ function initCloudArenaUi() {
                         };
                     });
                 }).then(function(result) {
-                    var payload = null;
-                    var rawText = String(result.text || '').trim();
-                    if (rawText !== '') {
-                        try {
-                            payload = JSON.parse(rawText);
-                        } catch (parseError) {
-                            var firstBrace = rawText.indexOf('{');
-                            var lastBrace = rawText.lastIndexOf('}');
-                            if (firstBrace !== -1 && lastBrace > firstBrace) {
-                                try {
-                                    payload = JSON.parse(rawText.substring(firstBrace, lastBrace + 1));
-                                } catch (secondParseError) {
-                                    payload = null;
-                                }
-                            }
-                        }
-                    }
+                    var payload = parseTicketDetailResponse(result.text);
 
-                    if (!payload && result.redirected) {
-                        window.location.href = link.href;
+                    if (!payload && result.redirected && fallbackHref) {
+                        window.location.href = fallbackHref;
                         return;
                     }
 
@@ -1382,28 +1556,47 @@ function initCloudArenaUi() {
                         throw new Error((payload && payload.message) ? payload.message : 'Không thể tải chi tiết ticket.');
                     }
 
-                    detailContainer.innerHTML = payload.html;
-                    setActiveTicketRow(link);
-                    initAdminAutoSaveForms(detailContainer);
-                    initAdminCustomSelects(detailContainer);
-                    if (window.history && window.history.replaceState) {
-                        var nextUrl = link.href;
-                        if (typeof payload.query_string === 'string') {
-                            var baseAdminContactsUrl = (window.URLROOT || '') + '/admincontacts';
-                            nextUrl = payload.query_string ? (baseAdminContactsUrl + '?' + payload.query_string) : baseAdminContactsUrl;
-                        }
-                        window.history.replaceState(null, '', nextUrl);
-                    }
+                    applyTicketDetailPayload(payload, activeLink);
                 }).catch(function(error) {
                     if (error && error.name === 'AbortError') {
                         return;
                     }
-                    showAdminToast('Không thể tải nhanh ticket. Vui lòng thử lại.', 'error');
+                    
                 }).finally(function() {
                     detailContainer.classList.remove('ticket-loading');
                     detailContainer.removeAttribute('aria-busy');
                 });
+            };
+
+            document.addEventListener('click', function(event) {
+                var link = event.target.closest('[data-ticket-select="true"]');
+                if (!link) {
+                    return;
+                }
+                if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+                    return;
+                }
+                event.preventDefault();
+                closeFloatingAdminCustomSelectMenus();
+
+                var userId = link.getAttribute('data-ticket-user-id');
+                var contactId = link.getAttribute('data-ticket-contact-id');
+                if (!userId || !contactId || typeof window.fetch !== 'function') {
+                    window.location.href = link.href;
+                    return;
+                }
+
+                loadTicketDetail(userId, contactId, link, link.href);
             });
+
+            var pageParams = new URLSearchParams(window.location.search || '');
+            var bootUid = (pageParams.get('user_id') || '').trim();
+            var bootCid = (pageParams.get('contact_id') || '').trim();
+            if (bootUid && bootCid && /^\d+$/.test(bootUid) && /^\d+$/.test(bootCid)) {
+                window.setTimeout(function() {
+                    loadTicketDetail(bootUid, bootCid, null, null);
+                }, 0);
+            }
         };
 
         if (filterSelect) {
@@ -1415,7 +1608,6 @@ function initCloudArenaUi() {
             renderRevenueChart(5);
         }
 
-        initAdminAutoSaveForms();
         initAdminCustomSelects();
         initAdminGlobalSearch();
         initBrandingUploadZone();
@@ -1426,6 +1618,7 @@ function initCloudArenaUi() {
         initAdminLoginNotificationToast();
         initAdminProfileDropdown();
         initTicketDetailSelection();
+        initAdminAutoSaveForms();
         initResetPasswordModal();
     }
 

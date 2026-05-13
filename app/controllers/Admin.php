@@ -615,6 +615,21 @@ class Admin extends Controller {
                 $rk = trim((string) ($_POST['home_review_key'] ?? ''));
                 $formData['home_review_key'] = $rk;
 
+                $formData['site_about_snippet'] = trim($_POST['site_about_snippet'] ?? '');
+                $formData['site_hotline'] = trim($_POST['site_hotline'] ?? '');
+                $formData['site_contact_email'] = trim($_POST['site_contact_email'] ?? '');
+                $formData['site_address'] = trim($_POST['site_address'] ?? '');
+
+                if ($formData['site_hotline'] === '') {
+                    $errors['site_hotline'] = 'Hotline không được để trống.';
+                }
+                if (!filter_var($formData['site_contact_email'], FILTER_VALIDATE_EMAIL)) {
+                    $errors['site_contact_email'] = 'Email liên hệ không hợp lệ.';
+                }
+                if ($formData['site_address'] === '') {
+                    $errors['site_address'] = 'Địa chỉ không được để trống.';
+                }
+
                 if ($formData['site_logo_text'] === '') {
                     $errors['site_logo_text'] = 'Tên hiển thị logo không được để trống.';
                 }
@@ -711,35 +726,136 @@ class Admin extends Controller {
                     }
                 }
             } elseif ($postedSection === 'contact') {
-                $formData['site_hotline'] = trim($_POST['site_hotline'] ?? '');
-                $formData['site_contact_email'] = trim($_POST['site_contact_email'] ?? '');
-                $formData['site_address'] = trim($_POST['site_address'] ?? '');
-                $formData['site_about_snippet'] = trim($_POST['site_about_snippet'] ?? '');
-                $formData['site_map_embed_url'] = trim($_POST['site_map_embed_url'] ?? '');
-                $formData['contact_page_title'] = trim($_POST['contact_page_title'] ?? '');
-                $formData['contact_page_intro'] = trim($_POST['contact_page_intro'] ?? '');
-                $formData['contact_sidebar_title'] = trim($_POST['contact_sidebar_title'] ?? '');
+                $contactPostKeys = [
+                    'site_map_embed_url',
+                    'contact_gate_headline',
+                    'contact_gate_headline_accent',
+                    'contact_gate_subtitle',
+                    'contact_node_card_title',
+                    'contact_node_region',
+                    'contact_node_online_label',
+                    'contact_node_latency_label',
+                    'contact_gate_cta_body',
+                    'contact_gate_cta_button',
+                    'contact_discord_typed_block',
+                    'contact_discord_invite_url',
+                    'contact_page_title',
+                    'contact_page_intro',
+                    'contact_sidebar_title',
+                    'contact_main_term_title',
+                    'contact_main_name_label',
+                    'contact_main_email_label',
+                    'contact_main_issue_label',
+                    'contact_main_issue_hint',
+                    'contact_main_msg_label',
+                    'contact_main_msg_placeholder',
+                    'contact_main_btn_send',
+                    'contact_main_btn_reset',
+                    'contact_main_cat_heading',
+                    'contact_main_back',
+                    'contact_main_status_title',
+                    'contact_main_status_online',
+                    'contact_main_topo_title',
+                    'contact_main_stat_lbl_1',
+                    'contact_main_stat_val_1',
+                    'contact_main_stat_lbl_2',
+                    'contact_main_stat_lbl_3',
+                    'contact_cat_desc_purchase_issue',
+                    'contact_cat_desc_forgot_password',
+                    'contact_cat_desc_bugs_technical',
+                    'contact_cat_desc_banned',
+                    'contact_cat_desc_billing_payment',
+                    'contact_cat_desc_others',
+                    'contact_form_purchase_order_lbl',
+                    'contact_form_purchase_guest',
+                    'contact_form_purchase_empty',
+                    'contact_form_purchase_opt',
+                    'contact_form_forgot_pw_lbl',
+                    'contact_form_forgot_pw_ph',
+                    'contact_form_banned_user_lbl',
+                    'contact_form_banned_user_ph',
+                ];
+                foreach ($contactPostKeys as $ck) {
+                    $formData[$ck] = trim($_POST[$ck] ?? '');
+                }
 
-                if ($formData['site_hotline'] === '') {
-                    $errors['site_hotline'] = 'Hotline không được để trống.';
+                $contactUiMax = [
+                    'contact_main_term_title' => 160,
+                    'contact_main_name_label' => 80,
+                    'contact_main_email_label' => 80,
+                    'contact_main_issue_label' => 120,
+                    'contact_main_issue_hint' => 400,
+                    'contact_main_msg_label' => 120,
+                    'contact_main_msg_placeholder' => 500,
+                    'contact_main_btn_send' => 60,
+                    'contact_main_btn_reset' => 40,
+                    'contact_main_cat_heading' => 160,
+                    'contact_main_back' => 120,
+                    'contact_main_status_title' => 160,
+                    'contact_main_status_online' => 120,
+                    'contact_main_topo_title' => 160,
+                    'contact_main_stat_lbl_1' => 80,
+                    'contact_main_stat_val_1' => 40,
+                    'contact_main_stat_lbl_2' => 80,
+                    'contact_main_stat_lbl_3' => 80,
+                    'contact_cat_desc_purchase_issue' => 300,
+                    'contact_cat_desc_forgot_password' => 300,
+                    'contact_cat_desc_bugs_technical' => 300,
+                    'contact_cat_desc_banned' => 300,
+                    'contact_cat_desc_billing_payment' => 300,
+                    'contact_cat_desc_others' => 300,
+                    'contact_form_purchase_order_lbl' => 160,
+                    'contact_form_purchase_guest' => 300,
+                    'contact_form_purchase_empty' => 300,
+                    'contact_form_purchase_opt' => 120,
+                    'contact_form_forgot_pw_lbl' => 160,
+                    'contact_form_forgot_pw_ph' => 300,
+                    'contact_form_banned_user_lbl' => 120,
+                    'contact_form_banned_user_ph' => 300,
+                ];
+                foreach ($contactUiMax as $fk => $mx) {
+                    if (strlen($formData[$fk]) > $mx) {
+                        $errors[$fk] = 'Tối đa ' . $mx . ' ký tự.';
+                    }
                 }
-                if (!filter_var($formData['site_contact_email'], FILTER_VALIDATE_EMAIL)) {
-                    $errors['site_contact_email'] = 'Email liên hệ không hợp lệ.';
-                }
-                if ($formData['site_address'] === '') {
-                    $errors['site_address'] = 'Địa chỉ không được để trống.';
-                }
+
                 if ($formData['site_map_embed_url'] !== '' && filter_var($formData['site_map_embed_url'], FILTER_VALIDATE_URL) === false) {
                     $errors['site_map_embed_url'] = 'URL bản đồ không hợp lệ.';
                 }
-                if ($formData['contact_page_title'] === '') {
-                    $errors['contact_page_title'] = 'Tiêu đề trang liên hệ không được để trống.';
+                $reqContact = [
+                    'contact_gate_headline' => 'Tiêu đề cổng (phần trước) không được để trống.',
+                    'contact_gate_headline_accent' => 'Tiêu đề cổng (phần nhấn màu) không được để trống.',
+                    'contact_gate_subtitle' => 'Mô tả phụ cổng không được để trống.',
+                    'contact_node_card_title' => 'Tiêu đề card node không được để trống.',
+                    'contact_node_region' => 'Nhãn khu vực node không được để trống.',
+                    'contact_node_online_label' => 'Nhãn trạng thái online không được để trống.',
+                    'contact_node_latency_label' => 'Nhãn độ trễ không được để trống.',
+                    'contact_gate_cta_body' => 'Nội dung ô CTA không được để trống.',
+                    'contact_gate_cta_button' => 'Nhãn nút Tạo Ticket không được để trống.',
+                    'contact_discord_typed_block' => 'Nội dung terminal Discord không được để trống.',
+                    'contact_page_title' => 'Tiêu đề trang (meta) không được để trống.',
+                    'contact_page_intro' => 'Mô tả trang (meta) không được để trống.',
+                ];
+                foreach ($reqContact as $field => $msg) {
+                    if ($formData[$field] === '') {
+                        $errors[$field] = $msg;
+                    }
                 }
-                if ($formData['contact_page_intro'] === '') {
-                    $errors['contact_page_intro'] = 'Phần giới thiệu ngắn không được để trống.';
+                if (strlen($formData['contact_discord_typed_block']) > 2000) {
+                    $errors['contact_discord_typed_block'] = 'Nội dung terminal tối đa 2000 ký tự.';
                 }
-                if ($formData['contact_sidebar_title'] === '') {
-                    $errors['contact_sidebar_title'] = 'Tiêu đề khối thông tin không được để trống.';
+                if ($formData['contact_discord_invite_url'] !== '') {
+                    $parsed = @parse_url($formData['contact_discord_invite_url']);
+                    $scheme = isset($parsed['scheme']) ? strtolower((string) $parsed['scheme']) : '';
+                    $host = isset($parsed['host']) ? strtolower((string) $parsed['host']) : '';
+                    $allowedHosts = ['discord.gg', 'discord.com', 'www.discord.com'];
+                    $hostOk = in_array($host, $allowedHosts, true);
+                    if ($scheme !== 'https' || !$hostOk || filter_var($formData['contact_discord_invite_url'], FILTER_VALIDATE_URL) === false) {
+                        $errors['contact_discord_invite_url'] = 'Chỉ chấp nhận URL https tới discord.gg hoặc discord.com.';
+                    }
+                }
+                if ($formData['contact_sidebar_title'] !== '' && strlen($formData['contact_sidebar_title']) > 120) {
+                    $errors['contact_sidebar_title'] = 'Tiêu đề sidebar tối đa 120 ký tự.';
                 }
             }
 
@@ -765,7 +881,8 @@ class Admin extends Controller {
                     'type' => 'danger',
                     'message' => 'Vui lòng kiểm tra lại các trường dữ liệu.'
                 ],
-                'nav_badges' => $this->getNavBadges()
+                'nav_badges' => $this->getNavBadges(),
+                'contact_ticket_categories' => $this->contactModel->getSupportTicketCategories(),
             ];
             $this->view('admin/settings/index', $data);
             return;
@@ -783,7 +900,8 @@ class Admin extends Controller {
             'picker_reviews' => $this->commentModel->listApprovedProductReviewsForPicker(120),
             'errors' => [],
             'flash' => $flash,
-            'nav_badges' => $this->getNavBadges()
+            'nav_badges' => $this->getNavBadges(),
+            'contact_ticket_categories' => $this->contactModel->getSupportTicketCategories(),
         ];
         $this->view('admin/settings/index', $data);
     }

@@ -10,7 +10,24 @@ $priorityLabels = [
     'high' => 'Cao',
     'urgent' => 'Khẩn cấp'
 ];
-$isLockedTicket = isset($selectedContact->status) && $selectedContact->status === 'replied';
+$statusBadgeClasses = [
+    'unread' => 'pill-status-unread',
+    'read' => 'pill-status-read',
+    'replied' => 'pill-status-replied'
+];
+$priorityBadgeClasses = [
+    'low' => 'pill-priority-low',
+    'normal' => 'pill-priority-normal',
+    'high' => 'pill-priority-high',
+    'urgent' => 'pill-priority-urgent'
+];
+$isLockedTicket = $selectedContact && isset($selectedContact->status) && $selectedContact->status === 'replied';
+if (!isset($ticketCategoryLabels) || !is_array($ticketCategoryLabels)) {
+    $ticketCategoryLabels = [];
+}
+$customerMessageDisplay = $selectedContact
+    ? Contact::customerMessageBodyForDisplay($selectedContact->message ?? '')
+    : '';
 ?>
 
 <?php if (!$selectedContact): ?>
@@ -24,8 +41,8 @@ $isLockedTicket = isset($selectedContact->status) && $selectedContact->status ==
             <h2 class="panel-title">Chi tiết ticket</h2>
         </div>
         <form action="<?php echo URLROOT; ?>/admincontacts/delete/<?php echo (int) $selectedContact->user_id; ?>/<?php echo (int) $selectedContact->contact_id; ?>" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn xóa ticket này?');">
-            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
-            <input type="hidden" name="redirect_query" value="<?php echo htmlspecialchars($queryString); ?>">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
+            <input type="hidden" name="redirect_query" value="<?php echo htmlspecialchars($queryString, ENT_QUOTES, 'UTF-8'); ?>">
             <button type="submit" class="btn btn-sm btn-danger ticket-delete-btn" title="Xóa ticket" aria-label="Xóa ticket">
                 <i class="ti-trash"></i>
             </button>
@@ -38,12 +55,31 @@ $isLockedTicket = isset($selectedContact->status) && $selectedContact->status ==
             <?php echo htmlspecialchars($selectedContact->email); ?>
             | <?php echo htmlspecialchars(date('d/m/Y H:i', strtotime($selectedContact->created_at))); ?>
         </small>
+        <?php
+        $subjRaw = (string) ($selectedContact->subject ?? '');
+        if ($subjRaw !== '' && preg_match('/^CA:([^|]+)\|/', $subjRaw, $m) && !empty($ticketCategoryLabels)) {
+            $slug = $m[1];
+            $lab = isset($ticketCategoryLabels[$slug]) ? $ticketCategoryLabels[$slug] : $slug;
+            ?>
+            <div class="mt-2 small text-muted">
+                <strong>Loại ticket:</strong> <?php echo htmlspecialchars($lab); ?>
+            </div>
+        <?php } ?>
+        <?php
+        $pwdHash = isset($selectedContact->previous_password_bcrypt) ? trim((string) $selectedContact->previous_password_bcrypt) : '';
+        if ($pwdHash !== '' && Contact::isStoredPasswordHashFormat($pwdHash)):
+            ?>
+            <div class="mt-2 small text-muted">
+                <strong>Mật khẩu trước đó (bcrypt, chỉ để đối chiếu):</strong>
+                <code class="d-block mt-1 p-2 small rounded border border-secondary text-break user-select-all"><?php echo htmlspecialchars($pwdHash); ?></code>
+            </div>
+        <?php endif; ?>
     </div>
 
     <div class="ticket-conversation mb-3">
         <div class="ticket-bubble ticket-bubble-customer">
             <div class="ticket-bubble-author">Khách hàng</div>
-            <div class="ticket-bubble-content"><?php echo nl2br(htmlspecialchars($selectedContact->message)); ?></div>
+            <div class="ticket-bubble-content"><?php echo nl2br(htmlspecialchars($customerMessageDisplay)); ?></div>
         </div>
         <?php if (!empty($selectedContact->admin_reply)): ?>
             <div class="ticket-bubble ticket-bubble-admin">
@@ -62,47 +98,33 @@ $isLockedTicket = isset($selectedContact->status) && $selectedContact->status ==
         <div class="alert alert-secondary py-2 mb-3 ticket-locked-alert">
             Ticket đã phản hồi được khóa chỉnh sửa. Bạn chỉ có thể xóa ticket này.
         </div>
-        <div class="row g-2 mb-3">
+        <div class="row g-2 mb-3 align-items-end">
             <div class="col-md-6">
                 <label class="form-label">Trạng thái</label>
-                <input
-                    type="text"
-                    class="form-control"
-                    value="<?php echo htmlspecialchars($statusLabels[$selectedContact->status] ?? ucfirst($selectedContact->status)); ?>"
-                    readonly
-                >
+                <div>
+                    <span class="pill-badge <?php echo $statusBadgeClasses[$selectedContact->status] ?? 'pill-status-read'; ?>">
+                        <?php echo htmlspecialchars($statusLabels[$selectedContact->status] ?? ucfirst($selectedContact->status)); ?>
+                    </span>
+                </div>
             </div>
             <div class="col-md-6">
                 <label class="form-label">Ưu tiên</label>
-                <input
-                    type="text"
-                    class="form-control"
-                    value="<?php echo htmlspecialchars($priorityLabels[$selectedContact->priority] ?? ucfirst($selectedContact->priority)); ?>"
-                    readonly
-                >
+                <div>
+                    <span class="pill-badge <?php echo $priorityBadgeClasses[$selectedContact->priority] ?? 'pill-priority-normal'; ?>">
+                        <?php echo htmlspecialchars($priorityLabels[$selectedContact->priority] ?? ucfirst($selectedContact->priority)); ?>
+                    </span>
+                </div>
             </div>
         </div>
     <?php else: ?>
-        <div class="row g-2 mb-3">
+        <div class="row g-2 mb-3 align-items-end">
             <div class="col-md-6">
-                <form
-                    action="<?php echo URLROOT; ?>/admincontacts/updateStatus/<?php echo (int) $selectedContact->user_id; ?>/<?php echo (int) $selectedContact->contact_id; ?>"
-                    method="POST"
-                    class="ticket-auto-save-form"
-                    data-admin-autosave="true"
-                    data-toast-success="Trạng thái đã cập nhật (tự động)."
-                >
-                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
-                    <input type="hidden" name="redirect_query" value="<?php echo htmlspecialchars($queryString); ?>">
-                    <label class="form-label">Trạng thái</label>
-                    <select name="status" class="form-select" data-admin-autosave-input="true" data-admin-custom-select="true" required>
-                        <?php foreach ($statuses as $status): ?>
-                            <option value="<?php echo htmlspecialchars($status); ?>" <?php echo $selectedContact->status === $status ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($statusLabels[$status] ?? ucfirst($status)); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </form>
+                <label class="form-label">Trạng thái</label>
+                <div>
+                    <span class="pill-badge <?php echo $statusBadgeClasses[$selectedContact->status] ?? 'pill-status-read'; ?>">
+                        <?php echo htmlspecialchars($statusLabels[$selectedContact->status] ?? ucfirst($selectedContact->status)); ?>
+                    </span>
+                </div>
             </div>
 
             <div class="col-md-6">
@@ -111,10 +133,13 @@ $isLockedTicket = isset($selectedContact->status) && $selectedContact->status ==
                     method="POST"
                     class="ticket-auto-save-form"
                     data-admin-autosave="true"
+                    data-ticket-priority-list-sync="1"
+                    data-ticket-user-id="<?php echo (int) $selectedContact->user_id; ?>"
+                    data-ticket-contact-id="<?php echo (int) $selectedContact->contact_id; ?>"
                     data-toast-success="Ưu tiên đã cập nhật (tự động)."
                 >
-                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
-                    <input type="hidden" name="redirect_query" value="<?php echo htmlspecialchars($queryString); ?>">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
+                    <input type="hidden" name="redirect_query" value="<?php echo htmlspecialchars($queryString, ENT_QUOTES, 'UTF-8'); ?>">
                     <label class="form-label">Ưu tiên</label>
                     <select name="priority" class="form-select" data-admin-autosave-input="true" data-admin-custom-select="true" required>
                         <?php foreach ($priorities as $priority): ?>
@@ -127,9 +152,9 @@ $isLockedTicket = isset($selectedContact->status) && $selectedContact->status ==
             </div>
         </div>
 
-        <form action="<?php echo URLROOT; ?>/admincontacts/reply/<?php echo (int) $selectedContact->user_id; ?>/<?php echo (int) $selectedContact->contact_id; ?>" method="POST" class="mb-1">
-            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
-            <input type="hidden" name="redirect_query" value="<?php echo htmlspecialchars($queryString); ?>">
+        <form action="<?php echo URLROOT; ?>/admincontacts/reply/<?php echo (int) $selectedContact->user_id; ?>/<?php echo (int) $selectedContact->contact_id; ?>" method="POST" class="mb-1 ticket-reply-form" data-ticket-reply-form="true">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
+            <input type="hidden" name="redirect_query" value="<?php echo htmlspecialchars($queryString, ENT_QUOTES, 'UTF-8'); ?>">
             <label for="reply_message" class="form-label">Phản hồi quản trị viên</label>
             <textarea
                 id="reply_message"
@@ -138,8 +163,9 @@ $isLockedTicket = isset($selectedContact->status) && $selectedContact->status ==
                 class="form-control"
                 placeholder="Nhập nội dung phản hồi..."
                 required
+                minlength="1"
             ><?php echo htmlspecialchars($selectedContact->admin_reply ?? ''); ?></textarea>
-            <button type="submit" class="btn btn-primary mt-2">
+            <button type="submit" class="btn btn-primary mt-2" data-ticket-reply-submit="true">
                 Gửi phản hồi
             </button>
         </form>

@@ -5,6 +5,7 @@ class Pages extends Controller {
     private $productModel;
     private $commentModel;
     private $userModel;
+    private $orderModel;
 
     
     public function __construct() {
@@ -13,6 +14,7 @@ class Pages extends Controller {
         $this->productModel = $this->model('Product');
         $this->commentModel = $this->model('Comment');
         $this->userModel = $this->model('User');
+        $this->orderModel = $this->model('Order');
     }
 
     public function index() {
@@ -88,22 +90,54 @@ class Pages extends Controller {
         if (empty($_SESSION['csrf_contact'])) {
             $_SESSION['csrf_contact'] = bin2hex(random_bytes(32));
         }
+
+        $pendingOrders = [];
+        if ($isLoggedIn) {
+            try {
+                $pendingOrders = $this->orderModel->getPendingOrdersForUser((int) $_SESSION['user_id']);
+            } catch (Throwable $error) {
+                $pendingOrders = [];
+            }
+        }
+
+        $publicSettings = $this->getPublicSettings();
+        $ticketCategories = $this->contactModel->getSupportTicketCategories();
+        $contactTitle = trim((string) ($publicSettings['contact_page_title'] ?? ''));
+        $contactDesc = trim((string) ($publicSettings['contact_page_intro'] ?? ''));
+        if ($contactTitle === '') {
+            $contactTitle = 'Liên hệ';
+        }
+        if ($contactDesc === '') {
+            $contactDesc = 'Gửi ticket hỗ trợ — ' . SITENAME . '.';
+        }
+
         $data = [
-            'title' => 'Liên hệ',
-            'description' => 'Liên hệ ' . SITENAME . ': hotline, email, địa chỉ và form hỗ trợ nhanh.',
+            'title' => $contactTitle,
+            'description' => $contactDesc,
             'is_logged_in' => $isLoggedIn,
             'csrf_token' => $_SESSION['csrf_contact'],
+            'support_ticket_categories' => $ticketCategories,
+            'pending_orders' => $pendingOrders,
+            'contact_support_assets' => true,
             'form' => [
                 'name' => $isLoggedIn ? trim((string) ($currentUser->full_name ?: $currentUser->username)) : '',
                 'email' => $isLoggedIn ? trim((string) $currentUser->email) : '',
-                'subject' => '',
+                'ticket_category' => 'bugs_technical',
+                'order_id' => '',
+                'banned_username' => '',
                 'message' => '',
-                'website' => ''
+                'website' => '',
             ],
             'errors' => [],
-            'success_message' => ''
+            'success_message' => '',
+            'contact_initial_step' => 'gate',
         ];
 
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $data['contact_initial_step'] = 'main';
+        } elseif (!empty($_SESSION['contact_success'])) {
+            $data['contact_initial_step'] = 'main';
+        }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // CSRF validation
@@ -116,7 +150,7 @@ class Pages extends Controller {
 
             // Honeypot – silently succeed if a bot filled the hidden field
             if (trim((string) ($_POST['website'] ?? '')) !== '') {
-                $_SESSION['contact_success'] = 'Gửi liên hệ thành công. Chúng tôi sẽ phản hồi sớm nhất.';
+                $_SESSION['contact_success'] = 'Gửi ticket thành công. Kỹ sư hỗ trợ sẽ phản hồi sớm nhất.';
                 header('Location: ' . URLROOT . '/pages/contact');
                 exit();
             }
@@ -128,24 +162,26 @@ class Pages extends Controller {
                 return;
             }
 
-            $data['form']['subject'] = trim($_POST['subject'] ?? '');
-            $data['form']['message'] = trim($_POST['message'] ?? '');
-            $data['form']['website'] = trim($_POST['website'] ?? '');
+            $catRaw = trim((string) ($_POST['ticket_category'] ?? ''));
+            $data['form']['ticket_category'] = array_key_exists($catRaw, $ticketCategories) ? $catRaw : 'others';
+            $data['form']['message'] = trim((string) ($_POST['message'] ?? ''));
+            $data['form']['website'] = trim((string) ($_POST['website'] ?? ''));
+            $data['form']['order_id'] = trim((string) ($_POST['order_id'] ?? ''));
+            $data['form']['banned_username'] = trim((string) ($_POST['banned_username'] ?? ''));
+            $prevPasswordPlain = (string) ($_POST['previous_password'] ?? '');
 
             if ($isLoggedIn) {
-                // KHÓA NGUỒN DỮ LIỆU name/email từ DB user đăng nhập
                 $data['form']['name'] = trim((string) ($currentUser->full_name ?: $currentUser->username));
                 $data['form']['email'] = trim((string) $currentUser->email);
             } else {
-                $data['form']['name'] = trim($_POST['name'] ?? '');
-                $data['form']['email'] = trim($_POST['email'] ?? '');
+                $data['form']['name'] = trim((string) ($_POST['name'] ?? ''));
+                $data['form']['email'] = trim((string) ($_POST['email'] ?? ''));
             }
 
             if ($isLoggedIn) {
                 if ($data['form']['name'] === '') {
                     $data['errors']['general'] = 'Tài khoản thiếu thông tin họ tên. Vui lòng cập nhật hồ sơ.';
-                }
-                if (!filter_var($data['form']['email'], FILTER_VALIDATE_EMAIL)) {
+                } elseif (!filter_var($data['form']['email'], FILTER_VALIDATE_EMAIL)) {
                     $data['errors']['general'] = 'Email tài khoản không hợp lệ. Vui lòng cập nhật hồ sơ.';
                 }
             } else {
@@ -154,7 +190,7 @@ class Pages extends Controller {
                 } elseif (strlen($data['form']['name']) > 100) {
                     $data['errors']['name'] = 'Họ tên tối đa 100 ký tự.';
                 }
-            
+
                 if ($data['form']['email'] === '') {
                     $data['errors']['email'] = 'Vui lòng nhập email.';
                 } elseif (!filter_var($data['form']['email'], FILTER_VALIDATE_EMAIL)) {
@@ -164,8 +200,43 @@ class Pages extends Controller {
                 }
             }
 
-            if ($data['form']['subject'] !== '' && strlen($data['form']['subject']) > 255) {
-                $data['errors']['subject'] = 'Chủ đề tối đa 255 ký tự.';
+            if ($data['form']['ticket_category'] === 'purchase_issue' && !$isLoggedIn) {
+                $data['errors']['ticket_category'] = 'Vấn đề đơn hàng yêu cầu đăng nhập.';
+            }
+
+            $orderIdInt = (int) $data['form']['order_id'];
+            $verifiedOrder = null;
+            if ($data['form']['ticket_category'] === 'purchase_issue') {
+                if (!$isLoggedIn) {
+                    // đã báo lỗi ở trên
+                } elseif ($orderIdInt <= 0) {
+                    $data['errors']['order_id'] = 'Vui lòng chọn đơn hàng liên quan.';
+                } else {
+                    $verifiedOrder = $this->orderModel->getPendingOrderByIdForUser($orderIdInt, (int) $_SESSION['user_id']);
+                    if (!$verifiedOrder) {
+                        $data['errors']['order_id'] = 'Đơn hàng không hợp lệ hoặc không còn trạng thái chờ xử lý.';
+                    }
+                }
+            }
+
+            if ($data['form']['ticket_category'] === 'banned') {
+                $bu = $data['form']['banned_username'];
+                if ($bu === '') {
+                    $data['errors']['banned_username'] = 'Vui lòng nhập tên đăng nhập (username) cần hỗ trợ.';
+                } elseif (strlen($bu) > 50 || !preg_match('/^[a-zA-Z0-9._-]+$/', $bu)) {
+                    $data['errors']['banned_username'] = 'Username không hợp lệ (tối đa 50 ký tự, chỉ chữ, số, . _ -).';
+                }
+            }
+
+            $previousPasswordBcrypt = null;
+            if ($data['form']['ticket_category'] === 'forgot_password' && $prevPasswordPlain !== '') {
+                if (strlen($prevPasswordPlain) < 6) {
+                    $data['errors']['previous_password'] = 'Mật khẩu trước đó tối thiểu 6 ký tự (nếu nhập).';
+                } elseif (strlen($prevPasswordPlain) > 128) {
+                    $data['errors']['previous_password'] = 'Mật khẩu trước đó tối đa 128 ký tự.';
+                } else {
+                    $previousPasswordBcrypt = password_hash($prevPasswordPlain, PASSWORD_DEFAULT);
+                }
             }
 
             if ($data['form']['message'] === '') {
@@ -176,16 +247,34 @@ class Pages extends Controller {
                 $data['errors']['message'] = 'Nội dung tối đa 5000 ký tự.';
             }
 
+            $categoryLabel = $ticketCategories[$data['form']['ticket_category']] ?? 'Khác';
+            $pfx = Contact::supportTicketSubjectPrefix();
+            $slug = $data['form']['ticket_category'];
+            $subjectTail = $categoryLabel;
+            if ($slug === 'purchase_issue' && $verifiedOrder) {
+                $subjectTail = $categoryLabel . ' — Đơn #' . (int) $verifiedOrder->id;
+            }
+            $subjectLine = $pfx . $slug . '|' . $subjectTail;
+            if (strlen($subjectLine) > 255) {
+                $subjectLine = substr($subjectLine, 0, 252) . '...';
+            }
+
+            $plainMessage = $data['form']['message'];
+
             if (empty($data['errors'])) {
                 $userId = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : $this->contactModel->getOrCreateGuestUserId();
                 if ($userId > 0) {
-                    $created = $this->contactModel->createContact([
+                    $contactPayload = [
                         'user_id' => $userId,
                         'name' => $data['form']['name'],
                         'email' => $data['form']['email'],
-                        'subject' => $data['form']['subject'],
-                        'message' => $data['form']['message']
-                    ]);
+                        'subject' => $subjectLine,
+                        'message' => $plainMessage,
+                    ];
+                    if ($previousPasswordBcrypt !== null) {
+                        $contactPayload['previous_password_bcrypt'] = $previousPasswordBcrypt;
+                    }
+                    $created = $this->contactModel->createContact($contactPayload);
 
                     if ($created) {
                         try {
@@ -196,14 +285,15 @@ class Pages extends Controller {
                                     'contact_id' => (int) ($created['contact_id'] ?? 0),
                                     'name' => $data['form']['name'],
                                     'email' => $data['form']['email'],
-                                    'subject' => $data['form']['subject'],
+                                    'subject' => $subjectLine,
+                                    'category_label' => $categoryLabel,
                                     'created_at' => $createdAt
                                 ]);
                             }
                         } catch (Throwable $error) {
                             // Keep contact flow successful even if notification sync fails.
                         }
-                        $_SESSION['contact_success'] = 'Gửi liên hệ thành công. Chúng tôi sẽ phản hồi sớm nhất.';
+                        $_SESSION['contact_success'] = 'Gửi ticket thành công. Kỹ sư hỗ trợ sẽ phản hồi sớm nhất.';
                         $_SESSION['contact_last_submit'] = time();
                         $_SESSION['csrf_contact'] = bin2hex(random_bytes(32));
                         header('Location: ' . URLROOT . '/pages/contact');

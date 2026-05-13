@@ -80,6 +80,11 @@ $siteAboutSnippet = $publicSettings['site_about_snippet'] ?? 'Nền tảng cho t
     <?php if (isset($isHomePage) && $isHomePage) : ?>
     <script src="https://unpkg.com/aos@next/dist/aos.js" crossorigin="anonymous"></script>
     <?php endif; ?>
+    <?php if (!empty($data['contact_support_assets'])) : ?>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/typed.js/2.0.12/typed.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="<?php echo URLROOT; ?>/js/contact-support.js?v=<?php echo @filemtime(dirname(APPROOT) . '/public/js/contact-support.js') ?: '1'; ?>" defer></script>
+    <?php endif; ?>
     <script src="<?php echo URLROOT; ?>/js/main.js"></script>
 </body>
 </html>

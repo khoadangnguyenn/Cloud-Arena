@@ -101,4 +101,50 @@ class Order {
         $row = $this->db->single();
         return $row ? (int) $row->total : 0;
     }
+
+    /**
+     * Đơn chờ xử lý của user (cho form ticket vấn đề đơn hàng).
+     *
+     * @return object[]
+     */
+    public function getPendingOrdersForUser($userId) {
+        $uid = (int) $userId;
+        if ($uid <= 0) {
+            return [];
+        }
+
+        $this->db->query(
+            "SELECT o.id, o.total_amount, o.created_at,
+                    COALESCE(GROUP_CONCAT(CONCAT(p.name, ' ×', oi.quantity) ORDER BY oi.id SEPARATOR ', '), '') AS items_label
+             FROM orders o
+             LEFT JOIN order_items oi ON oi.order_id = o.id
+             LEFT JOIN products p ON p.id = oi.product_id
+             WHERE o.user_id = :user_id AND o.status = 'pending'
+             GROUP BY o.id, o.total_amount, o.created_at
+             ORDER BY o.created_at DESC"
+        );
+        $this->db->bind(':user_id', $uid);
+
+        return $this->db->resultSet();
+    }
+
+    public function getPendingOrderByIdForUser($orderId, $userId) {
+        $oid = (int) $orderId;
+        $uid = (int) $userId;
+        if ($oid <= 0 || $uid <= 0) {
+            return null;
+        }
+
+        $this->db->query(
+            "SELECT o.id, o.total_amount, o.created_at, o.status
+             FROM orders o
+             WHERE o.id = :order_id AND o.user_id = :user_id AND o.status = 'pending'
+             LIMIT 1"
+        );
+        $this->db->bind(':order_id', $oid);
+        $this->db->bind(':user_id', $uid);
+
+        $row = $this->db->single();
+        return $row ?: null;
+    }
 }

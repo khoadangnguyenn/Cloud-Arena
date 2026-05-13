@@ -1,0 +1,4 @@
+1. admin panel updated: public UI management updated (home,contact).
+2. contact updated: ui update, 2 page in 1, effect use gsap & typed.js, category added, discord link.
+3. admin contact updated: category filter added, format detail updated, 
+render priority update directly.  
