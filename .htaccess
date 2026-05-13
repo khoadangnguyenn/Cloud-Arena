@@ -1,0 +1,7 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine on
+  # Strip legacy folder segment `Game-Server-Rental-Platform` from incoming URLs
+  RewriteRule ^Game-Server-Rental-Platform/(.*)$ public/$1 [L]
+  RewriteRule ^$ public/ [L]
+  RewriteRule (.*) public/$1 [L]
+</IfModule>
