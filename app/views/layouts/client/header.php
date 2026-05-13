@@ -5,15 +5,16 @@ $siteLogoImageFile = basename((string) ($publicSettings['site_logo_image'] ?? ''
 $siteLogoImageUrl = $siteLogoImageFile !== '' ? URLROOT . '/uploads/branding/' . rawurlencode($siteLogoImageFile) : '';
 $sessionAvatarRaw = trim((string) ($_SESSION['user_avatar'] ?? ''));
 $sessionAvatarUrl = '';
+
 if ($sessionAvatarRaw !== '') {
     if (strpos($sessionAvatarRaw, 'http://') === 0 || strpos($sessionAvatarRaw, 'https://') === 0) {
         $sessionAvatarUrl = $sessionAvatarRaw;
-    } elseif (strpos($sessionAvatarRaw, '/uploads/') === 0) {
-        $sessionAvatarUrl = URLROOT . $sessionAvatarRaw;
-    } elseif (strpos($sessionAvatarRaw, 'uploads/') === 0) {
+    } 
+    elseif (strpos($sessionAvatarRaw, 'uploads/') === 0 || strpos($sessionAvatarRaw, '/uploads/') === 0) {
         $sessionAvatarUrl = URLROOT . '/' . ltrim($sessionAvatarRaw, '/');
-    } else {
-        $sessionAvatarUrl = URLROOT . '/uploads/avatars/' . ltrim($sessionAvatarRaw, '/');
+    }
+    else {
+        $sessionAvatarUrl = URLROOT . '/uploads/' . ltrim($sessionAvatarRaw, '/');
     }
 }
 

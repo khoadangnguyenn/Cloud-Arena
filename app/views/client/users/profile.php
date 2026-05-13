@@ -54,8 +54,12 @@ $displayName = $user ? ($user->full_name ?: $user->username) : '';
                 <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
                     <h2 class="text-xl font-semibold text-white mb-5"><?php echo htmlspecialchars($secAvatar); ?></h2>
                     <div class="flex flex-col items-center">
-                        <?php if ($avatarUrl !== ''): ?>
-                            <img src="<?php echo htmlspecialchars($avatarUrl); ?>" alt="Avatar" class="w-32 h-32 rounded-full object-cover border border-gray-700 mb-4">
+                        <?php if(!empty($user->avatar)): ?>
+                            <?php 
+                                // Sử dụng ltrim để loại bỏ dấu / thừa nếu có, đảm bảo path luôn chuẩn
+                                $avatarPath = URLROOT . '/uploads/' . ltrim($user->avatar, '/'); 
+                            ?>
+                            <img src="<?php echo $avatarPath; ?>" alt="Avatar" class="w-24 h-24 rounded-2xl object-cover border-2 border-gray-800">
                         <?php else: ?>
                             <div class="w-32 h-32 rounded-full bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center text-white text-4xl font-bold mb-4">
                                 <?php echo strtoupper(substr($displayName, 0, 1)); ?>

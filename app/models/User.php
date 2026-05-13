@@ -191,18 +191,24 @@
       return $this->db->execute();
     }
 
-    public function getUserById($id) {
-      $this->db->query('SELECT id, username, email, full_name, avatar, role, status, created_at, password FROM users WHERE id = :id LIMIT 1');
-      $this->db->bind(':id', (int) $id);
-      return $this->db->single();
+    /**
+     * Lấy thông tin người dùng theo ID
+     */
+    public function getById($id) {
+        $this->db->query("SELECT * FROM users WHERE id = :id");
+        $this->db->bind(':id', $id);
+        return $this->db->single();
     }
 
-    public function updateProfile($userId, $fullName, $email) {
-      $this->db->query('UPDATE users SET full_name = :full_name, email = :email WHERE id = :id');
-      $this->db->bind(':full_name', trim($fullName));
-      $this->db->bind(':email', trim($email));
-      $this->db->bind(':id', (int) $userId);
-      return $this->db->execute();
+
+    public function updateProfile($id, $data) {
+        $this->db->query("UPDATE users SET full_name = :full_name, email = :email, avatar = :avatar WHERE id = :id");
+        $this->db->bind(':full_name', $data['full_name']);
+        $this->db->bind(':email', $data['email']);
+        $this->db->bind(':avatar', $data['avatar']);
+        $this->db->bind(':id', $id);
+        
+        return $this->db->execute();
     }
 
     public function updatePassword($userId, $hashedPassword) {

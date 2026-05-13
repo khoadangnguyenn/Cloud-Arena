@@ -172,11 +172,16 @@ class Users extends Controller
                 $avatarFilename = $user->avatar ?? null;
 
                 // Handle avatar upload
-                if (isset($_FILES['avatar']) && !empty($_FILES['avatar']['name'])) {
-                    require_once APPROOT . '/helpers/Upload.php';
-                    $uploader = new Upload($_FILES['avatar']);
-                    $res = $uploader->uploadImage(APPROOT . '/../public/uploads');
-                    if ($res['success']) $avatarFilename = $res['filename'];
+                if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK && !empty($_FILES['avatar']['name'])) {
+                    $uploadDir = dirname(APPROOT) . '/public/uploads/avatars/';
+                    
+                    $res = SecureUpload::storeRasterUpload($_FILES['avatar'], $uploadDir, 'av_');
+                    
+                    if ($res['ok']) {
+                        $avatarFilename = 'avatars/' . $res['filename']; 
+                    } else {
+                        $error = $res['message']; 
+                    }
                 }
 
                 $payload = ['full_name' => $full_name, 'email' => $email, 'avatar' => $avatarFilename];
