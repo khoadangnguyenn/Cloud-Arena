@@ -1,3 +1,4 @@
+DROP DATABASE IF EXISTS cloud_arena;
 CREATE DATABASE IF NOT EXISTS cloud_arena;
 USE cloud_arena;
 SET FOREIGN_KEY_CHECKS = 0;
@@ -426,12 +427,6 @@ INSERT INTO about (id, title, subtitle, services_heading, partners_heading, modp
 ) ON DUPLICATE KEY UPDATE title = VALUES(title), subtitle = VALUES(subtitle), services_heading = VALUES(services_heading), partners_heading = VALUES(partners_heading), modpacks_heading = VALUES(modpacks_heading), gallery_heading = VALUES(gallery_heading), content = VALUES(content), uptime = VALUES(uptime), support = VALUES(support), performance = VALUES(performance), years_active = VALUES(years_active), founded_year = VALUES(founded_year), partners = VALUES(partners), modpacks = VALUES(modpacks), sections = VALUES(sections), cta_heading = VALUES(cta_heading), cta_text = VALUES(cta_text), cta_button_text = VALUES(cta_button_text), cta_button_url = VALUES(cta_button_url);
 -- 4. FAQs (Bao Branch)
 
-INSERT INTO faqs (question, answer, status) VALUES
-('Làm cách nào để tạo tài khoản?', 'Bạn có thể tạo tài khoản bằng cách click vào "Đăng ký" trên trang chủ, điền đầy đủ thông tin và confirm email.', 'active'),
-('Dịch vụ của bạn có uptime bao nhiêu?', 'Chúng tôi cam kết cung cấp uptime 99.9% cho tất cả các dịch vụ hosting.', 'active'),
-('Làm cách nào để thanh toán?', 'Chúng tôi chấp nhận thanh toán qua chuyển khoản ngân hàng, ví điện tử và thẻ tín dụng.', 'active'),
-('Có hỗ trợ nào cho khách hàng không?', 'Có, chúng tôi có đội hỗ trợ 24/7 sẵn sàng giúp bạn qua email hoặc chat trực tuyến.', 'active'),
-('Tôi có thể nâng cấp server của mình không?', 'Có, bạn có thể nâng cấp RAM, CPU hoặc dung lượng lưu trữ bất cứ lúc nào.', 'active');
 
 -- 5. News (Khoa Branch)
 INSERT INTO news (author_id, category_id, title, slug, content, meta_description, meta_keywords, status, is_breaking, views_count) VALUES
@@ -458,10 +453,11 @@ INSERT INTO news_views (news_id, ip_address, source) VALUES
 (5, '127.0.0.1', 'direct'),
 (6, '127.0.0.1', 'google'), (6, '127.0.0.1', 'google'), (6, '127.0.0.1', 'google');
 
+-- Sửa lại ID người dùng từ 3 thành 8 (hoặc ID bất kỳ đã tồn tại trong bảng users)
 INSERT INTO news_likes (user_id, news_id) VALUES
-(1, 1), (2, 1), (3, 1),
+(1, 1), (2, 1), (8, 1), 
 (1, 2), (2, 2),
-(1, 4), (2, 4), (3, 4), (4, 4);
+(1, 4), (2, 4), (8, 4), (4, 4);
 
 -- 6. Contacts (Giang Branch Backup)
 INSERT INTO contacts (`user_id`, `contact_id`, `name`, `email`, `subject`, `message`, `status`, `created_at`) VALUES

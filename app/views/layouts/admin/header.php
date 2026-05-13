@@ -30,6 +30,10 @@
         $activeSection = 'ads';
     } elseif (strpos($currentUrl, 'admin/posts') === 0) {
         $activeSection = 'news';
+    } elseif (strpos($currentUrl, 'admin/about') === 0) {
+        $activeSection = 'about';
+    } elseif (strpos($currentUrl, 'admin/faqs') === 0) {
+        $activeSection = 'faqs';
     } elseif (strpos($currentUrl, 'admin/users') === 0) {
         $activeSection = 'users';
     } elseif (strpos($currentUrl, 'admin/settings') === 0) {
@@ -91,6 +95,14 @@
                 <a class="admin-nav-link <?php echo $activeSection === 'ads' ? 'active' : ''; ?>" href="<?php echo URLROOT; ?>/admin/ads">
                     <i class="ti-announcement"></i>
                     <span class="admin-link-text">Quảng cáo</span>
+                </a>
+                <a class="admin-nav-link <?php echo $activeSection === 'about' ? 'active' : ''; ?>" href="<?php echo URLROOT; ?>/admin/about">
+                    <i class="ti-info-alt"></i>
+                    <span class="admin-link-text">Giới thiệu</span>
+                </a>
+                <a class="admin-nav-link <?php echo $activeSection === 'faqs' ? 'active' : ''; ?>" href="<?php echo URLROOT; ?>/admin/faqs">
+                    <i class="ti-help"></i>
+                    <span class="admin-link-text">FAQ</span>
                 </a>
                 <a class="admin-nav-link <?php echo $activeSection === 'news' ? 'active' : ''; ?>" href="<?php echo URLROOT; ?>/admin/posts">
                     <i class="ti-file"></i>

@@ -5,7 +5,7 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-body">
-                    <form id="about-form" action="<?php echo URLROOT; ?>/admin/about/update" method="post" enctype="multipart/form-data">
+                    <form id="about-form" action="<?php echo URLROOT; ?>/admin/about" method="post" enctype="multipart/form-data">
                         <div class="row gx-4">
                             <div class="col-md-7">
                                 <h4 class="card_title">Quản lý Giới thiệu</h4>
@@ -19,6 +19,7 @@
                                 <div id="about-alert"></div>
                                 
                                 <input type="hidden" name="id" value="<?php echo isset($data['about']->id) ? $data['about']->id : ''; ?>">
+                                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($data['csrf_admin'] ?? ''); ?>">
                                 
                                 <div class="mb-3">
                                     <label for="about-title" class="form-label">Tiêu đề</label>

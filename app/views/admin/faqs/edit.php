@@ -6,8 +6,7 @@
     <?php
         $isNew = empty($data['faq']);
     ?>
-        <form action="<?php echo URLROOT; ?>/admin/AdminFaqs" method="post">
-            <input type="hidden" name="__action" value="<?php echo $isNew ? 'createFaq' : 'updateFaq'; ?>">
+        <form action="<?php echo $isNew ? URLROOT . '/admin/faqs/create' : URLROOT . '/admin/faqs/update/' . $data['faq']->id; ?>" method="post">
             <?php if(!$isNew): ?><input type="hidden" name="id" value="<?php echo $data['faq']->id; ?>"><?php endif; ?>
         <div class="mb-2">
             <label for="faq_question" class="block mb-1">Câu hỏi</label>
@@ -35,7 +34,7 @@
         </div>
         <div>
             <button class="btn btn-primary">Lưu</button>
-            <a href="<?php echo URLROOT; ?>/admin/AdminFaqs" class="btn">Huỷ</a>
+            <a href="<?php echo URLROOT; ?>/admin/faqs" class="btn">Huỷ</a>
         </div>
     </form>
 </div>

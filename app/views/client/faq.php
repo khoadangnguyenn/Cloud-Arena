@@ -13,7 +13,7 @@
                     <h2 class="text-white/80">Tổng: <?php echo isset($data['faqs']) ? count($data['faqs']) : 0; ?></h2>
                 </div>
                 <?php if(!empty($data['categories'])): ?>
-                <div class="w-full grid grid-cols-2 sm:grid-cols-3 gap-3 faq-category-grid">
+                <div class="w-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 faq-category-grid">
                     <?php foreach($data['categories'] as $c): ?>
                         <?php
                             $imgUrl = '';
@@ -62,7 +62,7 @@
                         <?php endforeach; ?>
                     </div>
                     <?php if(!empty($data['pagination'])): ?>
-                        <div class="mt-6 px-4"><?php echo $data['pagination']; ?></div>
+                        <div class="mt-6 px-4"><div class="faq-pagination-wrapper"><?php echo $data['pagination']; ?></div></div>
                     <?php endif; ?>
                 <?php else: ?>
                     <div class="bg-gray-900/50 border border-white/5 rounded-2xl p-6">
@@ -201,10 +201,28 @@ function nl2br(s){ return (s||'').replace(/\n/g,'<br>'); }
 <button onclick="openFaqChat()" title="Chat hỗ trợ" class="fixed right-6 bottom-6 bg-gradient-to-r from-cyan-500 to-purple-600 text-white rounded-full p-4 shadow-lg">Chat</button>
 <style>
 .faq-category-grid .cat-card{transition:transform .22s ease,box-shadow .22s ease;border-radius:12px;padding:14px;display:block;text-decoration:none;color:inherit}
-.faq-category-grid .cat-card:hover{transform:translateY(-6px);box-shadow:0 12px 30px rgba(0,0,0,0.45)}
-.faq-category-grid .cat-card .cat-img{width:100%;height:68px;object-fit:cover;border-radius:8px;margin-bottom:8px}
+.faq-category-grid .cat-card{transition:transform .24s cubic-bezier(.2,.9,.2,1),box-shadow .24s ease;border-radius:14px;padding:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-decoration:none;color:inherit;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(0,0,0,0.06));border:1px solid rgba(255,255,255,0.03)}
+.faq-category-grid .cat-card:hover{transform:translateY(-8px) scale(1.02);box-shadow:0 18px 40px rgba(2,6,23,0.6)}
+.faq-category-grid .cat-card .cat-img{width:100%;height:110px;object-fit:cover;border-radius:10px;margin-bottom:12px;box-shadow:0 8px 20px rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.03)}
+.faq-category-grid .cat-card .text-sm{font-weight:600;font-size:15px;color:#e6eef8}
+.faq-category-grid .cat-card .cat-img + div{margin-top:4px}
 .faq-a{transition:max-height .28s ease, opacity .28s ease}
 .btn-send{background:linear-gradient(90deg,#06b6d4,#9333ea);color:#fff;border:0;padding:10px 14px;border-radius:8px;cursor:pointer}
 #faq-chat-modal{z-index:9999}
+</style>
+<style>
+/* Pagination: horizontal, centered, pill buttons */
+.faq-pagination-wrapper{display:flex;justify-content:center;padding:8px 0}
+.faq-pagination-wrapper .pagination, .faq-pagination-wrapper nav.pagination{display:block}
+.faq-pagination-wrapper .pagination-list{display:flex;gap:8px;align-items:center;list-style:none;margin:0;padding:0}
+.faq-pagination-wrapper .page-item{display:inline-flex}
+.faq-pagination-wrapper .page-link, .faq-pagination-wrapper .page-ellipsis{display:inline-block;padding:8px 12px;border-radius:999px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:#cbd5e1;text-decoration:none}
+.faq-pagination-wrapper .page-link:hover{background:linear-gradient(90deg,#06b6d4,#9333ea);color:#fff;border-color:transparent;box-shadow:0 8px 20px rgba(99,102,241,0.12)}
+.faq-pagination-wrapper .page-item.active .page-link, .faq-pagination-wrapper .page-item.active .page-link{background:linear-gradient(90deg,#06b6d4,#9333ea);color:#fff;border-color:transparent}
+.faq-pagination-wrapper .page-ellipsis{padding:8px 10px;color:#94a3b8;border:0;background:transparent}
+@media (max-width:640px){
+    .faq-category-grid .cat-card .cat-img{height:84px}
+    .faq-category-grid{grid-template-columns:repeat(2,1fr)}
+}
 </style>
 <?php require APPROOT . '/views/layouts/client/footer.php'; ?>

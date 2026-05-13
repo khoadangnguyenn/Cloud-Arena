@@ -113,9 +113,10 @@ $navItems = [
     ],
     [
         'label' => 'Chúng tôi',
-        'href' => $aboutAnchorHref,
-        'is_active' => false,
-        'nav_spy' => $isHomePage ? 'about-us' : null,
+        // Navigate to the dedicated about page route instead of anchor
+        'href' => URLROOT . '/pages/about',
+        'is_active' => $currentController === 'pages' && $currentMethod === 'about',
+        'nav_spy' => null,
     ],
     [
         'label' => 'Liên hệ',

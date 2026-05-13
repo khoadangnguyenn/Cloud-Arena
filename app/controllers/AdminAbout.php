@@ -20,6 +20,53 @@ class AdminAbout extends Controller
 
     public function index()
     {
+        // Allow POST to this route to act as update (some forms may submit to /admin/about)
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // If both $_POST and $_FILES are empty, it's often caused by PHP upload/post limits
+            $hasPost = !empty($_POST);
+            $hasFiles = !empty($_FILES) && array_filter($_FILES, function($f){ return !empty($f['name']); });
+            if (!$hasPost && !$hasFiles) {
+                // record diagnostic info to help identify server-side POST issues (post_max_size, upload_max_filesize, max_input_vars)
+                try {
+                    $hdrs = function_exists('getallheaders') ? getallheaders() : [];
+                    $debugEmpty = [
+                        'time' => date('c'),
+                        'uri' => $_SERVER['REQUEST_URI'] ?? '',
+                        'method' => $_SERVER['REQUEST_METHOD'] ?? '',
+                        'headers' => $hdrs,
+                        'post_count' => count($_POST),
+                        'files_count' => count($_FILES),
+                        'raw' => @file_get_contents('php://input')
+                    ];
+                    @file_put_contents(APPROOT . '/../public/debug-about-empty-request.log', json_encode($debugEmpty, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n---\n", FILE_APPEND);
+                } catch (Throwable $e) {}
+
+                $_SESSION['flash_error'] = 'Form submission failed — request body appears empty. This is commonly caused by PHP limits (post_max_size, upload_max_filesize, or max_input_vars). Try submitting without files or increase those limits in php.ini.';
+                header('Location: ' . URLROOT . '/admin/about');
+                exit;
+            }
+            // Detect empty POST (commonly caused by exceeded post_max_size when uploading large files)
+            if (empty($_POST) && !empty($_SERVER['REQUEST_METHOD'])) {
+                try {
+                    $hdrs = function_exists('getallheaders') ? getallheaders() : [];
+                    $debugEmpty2 = [
+                        'time' => date('c'),
+                        'uri' => $_SERVER['REQUEST_URI'] ?? '',
+                        'method' => $_SERVER['REQUEST_METHOD'] ?? '',
+                        'headers' => $hdrs,
+                        'post_count' => count($_POST),
+                        'files_count' => count($_FILES),
+                        'raw' => @file_get_contents('php://input')
+                    ];
+                    @file_put_contents(APPROOT . '/../public/debug-about-empty-request.log', json_encode($debugEmpty2, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n---\n", FILE_APPEND);
+                } catch (Throwable $e) {}
+
+                $_SESSION['flash_error'] = 'Form submission failed — request body may be too large. Try removing file uploads or increasing post_max_size in PHP settings.';
+                header('Location: ' . URLROOT . '/admin/about');
+                exit;
+            }
+            return $this->update();
+        }
         $aboutModel = $this->model('About');
         $about = $aboutModel->get();
         $data = ['title' => 'Quản lý giới thiệu', 'about' => $about];
@@ -28,6 +75,9 @@ class AdminAbout extends Controller
 
     public function update()
     {
+        // Log invocation immediately for diagnosis
+        try { @file_put_contents(APPROOT . '/../public/debug-about-invoked.log', date('c') . " - update invoked - METHOD=" . ($_SERVER['REQUEST_METHOD'] ?? '') . "\n", FILE_APPEND); } catch (Throwable $e) {}
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $aboutModel = $this->model('About');
             // debug logging: capture incoming post/files and current about rows
@@ -45,6 +95,21 @@ class AdminAbout extends Controller
                 @file_put_contents(APPROOT . '/../public/debug-about.log', json_encode($debug, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n---\n", FILE_APPEND);
             } catch (Throwable $e) { /* ignore debug errors */
             }
+            // Verify CSRF token for admin forms
+            if (!$this->verifyCsrf('csrf_admin')) {
+                $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+                $msg = 'Yêu cầu không hợp lệ. Vui lòng thử lại.';
+                if ($isAjax) {
+                    if (ob_get_length()) { @ob_clean(); }
+                    header('Content-Type: application/json', true, 400);
+                    echo json_encode(['success' => false, 'message' => $msg]);
+                    exit;
+                }
+                $_SESSION['flash_error'] = $msg;
+                header('Location: ' . URLROOT . '/admin/about');
+                exit;
+            }
+
             $id = isset($_POST['id']) ? (int)$_POST['id'] : null;
             // Safely obtain title: prefer submitted value, otherwise preserve existing
             $title = null;
@@ -71,8 +136,16 @@ class AdminAbout extends Controller
                 header('Location: ' . URLROOT . '/admin/about');
                 exit;
             }
-            $content = $_POST['content'];
-            $admin_id = isset($_POST['admin_id']) ? (int)$_POST['admin_id'] : null;
+            // Safely obtain content: prefer submitted content, otherwise preserve existing
+            if (isset($_POST['content'])) {
+                $content = $_POST['content'];
+            } else {
+                $existingRow = $aboutModel->get();
+                $content = $existingRow && isset($existingRow->content) ? $existingRow->content : '';
+            }
+
+            // Admin id: prefer explicit submission, otherwise fall back to current session user
+            $admin_id = isset($_POST['admin_id']) ? (int)$_POST['admin_id'] : (isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null);
 
             $imageFilename = null;
             $backgroundFilename = null;

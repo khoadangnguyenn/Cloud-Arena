@@ -14,8 +14,7 @@
             <div class="card mb-4">
                 <div class="card-body d-flex justify-content-between align-items-center">
                     <h4 class="card_title">Quản lý FAQ</h4>
-                    <form action="<?php echo URLROOT; ?>/admin/faqs" method="post" class="d-flex gap-2">
-                        <input type="hidden" name="__action" value="createFaq">
+                    <form action="<?php echo URLROOT; ?>/admin/faqs/create" method="post" class="d-flex gap-2">
                         <input type="text" name="question" placeholder="Câu hỏi" class="form-control" style="min-width:300px;">
                         <?php if(!empty($data['categories'])): ?>
                             <select name="category" class="form-control" style="max-width:260px">
@@ -36,8 +35,7 @@
             <div class="card mb-4">
                 <div class="card-body d-flex justify-content-between align-items-center">
                     <h4 class="card_title">Quản lý Category FAQ</h4>
-                    <form action="<?php echo URLROOT; ?>/admin/faqs" method="post" enctype="multipart/form-data" class="d-flex gap-2">
-                        <input type="hidden" name="__action" value="createCategory">
+                    <form action="<?php echo URLROOT; ?>/admin/faqs/createCategory" method="post" enctype="multipart/form-data" class="d-flex gap-2">
                         <input type="text" name="title" placeholder="Tiêu đề category" class="form-control" style="min-width:240px;">
                         <input type="file" name="image" accept="image/*" class="form-control" style="max-width:320px">
                         <button class="btn btn-success">Thêm category</button>
@@ -53,16 +51,14 @@
                                         <div class="card-body">
                                             <h5 class="card-title"><?php echo htmlspecialchars($cat->title); ?></h5>
                                             <p class="text-muted">Slug: <?php echo htmlspecialchars($cat->slug); ?></p>
-                                            <form action="<?php echo URLROOT; ?>/admin/faqs" method="post" enctype="multipart/form-data" class="d-flex gap-2">
-                                                <input type="hidden" name="__action" value="updateCategory">
+                                            <form action="<?php echo URLROOT; ?>/admin/faqs/updateCategory/<?php echo $cat->id; ?>" method="post" enctype="multipart/form-data" class="d-flex gap-2">
                                                 <input type="hidden" name="id" value="<?php echo $cat->id; ?>">
                                                 <input type="text" name="title" value="<?php echo htmlspecialchars($cat->title); ?>" class="form-control">
                                                 <input type="file" name="image" accept="image/*" class="form-control">
                                                 <button class="btn btn-primary">Lưu</button>
                                             </form>
                                             <div class="mt-2 text-end">
-                                                <form action="<?php echo URLROOT; ?>/admin/faqs" method="post" style="display:inline-block" onsubmit="return confirm('Xóa category? Các FAQ liên quan sẽ bị bỏ category.')">
-                                                    <input type="hidden" name="__action" value="deleteCategory">
+                                                <form action="<?php echo URLROOT; ?>/admin/faqs/deleteCategory/<?php echo $cat->id; ?>" method="post" style="display:inline-block" onsubmit="return confirm('Xóa category? Các FAQ liên quan sẽ bị bỏ category.')">
                                                     <input type="hidden" name="id" value="<?php echo $cat->id; ?>">
                                                     <button class="btn btn-sm btn-danger">Xóa</button>
                                                 </form>
@@ -102,8 +98,7 @@
                                         </div>
                                         <div class="btn-group">
                                             <button type="button" class="btn btn-sm btn-outline-secondary btn-edit-toggle" data-id="<?php echo $faq->id; ?>">Sửa</button>
-                                            <form action="<?php echo URLROOT; ?>/admin/faqs" method="post" style="display:inline-block" onsubmit="return confirm('Xác nhận xóa?')">
-                                                <input type="hidden" name="__action" value="deleteFaq">
+                                            <form action="<?php echo URLROOT; ?>/admin/faqs/delete/<?php echo $faq->id; ?>" method="post" style="display:inline-block" onsubmit="return confirm('Xác nhận xóa?')">
                                                 <input type="hidden" name="id" value="<?php echo $faq->id; ?>">
                                                 <button class="btn btn-sm btn-danger">Xóa</button>
                                             </form>
@@ -111,8 +106,7 @@
                                     </div>
 
                                     <div class="faq-edit mt-3" id="faq-edit-<?php echo $faq->id; ?>" style="display:none;">
-                                        <form action="<?php echo URLROOT; ?>/admin/faqs" method="post" class="d-flex flex-column gap-2">
-                                            <input type="hidden" name="__action" value="updateFaq">
+                                        <form action="<?php echo URLROOT; ?>/admin/faqs/update/<?php echo $faq->id; ?>" method="post" class="d-flex flex-column gap-2">
                                             <input type="hidden" name="id" value="<?php echo $faq->id; ?>">
                                             <div class="row">
                                                 <div class="col-md-8">
@@ -174,8 +168,7 @@
                                     <?php if(!empty($m->reply)): ?>
                                         <div class="mt-3 p-3 bg-light text-dark rounded">Trả lời: <?php echo nl2br(htmlspecialchars($m->reply)); ?> <br><small>Bởi: <?php echo htmlspecialchars($m->reply_by); ?></small></div>
                                     <?php else: ?>
-                                        <form action="<?php echo URLROOT; ?>/admin/faqs" method="post" class="mt-3 d-flex gap-2">
-                                            <input type="hidden" name="__action" value="replyMessage">
+                                        <form action="<?php echo URLROOT; ?>/admin/faqs/replyMessage/<?php echo $m->id; ?>" method="post" class="mt-3 d-flex gap-2">
                                             <input type="hidden" name="id" value="<?php echo $m->id; ?>">
                                             <textarea name="reply" class="form-control" placeholder="Viết trả lời..." required></textarea>
                                             <button class="btn btn-primary">Gửi</button>

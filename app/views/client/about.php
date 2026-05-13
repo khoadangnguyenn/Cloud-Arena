@@ -1,6 +1,212 @@
 <?php require APPROOT . '/views/layouts/client/header.php'; ?>
+<style>
+/* Inlined about page visual enhancements (previously public/css/about-enhancements.css) */
+/* Hero wrapper 3D + subtle lift */
+.about-hero-box{
+    perspective:1200px;
+    transform-style:preserve-3d;
+    transition:transform .45s cubic-bezier(.2,.9,.2,1), box-shadow .45s ease;
+}
+.about-hero-box:hover{
+    transform:translateY(-8px);
+    box-shadow:0 30px 70px rgba(2,6,23,0.6);
+}
 
-<section id="about-section" class="relative bg-gradient-to-b from-gray-900 via-gray-950 to-black text-white overflow-hidden" style="opacity:0;transition:opacity .35s ease">
+/* panels respond to pointer via CSS vars set by JS */
+.about-hero-box .hero-panel{
+    transform: translateZ(var(--tz,0px)) rotateY(var(--ry,0deg)) rotateX(var(--rx,0deg)) translate(var(--tx,0px), var(--ty,0px));
+    transition:transform .28s cubic-bezier(.2,.9,.2,1), filter .28s ease;
+    will-change:transform;
+}
+
+/* media image gentle scale + hover */
+.hero-media img{
+    transition:transform .7s cubic-bezier(.2,.9,.2,1), box-shadow .5s ease, filter .5s ease;
+    transform-origin:center center;
+}
+.about-hero-box:hover .hero-media img{
+    transform:scale(1.025) rotate(-0.25deg);
+    filter:brightness(1.02) saturate(1.06);
+}
+.hero-media img:hover{
+    transform:scale(1.06) rotate(-0.5deg);
+    box-shadow:0 18px 60px rgba(2,6,23,0.5);
+}
+
+/* animated gradient blobs (extra depth) */
+.about-vibe::after{
+    content:'';position:absolute;inset:auto auto 8% 4%;width:380px;height:380px;border-radius:50%;filter:blur(60px);opacity:.18;pointer-events:none;background:linear-gradient(135deg,#06b6d4,#9333ea);
+    transform:translate3d(0,0,0);mix-blend-mode:screen;animation:blobFloat 10s ease-in-out infinite;
+}
+@keyframes blobFloat{0%{transform:translateY(0) scale(1)}50%{transform:translateY(-18px) scale(1.04)}100%{transform:translateY(0) scale(1)}}
+
+/* Section dots style */
+.sections-dots button{width:12px;height:12px;border-radius:50%;border:0;padding:0;background:linear-gradient(135deg,#06b6d4,#9333ea);box-shadow:0 8px 18px rgba(6,182,212,0.12);transition:transform .28s ease, opacity .28s ease}
+.sections-dots button:hover{transform:scale(1.28);opacity:1}
+.sections-dots button[aria-current="true"]{transform:scale(1.2);box-shadow:0 12px 30px rgba(147,51,234,0.14)}
+
+/* Stat card shimmer on hover */
+.stat-card{position:relative;overflow:hidden}
+.stat-card::after{content:'';position:absolute;left:-40%;top:0;width:40%;height:100%;background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.12), rgba(255,255,255,0.02));transform:skewX(-18deg) translateX(-100%);transition:transform .9s cubic-bezier(.2,.8,.2,1)}
+.stat-card:hover::after{transform:skewX(-18deg) translateX(220%)}
+
+/* Info rows hover lift */
+.info-row{transition:transform .36s cubic-bezier(.2,.9,.2,1), box-shadow .36s}
+.info-row:hover{transform:translateY(-8px);box-shadow:0 24px 60px rgba(2,6,23,0.45)}
+.info-row .info-image img{transition:transform .6s ease, filter .6s ease}
+.info-row:hover .info-image img{transform:translateY(-6px) scale(1.03);filter:brightness(1.03)}
+
+/* subtle entrance animations if JS toggles .floating */
+.hero-media .floating{animation:floatSlow 6.6s ease-in-out infinite}
+@keyframes floatSlow{0%{transform:translateY(0) scale(1)}50%{transform:translateY(-8px) scale(1.01)}100%{transform:translateY(0) scale(1)}}
+
+/* title char hover intensify */
+.about-title-char{transition:transform .28s cubic-bezier(.2,.9,.2,1), color .3s}
+.about-title-char:hover{transform:translateY(-6px) scale(1.14);color:#7ee0ff}
+
+/* Lightbox small polish */
+#lightbox.show{display:flex;opacity:1;transition:opacity .28s ease}
+#lightbox{transition:opacity .28s ease}
+
+/* Swiper slide entry polish (if Swiper used) */
+.swiper-slide .slide-inner{opacity:0;transform:translateY(14px) scale(.996);transition:opacity .48s cubic-bezier(.2,.9,.2,1), transform .48s cubic-bezier(.2,.9,.2,1)}
+.swiper-slide-active .slide-inner, .swiper-slide-active .enter{opacity:1;transform:translateY(0) scale(1)}
+
+/* keep everything responsive and non-invasive */
+@media (prefers-reduced-motion: reduce){
+    .about-hero-box, .about-vibe::after, .stat-card::after, .hero-media .floating{animation:none !important;transition:none !important}
+}
+</style>
+
+<script>
+/* Inlined about page JS enhancements (previously public/js/about-enhancements.js)
+     - pointer parallax for hero
+     - floating effect for hero media
+     - autoplay for sections carousel (non-invasive)
+     - Swiper appearance hookup when Swiper is present
+*/
+(function(){
+    'use strict';
+    var heroWrapper = document.querySelector('.about-hero-box');
+    if(heroWrapper){
+        var maxTilt = 8; // degrees
+        var maxTranslate = 12; // px
+        var tz = 12; // translateZ on hover
+        var pointerActive = false;
+
+        function setVars(rx, ry, tx, ty, tzv){
+            heroWrapper.style.setProperty('--rx', rx + 'deg');
+            heroWrapper.style.setProperty('--ry', ry + 'deg');
+            heroWrapper.style.setProperty('--tx', tx + 'px');
+            heroWrapper.style.setProperty('--ty', ty + 'px');
+            heroWrapper.style.setProperty('--tz', tzv + 'px');
+        }
+
+        function onMove(e){
+            var r = heroWrapper.getBoundingClientRect();
+            var cx = r.left + r.width/2;
+            var cy = r.top + r.height/2;
+            var clientX = e.clientX || (e.touches && e.touches[0] && e.touches[0].clientX) || cx;
+            var clientY = e.clientY || (e.touches && e.touches[0] && e.touches[0].clientY) || cy;
+            var dx = (clientX - cx) / (r.width/2);
+            var dy = (clientY - cy) / (r.height/2);
+            dx = Math.max(-1, Math.min(1, dx));
+            dy = Math.max(-1, Math.min(1, dy));
+            var ry = dx * maxTilt * -1; // horizontal movement -> rotateY
+            var rx = dy * maxTilt; // vertical movement -> rotateX
+            var tx = dx * maxTranslate * -1;
+            var ty = dy * (maxTranslate/1.6) * -1;
+            setVars(rx, ry, tx, ty, tz);
+        }
+
+        function onEnter(){ pointerActive = true; heroWrapper.classList.add('hovering'); setVars(0,0,0,0,tz); }
+        function onLeave(){ pointerActive = false; heroWrapper.classList.remove('hovering'); setVars(0,0,0,0,0); }
+
+        heroWrapper.addEventListener('pointermove', onMove);
+        heroWrapper.addEventListener('pointerenter', onEnter);
+        heroWrapper.addEventListener('pointerleave', onLeave);
+        heroWrapper.addEventListener('touchstart', onEnter);
+        heroWrapper.addEventListener('touchend', onLeave);
+
+        // apply a small floating class to the hero media image (if present)
+        var heroImg = heroWrapper.querySelector('.hero-media img');
+        if(heroImg) heroImg.classList.add('floating');
+    }
+
+    // Sections carousel autoplay (non-invasive: uses existing next button)
+    (function(){
+        var sections = document.getElementById('sections-carousel');
+        if(!sections) return;
+        var next = document.getElementById('sections-next');
+        var prev = document.getElementById('sections-prev');
+        var autoplay = true;
+        var delay = 5600; // ms
+        var timer = null;
+        function start(){ if(!autoplay || !next) return; stop(); timer = setInterval(function(){ try{ next.click(); }catch(e){} }, delay); }
+        function stop(){ if(timer) { clearInterval(timer); timer = null; } }
+        sections.addEventListener('mouseenter', stop); sections.addEventListener('mouseleave', start);
+        sections.addEventListener('touchstart', stop); sections.addEventListener('touchend', start);
+        start();
+    })();
+
+    // Enhance keyboard / focus visibility for section dots (ARIA current)
+    (function(){
+        var dotsWrap = document.getElementById('sections-dots');
+        if(!dotsWrap) return;
+        dotsWrap.querySelectorAll('button').forEach(function(b){
+            b.addEventListener('click', function(){
+                dotsWrap.querySelectorAll('button').forEach(function(x){ x.removeAttribute('aria-current'); });
+                b.setAttribute('aria-current','true');
+            });
+        });
+    })();
+
+    // Progressive reveal for title chars (keyboard accessible)
+    (function(){
+        var title = document.getElementById('about-title');
+        if(!title) return;
+        title.addEventListener('focus', function(){ title.querySelectorAll('.about-title-char').forEach(function(ch,i){ setTimeout(function(){ ch.style.transform = 'translateY(-8px) scale(1.12)'; }, i*40); setTimeout(function(){ title.querySelectorAll('.about-title-char').forEach(function(c){ c.style.transform = ''; }); }, 1200); }); }, true);
+    })();
+
+    // Swiper appearance hookup: if Swiper is loaded and there are .swiper-container elements, initialize with entry animations
+    (function(){
+        if(typeof window.Swiper !== 'function') return;
+        var nodes = document.querySelectorAll('.swiper-container, .swiper');
+        if(!nodes || nodes.length === 0) return;
+        nodes.forEach(function(node, i){
+            try{
+                var s = new window.Swiper(node, {
+                    effect: 'fade',
+                    fadeEffect: { crossFade: true },
+                    speed: 700,
+                    loop: false,
+                    autoplay: { delay: 5200, disableOnInteraction: true },
+                    navigation: { nextEl: node.querySelector('.swiper-button-next'), prevEl: node.querySelector('.swiper-button-prev') },
+                    pagination: { el: node.querySelector('.swiper-pagination'), clickable: true },
+                    on: {
+                        init: function(){
+                            // ensure active slide contents animate in
+                            node.querySelectorAll('.swiper-slide').forEach(function(sl){ sl.querySelectorAll('.slide-inner, .enter').forEach(function(el){ el.style.opacity = 0; el.style.transform = 'translateY(14px) scale(.996)'; }); });
+                            var active = node.querySelector('.swiper-slide-active');
+                            if(active) active.querySelectorAll('.slide-inner, .enter').forEach(function(el){ setTimeout(function(){ el.style.opacity = 1; el.style.transform = 'translateY(0) scale(1)'; }, 60); });
+                        },
+                        slideChangeTransitionStart: function(){
+                            node.querySelectorAll('.swiper-slide').forEach(function(sl){ sl.querySelectorAll('.slide-inner, .enter').forEach(function(el){ el.style.opacity = 0; el.style.transform = 'translateY(14px) scale(.996)'; }); });
+                        },
+                        slideChangeTransitionEnd: function(){
+                            var active = node.querySelector('.swiper-slide-active');
+                            if(active) active.querySelectorAll('.slide-inner, .enter').forEach(function(el,i){ setTimeout(function(){ el.style.opacity = 1; el.style.transform = 'translateY(0) scale(1)'; }, i*60 + 40); });
+                        }
+                    }
+                });
+            }catch(e){console.warn('swiper init error', e);}    
+        });
+    })();
+
+})();
+</script>
+
+<section id="about-section" class="relative bg-gradient-to-b from-gray-900 via-gray-950 to-black text-white overflow-hidden" style="opacity:0;transition:opacity .35s ease;padding-top:5.6rem">
     <?php
         // Build background style: prefer explicit background field if present, otherwise fallback to gradient
         $bgStyle = '';
@@ -56,7 +262,7 @@
         </style>
     
 
-    <div class="about-head" style="max-width:1200px;margin:0 auto 18px;padding:0 1.5rem;text-align:center">
+    <div class="about-head" data-aos="fade-down" data-aos-delay="120" style="max-width:1200px;margin:0 auto 18px;padding:0 1.5rem;text-align:center">
         <style>
             /* Title wave characters */
             .about-title-char{display:inline-block;transform-origin:left center;will-change:transform}
@@ -99,6 +305,11 @@
                 }
             })();
         </script>
+        <style>
+            /* Fallback entrance animation in case AOS isn't available yet */
+            .about-head{opacity:0;transform:translateY(-8px);animation:aboutHeadIn .64s ease-out forwards;animation-delay:.12s}
+            @keyframes aboutHeadIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+        </style>
     </div>
 
     <div class="hero-outer">
@@ -385,6 +596,49 @@
     <?php endif; ?>
 
 
+        <!-- Stats row (moved up under hero) -->
+        <div class="mt-8">
+            <style>
+                .stats-row{display:flex;gap:18px;align-items:stretch;flex-wrap:nowrap}
+                .stat-card{flex:1;display:flex;align-items:center;gap:18px;padding:22px;border-radius:16px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.06));box-shadow:0 14px 40px rgba(2,6,23,0.55)}
+                .stat-icon{width:76px;height:76px;border-radius:14px;background:linear-gradient(135deg,#06b6d4,#9333ea);display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;flex:0 0 76px}
+                .stat-value{font-size:2rem;font-weight:900;color:#fff;margin-bottom:2px}
+                .stat-label{color:#9fb6cc;font-size:0.95rem}
+            </style>
+
+            <div class="stats-row">
+                <?php if(!empty($data['about']->uptime)): ?>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="<?php echo !empty($data['about']->uptime_icon) ? htmlspecialchars($data['about']->uptime_icon) : 'fa-solid fa-clock'; ?>"></i></div>
+                        <div>
+                            <div class="stat-value"><?php echo htmlspecialchars($data['about']->uptime); ?></div>
+                            <div class="stat-label">Uptime cam kết</div>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
+                <?php if(!empty($data['about']->support)): ?>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="<?php echo !empty($data['about']->support_icon) ? htmlspecialchars($data['about']->support_icon) : 'fa-solid fa-headset'; ?>"></i></div>
+                        <div>
+                            <div class="stat-value"><?php echo htmlspecialchars($data['about']->support); ?></div>
+                            <div class="stat-label">Hỗ trợ khách hàng</div>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
+                <?php if(!empty($data['about']->performance)): ?>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="<?php echo !empty($data['about']->performance_icon) ? htmlspecialchars($data['about']->performance_icon) : 'fa-solid fa-tachometer-alt'; ?>"></i></div>
+                        <div>
+                            <div class="stat-value"><?php echo htmlspecialchars($data['about']->performance); ?></div>
+                            <div class="stat-label">Hiệu năng</div>
+                        </div>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+
         <!-- Partners & Modpacks -->
         <div class="mt-20 grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div class="lg:col-span-2">
@@ -452,48 +706,7 @@
             </div>
         <?php endif; ?>
 
-        <!-- Stats row (separated from hero) -->
-        <div class="mt-8">
-            <style>
-                .stats-row{display:flex;gap:18px;align-items:stretch;flex-wrap:nowrap}
-                .stat-card{flex:1;display:flex;align-items:center;gap:18px;padding:22px;border-radius:16px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.06));box-shadow:0 14px 40px rgba(2,6,23,0.55)}
-                .stat-icon{width:76px;height:76px;border-radius:14px;background:linear-gradient(135deg,#06b6d4,#9333ea);display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;flex:0 0 76px}
-                .stat-value{font-size:2rem;font-weight:900;color:#fff;margin-bottom:2px}
-                .stat-label{color:#9fb6cc;font-size:0.95rem}
-            </style>
-
-            <div class="stats-row">
-                <?php if(!empty($data['about']->uptime)): ?>
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="<?php echo !empty($data['about']->uptime_icon) ? htmlspecialchars($data['about']->uptime_icon) : 'fa-solid fa-clock'; ?>"></i></div>
-                        <div>
-                            <div class="stat-value"><?php echo htmlspecialchars($data['about']->uptime); ?></div>
-                            <div class="stat-label">Uptime cam kết</div>
-                        </div>
-                    </div>
-                <?php endif; ?>
-
-                <?php if(!empty($data['about']->support)): ?>
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="<?php echo !empty($data['about']->support_icon) ? htmlspecialchars($data['about']->support_icon) : 'fa-solid fa-headset'; ?>"></i></div>
-                        <div>
-                            <div class="stat-value"><?php echo htmlspecialchars($data['about']->support); ?></div>
-                            <div class="stat-label">Hỗ trợ khách hàng</div>
-                        </div>
-                    </div>
-                <?php endif; ?>
-
-                <?php if(!empty($data['about']->performance)): ?>
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="<?php echo !empty($data['about']->performance_icon) ? htmlspecialchars($data['about']->performance_icon) : 'fa-solid fa-tachometer-alt'; ?>"></i></div>
-                        <div>
-                            <div class="stat-value"><?php echo htmlspecialchars($data['about']->performance); ?></div>
-                            <div class="stat-label">Hiệu năng</div>
-                        </div>
-                    </div>
-                <?php endif; ?>
-            </div>
-        </div>
+        
 
         <!-- Info rows (replaces old gallery) -->
         <?php $gallery = isset($displayGallery) ? $displayGallery : (isset($data['about']->gallery) && $data['about']->gallery ? json_decode($data['about']->gallery, true) : []); ?>

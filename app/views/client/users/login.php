@@ -20,6 +20,7 @@
             </p>
         </div>
         <form class="mt-8 space-y-6" action="<?php echo URLROOT; ?>/users/login" method="POST">
+            <input type="hidden" name="csrf_token" value="<?php echo $data['csrf_token'] ?? ''; ?>">
             <div class="space-y-4">
                 <div>
                     <label for="username" class="block text-sm font-medium text-gray-400 mb-2">Tên đăng nhập</label>
@@ -50,6 +51,9 @@
                     Đăng nhập hệ thống
                 </button>
             </div>
+            <?php if (!empty($data['login_err'])): ?>
+                <p class="text-center text-sm text-red-400 mt-2"><?php echo htmlspecialchars($data['login_err']); ?></p>
+            <?php endif; ?>
         </form>
     </div>
 </div>

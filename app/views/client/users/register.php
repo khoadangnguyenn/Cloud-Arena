@@ -20,6 +20,7 @@
       </p>
     </div>
     <form class="mt-8 space-y-4" action="<?php echo URLROOT; ?>/users/register" method="POST">
+      <input type="hidden" name="csrf_token" value="<?php echo $data['csrf_token'] ?? ''; ?>">
       <div>
         <label class="block text-sm font-medium text-gray-400 mb-2">Tên đăng nhập</label>
         <input name="username" type="text" class="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all <?php echo (!empty($data['username_err'])) ? 'border-red-500 bg-red-500/5' : ''; ?>" placeholder="Nhập tên đăng nhập" value="<?php echo $data['username']; ?>">

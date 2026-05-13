@@ -77,27 +77,41 @@ $siteAboutSnippet = $publicSettings['site_about_snippet'] ?? 'Nền tảng cho t
             </div>
         </div>
     </footer>
+</
     <!-- AOS Animation Library -->
     <script src="https://unpkg.com/aos@next/dist/aos.js" crossorigin="anonymous"></script>
     <!-- GSAP + ScrollTrigger -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" crossorigin="anonymous"></script>
     <!-- Medium-Zoom -->
-    <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.8/dist/medium-zoom.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.8/dist/medium-zoom.min.js" crossorigin="anonymous"></script>
     <!-- Prism.js (Syntax Highlighting) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-php.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-php.min.js" crossorigin="anonymous"></script>
+
     <script>
-        // Initialize AOS on all pages
+        // Initialize optional libraries safely
         if (typeof AOS !== 'undefined') {
             AOS.init({ duration: 800, once: true, offset: 80 });
         }
-        // Initialize Medium-Zoom on all pages
         if (typeof mediumZoom !== 'undefined') {
             mediumZoom('[data-zoomable]', { background: 'rgba(0,0,0,0.85)' });
         }
+        if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
+            try {
+                gsap.registerPlugin(ScrollTrigger);
+            } catch (e) {
+                // ignore registration errors
+            }
+        }
     </script>
+
+    <?php if (!empty($data['contact_support_assets'])) : ?>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/typed.js/2.0.12/typed.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        <script src="<?php echo URLROOT; ?>/js/contact-support.js?v=<?php echo @filemtime(dirname(APPROOT) . '/public/js/contact-support.js') ?: '1'; ?>" defer></script>
+    <?php endif; ?>
+
     <script src="<?php echo URLROOT; ?>/js/main.js"></script>
 </body>
 </html>

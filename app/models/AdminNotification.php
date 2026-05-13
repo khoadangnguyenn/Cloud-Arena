@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/Contact.php';
+
 class AdminNotification {
     private $db;
     private $allowedTypes = ['ticket', 'revenue'];
@@ -64,6 +66,10 @@ class AdminNotification {
         $name = trim((string) ($ticketData['name'] ?? 'Khách hàng'));
         $subject = trim((string) ($ticketData['subject'] ?? ''));
         $email = trim((string) ($ticketData['email'] ?? ''));
+        $typeLabel = trim((string) ($ticketData['category_label'] ?? ''));
+        if ($typeLabel === '' && $subject !== '') {
+            $typeLabel = Contact::ticketTypeLabelFromSubject($subject);
+        }
         $createdAt = trim((string) ($ticketData['created_at'] ?? ''));
         if ($createdAt === '') {
             $createdAt = date('Y-m-d H:i:s');
@@ -74,11 +80,16 @@ class AdminNotification {
         }
         $sourceKey = 'ticket_created:' . $userId . ':' . $contactId . ':' . $createdToken;
 
+        $summary = $typeLabel !== '' ? $typeLabel : 'Ticket mới';
+        if ($email !== '') {
+            $summary .= ' · ' . $email;
+        }
+
         return $this->createNotification(
             'ticket',
             $sourceKey,
             'Ticket mới từ ' . ($name !== '' ? $name : 'Khách hàng'),
-            ($subject !== '' ? $subject : '(Không có chủ đề)') . ' - ' . $email,
+            $summary,
             '/admincontacts?user_id=' . $userId . '&contact_id=' . $contactId,
             $createdAt,
             [
