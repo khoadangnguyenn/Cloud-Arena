@@ -19,7 +19,7 @@ for ($i = 0; $i < 4; $i++) {
 $reviewKey = trim((string) ($s['home_review_key'] ?? ''));
 ?>
 
-<form action="<?php echo URLROOT; ?>/admin/settings/homepage" method="POST" enctype="multipart/form-data" novalidate>
+<form action="<?php echo URLROOT; ?>/admin/settings/homepage" method="POST" enctype="multipart/form-data" novalidate data-admin-settings-form="true">
     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($data['csrf_admin'] ?? ''); ?>">
     <input type="hidden" name="settings_section" value="homepage">
 
@@ -209,6 +209,56 @@ $reviewKey = trim((string) ($s['home_review_key'] ?? ''));
             </div>
         </div>
     <?php endfor; ?>
+
+    <hr class="settings-divider">
+
+    <div class="settings-section-header">
+        <h3>Thông tin liên hệ chung (footer &amp; meta site)</h3>
+        <p>Hotline, email, địa chỉ và mô tả ngắn hiển thị trên footer và meta mặc định. Đã chuyển khỏi tab Liên hệ để gom cùng cấu hình trang chủ.</p>
+    </div>
+
+    <div class="form-group mb-3">
+        <label for="site_about_snippet" class="col-form-label">Mô tả ngắn / meta site (footer)</label>
+        <textarea class="form-control" id="site_about_snippet" name="site_about_snippet" rows="3" maxlength="300"><?php echo htmlspecialchars($s['site_about_snippet'] ?? ''); ?></textarea>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group mb-3">
+                <label for="site_contact_email" class="col-form-label">Email liên hệ</label>
+                <div class="input-icon-group">
+                    <span><i class="ti-email"></i></span>
+                    <input class="form-control <?php echo !empty($errors['site_contact_email']) ? 'is-invalid' : ''; ?>" type="email" id="site_contact_email" name="site_contact_email" value="<?php echo htmlspecialchars($s['site_contact_email'] ?? ''); ?>" maxlength="100" required>
+                </div>
+                <?php if (!empty($errors['site_contact_email'])): ?>
+                    <div class="invalid-feedback d-block"><?php echo htmlspecialchars($errors['site_contact_email']); ?></div>
+                <?php endif; ?>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group mb-3">
+                <label for="site_hotline" class="col-form-label">Hotline</label>
+                <div class="input-icon-group">
+                    <span><i class="ti-mobile"></i></span>
+                    <input class="form-control <?php echo !empty($errors['site_hotline']) ? 'is-invalid' : ''; ?>" type="text" id="site_hotline" name="site_hotline" value="<?php echo htmlspecialchars($s['site_hotline'] ?? ''); ?>" maxlength="30" required>
+                </div>
+                <?php if (!empty($errors['site_hotline'])): ?>
+                    <div class="invalid-feedback d-block"><?php echo htmlspecialchars($errors['site_hotline']); ?></div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-group mb-3">
+        <label for="site_address" class="col-form-label">Địa chỉ</label>
+        <div class="input-icon-group">
+            <span><i class="ti-location-pin"></i></span>
+            <input class="form-control <?php echo !empty($errors['site_address']) ? 'is-invalid' : ''; ?>" type="text" id="site_address" name="site_address" value="<?php echo htmlspecialchars($s['site_address'] ?? ''); ?>" maxlength="255" required>
+        </div>
+        <?php if (!empty($errors['site_address'])): ?>
+            <div class="invalid-feedback d-block"><?php echo htmlspecialchars($errors['site_address']); ?></div>
+        <?php endif; ?>
+    </div>
 
     <div class="settings-actions">
         <button type="submit" class="btn btn-primary">Lưu thay đổi</button>

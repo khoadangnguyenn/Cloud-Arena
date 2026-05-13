@@ -1025,6 +1025,22 @@ body.admin-modern.admin-theme-dark .admin-custom-select-menu {
     background: #12233f;
     border-color: #2a446e;
     box-shadow: 0 14px 30px rgba(2, 8, 23, 0.4);
+    scrollbar-color: rgba(156, 176, 220, 0.55) rgba(14, 27, 49, 0.55);
+}
+
+body.admin-modern.admin-theme-dark .admin-custom-select-menu::-webkit-scrollbar-track {
+    background: rgba(14, 27, 49, 0.55);
+}
+
+body.admin-modern.admin-theme-dark .admin-custom-select-menu::-webkit-scrollbar-thumb {
+    background: rgba(156, 176, 220, 0.42);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+
+body.admin-modern.admin-theme-dark .admin-custom-select-menu::-webkit-scrollbar-thumb:hover {
+    background: rgba(186, 200, 235, 0.55);
+    background-clip: padding-box;
 }
 
 body.admin-modern.admin-theme-dark .admin-custom-select-option {
@@ -1117,9 +1133,30 @@ body.admin-modern.admin-theme-dark .admin-custom-select-option.active {
     box-shadow: 0 14px 26px rgba(16, 27, 49, 0.16);
     padding: 0.35rem;
     display: none;
-    max-height: 230px;
+    max-height: min(320px, 55vh);
     overflow-y: auto;
+    overflow-x: hidden;
     white-space: normal;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(100, 116, 139, 0.65) rgba(241, 245, 249, 0.9);
+}
+
+.admin-custom-select-menu::-webkit-scrollbar {
+    width: 8px;
+}
+.admin-custom-select-menu::-webkit-scrollbar-track {
+    background: rgba(241, 245, 249, 0.95);
+    border-radius: 8px;
+}
+.admin-custom-select-menu::-webkit-scrollbar-thumb {
+    background: rgba(100, 116, 139, 0.55);
+    border-radius: 8px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+.admin-custom-select-menu::-webkit-scrollbar-thumb:hover {
+    background: rgba(71, 85, 105, 0.75);
+    background-clip: padding-box;
 }
 
 .admin-custom-select-menu.show {
@@ -1449,6 +1486,34 @@ textarea:focus-visible {
 
 .ticket-user-meta small {
     color: var(--admin-muted);
+}
+
+.ticket-detail-field-label {
+    font-weight: 600;
+    color: var(--admin-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: 0.7rem;
+}
+
+.ticket-detail-ticket-type-value {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--admin-text);
+}
+
+.ticket-purchase-order-display {
+    width: 100%;
+    border-radius: 0.5rem;
+    border: 1px solid var(--admin-border);
+    background: #ffffff;
+    color: var(--admin-text);
+    padding: 0.55rem 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.45;
+    white-space: normal;
+    word-break: break-word;
 }
 
 .ticket-delete-btn {
@@ -1830,6 +1895,20 @@ body.admin-modern.admin-theme-dark .ticket-user-meta small {
     color: #9cb0d2;
 }
 
+body.admin-modern.admin-theme-dark .ticket-detail-ticket-type-value {
+    color: #e8f0ff;
+}
+
+body.admin-modern.admin-theme-dark .ticket-detail-field-label {
+    color: #9cb0d2;
+}
+
+body.admin-modern.admin-theme-dark .ticket-purchase-order-display {
+    background: #0e1b34;
+    border-color: #284067;
+    color: #deebff;
+}
+
 body.admin-modern.admin-theme-dark .ticket-bubble-customer {
     background: #162947;
     border-color: #284067;
@@ -1966,6 +2045,17 @@ body.admin-modern.admin-theme-dark .admin-footer-note {
 /* ---------- Tickets / Users / Settings responsive tuning ---------- */
 .ticket-list-table {
     min-width: 680px;
+}
+
+/* Light theme: ticket list area reads clearer on pale background */
+body.admin-modern:not(.admin-theme-dark) .ticket-list-panel .table-responsive {
+    border: 1px solid #b8c9e6;
+    border-radius: 0.75rem;
+    background: #f5f8fc;
+}
+
+body.admin-modern:not(.admin-theme-dark) .ticket-list-panel .ticket-list-table tbody td {
+    border-color: #d0dce8;
 }
 
 .ticket-detail-header {
@@ -2201,4 +2291,71 @@ body.admin-modern.admin-theme-dark .admin-footer-note {
 }
 .settings-help-text {
     color: var(--admin-muted);
+}
+
+/* Contact settings — Discord terminal textarea (dark: contrast + placeholder) */
+body.admin-modern.admin-theme-dark #contact_discord_typed_block {
+    background-color: #0a1528;
+    border-color: #315082;
+    color: #eaf2ff;
+}
+body.admin-modern.admin-theme-dark #contact_discord_typed_block::placeholder {
+    color: #8aa3c9;
+}
+
+/* Contact settings: category <details> — hide UA marker; Themify chevron */
+.contact-settings-cat-details > summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    color: var(--admin-text);
+    font-weight: 600;
+}
+.contact-settings-cat-details > summary::-webkit-details-marker {
+    display: none;
+}
+.contact-settings-cat-details > summary:focus-visible {
+    outline: 2px solid var(--admin-primary);
+    outline-offset: 2px;
+    border-radius: 0.25rem;
+}
+.contact-settings-cat-chevron {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1rem;
+    min-height: 1em;
+    margin-top: 0.07em;
+}
+.contact-settings-cat-chevron i {
+    font-size: 0.7rem;
+    line-height: 1;
+    color: var(--admin-muted);
+    transition: transform 0.2s ease;
+}
+.contact-settings-cat-details[open] .contact-settings-cat-chevron i {
+    transform: rotate(90deg);
+}
+.contact-settings-cat-summary-main {
+    flex: 1;
+    min-width: 0;
+}
+.contact-settings-cat-details .contact-settings-cat-slug {
+    color: var(--admin-muted);
+    font-weight: 500;
+}
+
+/* Ticket list: empty state (avoid Bootstrap text-muted on dark admin) */
+.ticket-list-empty {
+    color: var(--admin-muted);
+    padding: 1.25rem 0.5rem;
+    font-size: 0.95rem;
+}
+
+.ticket-type-cell {
+    color: var(--admin-text);
+    font-weight: 500;
 }

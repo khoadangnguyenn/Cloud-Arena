@@ -1,208 +1,411 @@
 <?php
-class Users extends Controller
-{
-    // Default index to avoid missing method errors
-    public function index()
-    {
-        header('Location: ' . URLROOT . '/users/login');
-        exit;
+class Users extends Controller {
+
+    private $userModel;
+
+    public function __construct() {
+        $this->userModel = $this->model('User');
     }
 
-    public function login()
-    {
-        // If POST, process login
+    private function requireAuth() {
+        if (!isset($_SESSION['user_id'])) {
+            header('Location: ' . URLROOT . '/users/login');
+            exit();
+        }
+    }
+
+    // GET /users/login  — show form
+    // POST /users/login — process credentials
+    public function login() {
+        if (isset($_SESSION['user_id'])) {
+            header('Location: ' . URLROOT);
+            exit();
+        }
+
+        if (empty($_SESSION['csrf_login'])) {
+            $_SESSION['csrf_login'] = bin2hex(random_bytes(32));
+        }
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // Sanitize POST
             $username = trim($_POST['username'] ?? '');
-            $password = $_POST['password'] ?? '';
+            $password = trim($_POST['password'] ?? '');
 
-            $userModel = $this->model('User');
-            $user = $userModel->login($username, $password);
+            $data = [
+                'title'        => 'Đăng nhập',
+                'csrf_token'   => $_SESSION['csrf_login'],
+                'username'     => htmlspecialchars($username),
+                'password'     => '',
+                'username_err' => '',
+                'password_err' => '',
+                'login_err'    => '',
+            ];
 
-            if ($user) {
-                // Prevent banned users from logging in
-                if (isset($user->status) && $user->status === 'banned') {
-                    $data = [
-                        'title' => 'Đăng nhập',
-                        'username' => $username,
-                        'username_err' => 'Tài khoản của bạn đã bị cấm.',
-                        'password_err' => ''
-                    ];
-                    $this->view('client/users/login', $data);
-                    return;
-                }
-                // Set session
-                $_SESSION['user_id'] = $user->id;
-                $_SESSION['user_name'] = $user->full_name ?: $user->username;
-                $_SESSION['user_role'] = $user->role ?? 'member';
-                if (!empty($user->avatar)) {
-                    $_SESSION['user_avatar'] = $user->avatar;
-                }
-                // Store credit in session for quick display in navbar
-                $_SESSION['user_credit'] = isset($user->credit) ? (int)$user->credit : 0;
-                header('Location: ' . URLROOT . '/pages/index');
-                exit;
-            } else {
-                $data = [
-                    'title' => 'Đăng nhập',
-                    'username' => $username,
-                    'username_err' => 'Tên đăng nhập hoặc mật khẩu không đúng',
-                    'password_err' => ''
-                ];
+            $submittedToken = trim((string) ($_POST['csrf_token'] ?? ''));
+            if (!hash_equals((string) ($_SESSION['csrf_login'] ?? ''), $submittedToken)) {
+                $data['login_err'] = 'Yêu cầu không hợp lệ. Vui lòng tải lại trang.';
                 $this->view('client/users/login', $data);
+                return;
             }
+
+            // Rate limiting sau lần đăng nhập sai gần nhất
+            if ((time() - (int) ($_SESSION['login_last_submit'] ?? 0)) < 10) {
+                $data['login_err'] = 'Bạn vừa thử đăng nhập. Vui lòng đợi ít nhất 10 giây trước khi thử lại.';
+                $this->view('client/users/login', $data);
+                return;
+            }
+
+            if (empty($username)) {
+                $data['username_err'] = 'Vui lòng nhập tên đăng nhập.';
+            }
+            if (empty($password)) {
+                $data['password_err'] = 'Vui lòng nhập mật khẩu.';
+            }
+
+            if (empty($data['username_err']) && empty($data['password_err'])) {
+                $loggedInUser = $this->userModel->login($username, $password);
+
+                if ($loggedInUser) {
+                    if ($loggedInUser->status === 'banned') {
+                        $data['login_err'] = 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ hỗ trợ.';
+                        $this->view('client/users/login', $data);
+                        return;
+                    }
+
+                    // Set session
+                    $_SESSION['user_id']   = $loggedInUser->id;
+                    $_SESSION['user_name'] = $loggedInUser->full_name ?: $loggedInUser->username;
+                    $_SESSION['user_role'] = $loggedInUser->role;
+                    $_SESSION['user_avatar'] = $loggedInUser->avatar ?? '';
+                    session_regenerate_id(true);
+                    unset($_SESSION['login_last_submit']);
+
+                    if ($loggedInUser->role === 'admin') {
+                        header('Location: ' . URLROOT . '/admin');
+                    } else {
+                        header('Location: ' . URLROOT);
+                    }
+                    exit();
+                } else {
+                    $data['login_err'] = 'Tên đăng nhập hoặc mật khẩu không đúng.';
+                    $_SESSION['login_last_submit'] = time();
+                }
+            }
+
+            $this->view('client/users/login', $data);
             return;
         }
 
-        $data = ['title' => 'Đăng nhập', 'username' => '', 'username_err' => '', 'password_err' => ''];
+        // GET — show blank form
+        $data = [
+            'title'        => 'Đăng nhập',
+            'csrf_token'   => $_SESSION['csrf_login'],
+            'username'     => '',
+            'password'     => '',
+            'username_err' => '',
+            'password_err' => '',
+            'login_err'    => '',
+        ];
         $this->view('client/users/login', $data);
     }
 
-    public function logout()
-    {
-        // Clear session and redirect to home
-        // Unset all session variables
-        $_SESSION = [];
-        // Destroy the session cookie
-        if (ini_get("session.use_cookies")) {
-            $params = session_get_cookie_params();
-            setcookie(
-                session_name(),
-                '',
-                time() - 42000,
-                $params["path"],
-                $params["domain"],
-                $params["secure"],
-                $params["httponly"]
-            );
+    // GET /users/register  — show form
+    // POST /users/register — process registration
+    public function register() {
+        if (isset($_SESSION['user_id'])) {
+            header('Location: ' . URLROOT);
+            exit();
         }
-        session_destroy();
-        header('Location: ' . URLROOT . '/');
-        exit;
-    }
 
-    public function register()
-    {
+        if (empty($_SESSION['csrf_register'])) {
+            $_SESSION['csrf_register'] = bin2hex(random_bytes(32));
+        }
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $username = trim($_POST['username'] ?? '');
-            $email = trim($_POST['email'] ?? '');
-            $password = $_POST['password'] ?? '';
-            $confirm_password = $_POST['confirm_password'] ?? '';
-
-            $userModel = $this->model('User');
+            $username         = trim($_POST['username'] ?? '');
+            $fullName         = trim($_POST['full_name'] ?? '');
+            $email            = trim($_POST['email'] ?? '');
+            $password         = trim($_POST['password'] ?? '');
+            $confirm_password = trim($_POST['confirm_password'] ?? '');
 
             $data = [
-                'title' => 'Đăng ký',
-                'username' => $username,
-                'email' => $email,
-                'username_err' => '',
-                'email_err' => '',
-                'password_err' => '',
-                'confirm_password_err' => ''
+                'title'                => 'Đăng ký',
+                'csrf_token'           => $_SESSION['csrf_register'],
+                'username'             => htmlspecialchars($username),
+                'full_name'            => htmlspecialchars($fullName),
+                'email'                => htmlspecialchars($email),
+                'password'             => '',
+                'confirm_password'     => '',
+                'username_err'         => '',
+                'full_name_err'        => '',
+                'email_err'            => '',
+                'password_err'         => '',
+                'confirm_password_err' => '',
             ];
 
-            // Validate
-            if (empty($username)) $data['username_err'] = 'Vui lòng nhập tên đăng nhập';
-            if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) $data['email_err'] = 'Email không hợp lệ';
-            if (empty($password) || strlen($password) < 6) $data['password_err'] = 'Mật khẩu ít nhất 6 ký tự';
-            if ($password !== $confirm_password) $data['confirm_password_err'] = 'Mật khẩu xác nhận không khớp';
+            $submittedToken = trim((string) ($_POST['csrf_token'] ?? ''));
+            if (!hash_equals((string) ($_SESSION['csrf_register'] ?? ''), $submittedToken)) {
+                $data['username_err'] = 'Yêu cầu không hợp lệ. Vui lòng tải lại trang.';
+                $this->view('client/users/register', $data);
+                return;
+            }
 
-            // Check unique
-            if ($userModel->findUserByUsername($username)) $data['username_err'] = 'Tên đăng nhập đã tồn tại';
-            if ($userModel->findUserByEmail($email)) $data['email_err'] = 'Email đã được sử dụng';
+            // Validate username
+            if (empty($username)) {
+                $data['username_err'] = 'Vui lòng nhập tên đăng nhập.';
+            } elseif (strlen($username) < 3 || strlen($username) > 50) {
+                $data['username_err'] = 'Tên đăng nhập phải từ 3 đến 50 ký tự.';
+            } elseif (!preg_match('/^[a-zA-Z0-9$@_!]+$/', $username)) {
+                $data['username_err'] = 'Tên đăng nhập chỉ dùng chữ cái, số và ký tự $ @ _ !';
+            } elseif ($this->userModel->findUserByUsername($username)) {
+                $data['username_err'] = 'Tên đăng nhập đã tồn tại.';
+            }
 
-            // If no errors, register
-            if (empty($data['username_err']) && empty($data['email_err']) && empty($data['password_err']) && empty($data['confirm_password_err'])) {
-                $hashed = password_hash($password, PASSWORD_DEFAULT);
-                $payload = ['username' => $username, 'email' => $email, 'password' => $hashed];
-                if ($userModel->register($payload)) {
-                    header('Location: ' . URLROOT . '/users/login');
-                    exit;
-                } else {
-                    die('Lỗi đăng ký tài khoản');
+            // Validate email
+            if (empty($email)) {
+                $data['email_err'] = 'Vui lòng nhập email.';
+            } elseif (!preg_match('/^[a-zA-Z0-9@.]+$/', $email)) {
+                $data['email_err'] = 'Email chỉ được chứa chữ cái, số, @ và dấu chấm.';
+            } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $data['email_err'] = 'Email không hợp lệ.';
+            } elseif ($this->userModel->findUserByEmail($email)) {
+                $data['email_err'] = 'Email này đã được sử dụng.';
+            }
+
+            // Validate optional display name
+            if ($fullName !== '') {
+                if (strlen($fullName) > 100) {
+                    $data['full_name_err'] = 'Tên hiển thị tối đa 100 ký tự.';
+                } elseif (!preg_match('/^[a-zA-ZÀ-ỹ\s]+$/u', $fullName)) {
+                    $data['full_name_err'] = 'Tên hiển thị chỉ được chứa chữ cái và khoảng cách.';
                 }
             }
 
-            // Show form with errors
+            // Validate password
+            if (empty($password)) {
+                $data['password_err'] = 'Vui lòng nhập mật khẩu.';
+            } elseif (strlen($password) < 6) {
+                $data['password_err'] = 'Mật khẩu phải có ít nhất 6 ký tự.';
+            }
+
+            // Validate confirm password
+            if (empty($confirm_password)) {
+                $data['confirm_password_err'] = 'Vui lòng xác nhận mật khẩu.';
+            } elseif ($password !== $confirm_password) {
+                $data['confirm_password_err'] = 'Mật khẩu xác nhận không khớp.';
+            }
+
+            $hasErrors = $data['username_err'] || $data['full_name_err'] || $data['email_err']
+                      || $data['password_err'] || $data['confirm_password_err'];
+
+            if (!$hasErrors) {
+                $data['password'] = password_hash($password, PASSWORD_DEFAULT);
+
+                $registerData = [
+                    'username' => $username,
+                    'full_name' => $fullName === '' ? $username : $fullName,
+                    'email'    => $email,
+                    'password' => $data['password'],
+                ];
+
+                if ($this->userModel->register($registerData)) {
+                    unset($_SESSION['csrf_register']);
+                    $_SESSION['register_success'] = 'Đăng ký thành công! Vui lòng đăng nhập.';
+                    header('Location: ' . URLROOT . '/users/login');
+                    exit();
+                } else {
+                    $data['username_err'] = 'Có lỗi xảy ra khi đăng ký. Vui lòng thử lại.';
+                }
+            }
+
             $this->view('client/users/register', $data);
             return;
         }
 
-        $data = ['title' => 'Đăng ký', 'username' => '', 'email' => '', 'username_err' => '', 'email_err' => '', 'password_err' => '', 'confirm_password_err' => ''];
+        // GET — show blank form
+        $data = [
+            'title'                => 'Đăng ký',
+            'csrf_token'           => $_SESSION['csrf_register'],
+            'username'             => '',
+            'full_name'            => '',
+            'email'                => '',
+            'password'             => '',
+            'confirm_password'     => '',
+            'username_err'         => '',
+            'full_name_err'        => '',
+            'email_err'            => '',
+            'password_err'         => '',
+            'confirm_password_err' => '',
+        ];
         $this->view('client/users/register', $data);
     }
 
-    public function profile()
-    {
-        if (!isset($_SESSION['user_id'])) {
+    // GET /users/logout
+    public function logout() {
+        session_destroy();
+        header('Location: ' . URLROOT . '/users/login');
+        exit();
+    }
+
+    public function profile() {
+        $this->requireAuth();
+        $currentUser = $this->userModel->getUserById((int) $_SESSION['user_id']);
+        if (!$currentUser) {
+            session_destroy();
             header('Location: ' . URLROOT . '/users/login');
             exit();
         }
 
-        $userModel = $this->model('User');
-        $user = $userModel->getById($_SESSION['user_id']);
+        if (empty($_SESSION['csrf_profile'])) {
+            $_SESSION['csrf_profile'] = bin2hex(random_bytes(32));
+        }
+
+        $errors = [
+            'full_name' => '',
+            'email' => '',
+            'current_password' => '',
+            'new_password' => '',
+            'confirm_password' => '',
+            'avatar' => ''
+        ];
+        $successMessage = $_SESSION['profile_success'] ?? '';
+        unset($_SESSION['profile_success']);
+
+        $pub = $this->getPublicSettings();
+        $profilePageTitle = trim($pub['profile_page_title'] ?? '') ?: 'Hồ sơ người dùng';
+        $profilePageDesc = trim($pub['profile_page_intro'] ?? '');
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // Determine action: update_profile or change_password
-            if (isset($_POST['action']) && $_POST['action'] === 'change_password') {
-                $current = $_POST['current_password'] ?? '';
-                $new = $_POST['new_password'] ?? '';
-                $confirm = $_POST['confirm_password'] ?? '';
+            $submittedToken = trim((string) ($_POST['csrf_token'] ?? ''));
+            if (!hash_equals((string) ($_SESSION['csrf_profile'] ?? ''), $submittedToken)) {
+                $successMessage = '';
+                $errors['full_name'] = 'Yêu cầu không hợp lệ. Vui lòng tải lại trang.';
+                $this->view('client/users/profile', [
+                    'title'           => $profilePageTitle,
+                    'description'    => $profilePageDesc,
+                    'csrf_token'      => $_SESSION['csrf_profile'],
+                    'user'            => $currentUser,
+                    'errors'          => $errors,
+                    'success_message' => ''
+                ]);
+                return;
+            }
 
-                if (empty($new) || strlen($new) < 6) {
-                    $error = 'Mật khẩu mới phải có ít nhất 6 ký tự';
-                } elseif ($new !== $confirm) {
-                    $error = 'Mật khẩu xác nhận không khớp';
-                } else {
-                    // Verify current
-                    $userRow = $this->model('User')->getById($_SESSION['user_id']);
-                    $userModel = $this->model('User');
-                    if (!$userModel->verifyPassword($_SESSION['user_id'], $current)) {
-                        $error = 'Mật khẩu hiện tại không chính xác';
-                    } else {
-                        $hashed = password_hash($new, PASSWORD_DEFAULT);
-                        $userModel->updatePassword($_SESSION['user_id'], $hashed);
-                        $success = 'Đổi mật khẩu thành công';
+            $action = trim($_POST['action'] ?? '');
+
+            if ($action === 'profile_info') {
+                $fullName = trim($_POST['full_name'] ?? '');
+                $email    = trim($_POST['email'] ?? '');
+
+                if ($fullName === '') {
+                    $errors['full_name'] = 'Họ và tên không được để trống.';
+                } elseif (strlen($fullName) > 100) {
+                    $errors['full_name'] = 'Tên hiển thị tối đa 100 ký tự.';
+                } elseif (!preg_match('/^[a-zA-ZÀ-ỹ\s]+$/u', $fullName)) {
+                    $errors['full_name'] = 'Tên hiển thị chỉ được chứa chữ cái và khoảng cách.';
+                }
+
+                if (empty($email)) {
+                    $errors['email'] = 'Vui lòng nhập email.';
+                } elseif (!preg_match('/^[a-zA-Z0-9@.]+$/', $email)) {
+                    $errors['email'] = 'Email chỉ được chứa chữ cái, số, @ và dấu chấm.';
+                } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    $errors['email'] = 'Email không hợp lệ.';
+                } elseif ($email !== $currentUser->email && $this->userModel->findUserByEmail($email)) {
+                    $errors['email'] = 'Email đã được sử dụng.';
+                }
+
+                if ($errors['full_name'] === '' && $errors['email'] === '') {
+                    $updated = $this->userModel->updateProfile((int) $_SESSION['user_id'], $fullName, $email);
+                    if ($updated) {
+                        $_SESSION['user_name']      = $fullName;
+                        $_SESSION['csrf_profile']   = bin2hex(random_bytes(32));
+                        $_SESSION['profile_success'] = 'Đã cập nhật thông tin cá nhân.';
+                        header('Location: ' . URLROOT . '/users/profile');
+                        exit();
                     }
                 }
-            } else {
-                // profile update
-                $full_name = isset($_POST['full_name']) ? trim($_POST['full_name']) : ($user->full_name ?? '');
-                $email = isset($_POST['email']) ? trim($_POST['email']) : ($user->email ?? '');
-                $avatarFilename = $user->avatar ?? null;
+            }
 
-                // Handle avatar upload
-                if (isset($_FILES['avatar']) && !empty($_FILES['avatar']['name'])) {
-                    require_once APPROOT . '/helpers/Upload.php';
-                    $uploader = new Upload($_FILES['avatar']);
-                    $res = $uploader->uploadImage(APPROOT . '/../public/uploads');
-                    if ($res['success']) $avatarFilename = $res['filename'];
+            if ($action === 'change_password') {
+                $currentPassword = trim($_POST['current_password'] ?? '');
+                $newPassword = trim($_POST['new_password'] ?? '');
+                $confirmPassword = trim($_POST['confirm_password'] ?? '');
+
+                if ($currentPassword === '') {
+                    $errors['current_password'] = 'Vui lòng nhập mật khẩu hiện tại.';
+                } elseif (!password_verify($currentPassword, $currentUser->password)) {
+                    $errors['current_password'] = 'Mật khẩu hiện tại không chính xác.';
                 }
 
-                $payload = ['full_name' => $full_name, 'email' => $email, 'avatar' => $avatarFilename];
-                $this->model('User')->updateProfile($_SESSION['user_id'], $payload);
-                $_SESSION['user_name'] = $full_name ?: $_SESSION['user_name'];
-                if (!empty($avatarFilename)) {
-                    $_SESSION['user_avatar'] = $avatarFilename;
+                if (strlen($newPassword) < 6) {
+                    $errors['new_password'] = 'Mật khẩu mới cần ít nhất 6 ký tự.';
                 }
-                header('Location: ' . URLROOT . '/users/profile');
-                exit();
+                if ($confirmPassword !== $newPassword) {
+                    $errors['confirm_password'] = 'Xác nhận mật khẩu không khớp.';
+                }
+
+                if ($errors['current_password'] === '' && $errors['new_password'] === '' && $errors['confirm_password'] === '') {
+                    $updated = $this->userModel->updatePassword((int) $_SESSION['user_id'], password_hash($newPassword, PASSWORD_DEFAULT));
+                    if ($updated) {
+                        $_SESSION['csrf_profile']    = bin2hex(random_bytes(32));
+                        $_SESSION['profile_success'] = 'Đã cập nhật mật khẩu.';
+                        header('Location: ' . URLROOT . '/users/profile');
+                        exit();
+                    }
+                }
+            }
+
+            if ($action === 'upload_avatar') {
+                if (!empty($_FILES['avatar']['name'])) {
+                    $uploadDir = APPROOT . '/../public/uploads/avatars/';
+                    $stored = SecureUpload::storeRasterUpload(
+                        $_FILES['avatar'],
+                        $uploadDir,
+                        'av_',
+                        SecureUpload::DEFAULT_MAX_BYTES
+                    );
+                    if (!$stored['ok']) {
+                        $errors['avatar'] = $stored['message'] ?? 'Không thể tải ảnh lên. Vui lòng thử lại.';
+                    } else {
+                        $oldRel = (string) ($currentUser->avatar ?? '');
+                        if ($oldRel !== '') {
+                            $oldPath = '';
+                            if (strpos($oldRel, '/uploads/avatars/') === 0) {
+                                $oldPath = APPROOT . '/../public' . $oldRel;
+                            } elseif (preg_match('#^uploads/avatars/[^/]+$#i', $oldRel)) {
+                                $oldPath = APPROOT . '/../public/' . $oldRel;
+                            }
+                            if ($oldPath !== '' && is_file($oldPath)) {
+                                @unlink($oldPath);
+                            }
+                        }
+
+                        $avatarRelativeUrl = '/uploads/avatars/' . $stored['filename'];
+                        $this->userModel->updateAvatar((int) $_SESSION['user_id'], $avatarRelativeUrl);
+                        $_SESSION['user_avatar']      = $avatarRelativeUrl;
+                        $_SESSION['csrf_profile']     = bin2hex(random_bytes(32));
+                        $_SESSION['profile_success'] = 'Đã cập nhật ảnh đại diện.';
+                        header('Location: ' . URLROOT . '/users/profile');
+                        exit();
+                    }
+                } else {
+                    $errors['avatar'] = 'Vui lòng chọn ảnh đại diện.';
+                }
             }
         }
 
-        $data = ['title' => 'Hồ sơ cá nhân', 'user' => $user, 'error' => $error ?? '', 'success' => $success ?? ''];
-        $this->view('client/users/profile', $data);
-    }
-
-    public function dashboard()
-    {
-        if (!isset($_SESSION['user_id'])) {
-            header('Location: ' . URLROOT . '/users/login');
-            exit();
+        $user = $this->userModel->getUserById((int) $_SESSION['user_id']);
+        if ($user) {
+            $_SESSION['user_avatar'] = $user->avatar ?? '';
         }
-        $userServiceModel = $this->model('UserServiceModel');
-        $services = $userServiceModel->getUserServices($_SESSION['user_id']);
-        $data = ['title' => 'Dashboard cá nhân', 'services' => $services];
-        $this->view('client/users/dashboard', $data);
+        $data = [
+            'title'           => $profilePageTitle,
+            'description'    => $profilePageDesc,
+            'csrf_token'      => $_SESSION['csrf_profile'],
+            'user'            => $user,
+            'errors'          => $errors,
+            'success_message' => $successMessage
+        ];
+        $this->view('client/users/profile', $data);
     }
 }

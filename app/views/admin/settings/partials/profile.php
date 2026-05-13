@@ -3,7 +3,7 @@ $s = $data['settings'];
 $errors = $data['errors'] ?? [];
 ?>
 
-<form action="<?php echo URLROOT; ?>/admin/settings/profile" method="POST" novalidate>
+<form action="<?php echo URLROOT; ?>/admin/settings/profile" method="POST" novalidate data-admin-settings-form="true">
     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($data['csrf_admin'] ?? ''); ?>">
     <input type="hidden" name="settings_section" value="profile">
 

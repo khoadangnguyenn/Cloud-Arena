@@ -11,8 +11,14 @@ class Controller {
     }
 
     protected function verifyCsrf($key) {
-        $submitted = trim((string) ($_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? ''));
-        return hash_equals((string) ($_SESSION[$key] ?? ''), $submitted);
+        $expected = trim((string) ($_SESSION[$key] ?? ''));
+        $fromPost = trim((string) ($_POST['csrf_token'] ?? ''));
+        $fromHeader = trim((string) ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? ''));
+        $submitted = $fromPost !== '' ? $fromPost : $fromHeader;
+        if ($expected === '' || $submitted === '') {
+            return false;
+        }
+        return hash_equals($expected, $submitted);
     }
 
     public function model($model) {
@@ -113,21 +119,24 @@ class Controller {
         }
 
         $sessionKey = 'admin_notification_toast_shown_' . $adminUserId;
-        $alreadyShown = !empty($_SESSION[$sessionKey]);
-        if ($alreadyShown) {
+
+        $badges = $this->getAdminNavBadges();
+        $notifCount = max(0, (int) ($badges['notifications'] ?? 0));
+
+        if ($notifCount <= 0) {
+            unset($_SESSION[$sessionKey]);
             return $default;
         }
 
-        $badges = $this->getAdminNavBadges();
-        $count = max(0, (int) ($badges['notifications'] ?? 0));
-        if ($count <= 0) {
+        $alreadyShown = !empty($_SESSION[$sessionKey]);
+        if ($alreadyShown) {
             return $default;
         }
 
         $_SESSION[$sessionKey] = 1;
         return [
             'show' => true,
-            'count' => $count
+            'count' => $notifCount
         ];
     }
 
