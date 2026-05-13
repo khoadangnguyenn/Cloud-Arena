@@ -255,16 +255,16 @@
 }
 
 .support-topo-lbl--edge {
-    left: 49%;
-    top: 54%;
+    left: 61%;
+    top: 30%;
     transform: translate(-100%, 0);
     padding-right: 0.25rem;
 }
 
 .support-topo-status {
     position: absolute;
-    left: 51%;
-    top: 53%;
+    left: 53%;
+    top: 56%;
     transform: translate(0, 0);
     display: flex;
     align-items: center;
