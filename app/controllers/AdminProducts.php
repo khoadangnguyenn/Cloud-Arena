@@ -62,24 +62,39 @@ class AdminProducts extends Controller {
 
             if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
                 $fileTmpPath = $_FILES['image']['tmp_name'];
-                $fileName = time() . '_' . $_FILES['image']['name']; 
-                $uploadFileDir = dirname(APPROOT) . '/public/media/'; 
+                $originalName = isset($_FILES['image']['name']) ? $_FILES['image']['name'] : '';
+                $safeBase = preg_replace('/[^A-Za-z0-9._-]+/', '_', basename($originalName));
+                $fileName = time() . '_' . $safeBase;
+
+                $uploadFileDir = rtrim(dirname(APPROOT), "\\/") . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR;
+                if (!is_dir($uploadFileDir)) {
+                    if (!mkdir($uploadFileDir, 0755, true) && !is_dir($uploadFileDir)) {
+                        $data['image_err'] = 'Không thể tạo thư mục lưu trữ ảnh trên server.';
+                    }
+                }
+
                 $dest_path = $uploadFileDir . $fileName;
 
                 $allowedfileExtensions = array('jpg', 'gif', 'png', 'jpeg', 'webp');
-                $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+                $fileExtension = strtolower(pathinfo($safeBase, PATHINFO_EXTENSION));
 
-                if (in_array($fileExtension, $allowedfileExtensions)) {
-                    if(move_uploaded_file($fileTmpPath, $dest_path)) {
-                        $data['image_url'] = 'media/' . $fileName; 
+                if (empty($data['image_err'])) {
+                    if (in_array($fileExtension, $allowedfileExtensions)) {
+                        if (move_uploaded_file($fileTmpPath, $dest_path)) {
+                            // store relative URL path used elsewhere in app
+                            $data['image_url'] = 'media/' . $fileName;
+                        } else {
+                            $data['image_err'] = 'Có lỗi khi di chuyển file upload tới thư mục lưu trữ.';
+                        }
                     } else {
-                        $data['image_err'] = 'Có lỗi khi di chuyển file upload tới thư mục lưu trữ.';
+                        $data['image_err'] = 'Chỉ chấp nhận file ảnh (JPG, PNG, GIF, WEBP).';
                     }
-                } else {
-                    $data['image_err'] = 'Chỉ chấp nhận file ảnh (JPG, PNG, GIF, WEBP).';
                 }
             } else {
-                $data['image_err'] = 'Vui lòng chọn hình ảnh sản phẩm.';
+                // Keep existing image on edit if none uploaded; for add, require image
+                if ($data['image_url'] === '') {
+                    $data['image_err'] = 'Vui lòng chọn hình ảnh sản phẩm.';
+                }
             }
 
             if (empty($data['name_err']) && empty($data['price_err']) && empty($data['image_err']) && empty($data['ram_mb_err']) && empty($data['cpu_err']) && empty($data['disk_err'])) {
@@ -152,23 +167,34 @@ class AdminProducts extends Controller {
             if (empty($data['disk_gb']) || !is_numeric($data['disk_gb']) || $data['disk_gb'] < 0) { $data['disk_err'] = 'Ổ cứng không hợp lệ'; }
 
             if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-                $fileTmpPath = $_FILES['image']['tmp_name'];
-                $fileName = time() . '_' . $_FILES['image']['name']; 
-                $uploadFileDir = dirname(APPROOT) . '/public/media/'; 
-                $dest_path = $uploadFileDir . $fileName;
+                    $fileTmpPath = $_FILES['image']['tmp_name'];
+                    $originalName = isset($_FILES['image']['name']) ? $_FILES['image']['name'] : '';
+                    $safeBase = preg_replace('/[^A-Za-z0-9._-]+/', '_', basename($originalName));
+                    $fileName = time() . '_' . $safeBase;
 
-                $allowedfileExtensions = array('jpg', 'gif', 'png', 'jpeg', 'webp');
-                $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-
-                if (in_array($fileExtension, $allowedfileExtensions)) {
-                    if(move_uploaded_file($fileTmpPath, $dest_path)) {
-                        $data['image_url'] = 'media/' . $fileName; 
-                    } else {
-                        $data['image_err'] = 'Có lỗi khi di chuyển file upload tới thư mục lưu trữ.';
+                    $uploadFileDir = rtrim(dirname(APPROOT), "\\/") . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR;
+                    if (!is_dir($uploadFileDir)) {
+                        if (!mkdir($uploadFileDir, 0755, true) && !is_dir($uploadFileDir)) {
+                            $data['image_err'] = 'Không thể tạo thư mục lưu trữ ảnh trên server.';
+                        }
                     }
-                } else {
-                    $data['image_err'] = 'Chỉ chấp nhận file ảnh (JPG, PNG, GIF, WEBP).';
-                }
+
+                    $dest_path = $uploadFileDir . $fileName;
+
+                    $allowedfileExtensions = array('jpg', 'gif', 'png', 'jpeg', 'webp');
+                    $fileExtension = strtolower(pathinfo($safeBase, PATHINFO_EXTENSION));
+
+                    if (empty($data['image_err'])) {
+                        if (in_array($fileExtension, $allowedfileExtensions)) {
+                            if (move_uploaded_file($fileTmpPath, $dest_path)) {
+                                $data['image_url'] = 'media/' . $fileName;
+                            } else {
+                                $data['image_err'] = 'Có lỗi khi di chuyển file upload tới thư mục lưu trữ.';
+                            }
+                        } else {
+                            $data['image_err'] = 'Chỉ chấp nhận file ảnh (JPG, PNG, GIF, WEBP).';
+                        }
+                    }
             }
 
             if (empty($data['name_err']) && empty($data['price_err']) && empty($data['image_err']) && empty($data['ram_mb_err']) && empty($data['cpu_err']) && empty($data['disk_err'])) {

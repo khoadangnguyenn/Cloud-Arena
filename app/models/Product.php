@@ -116,6 +116,18 @@ class Product {
         return $this->db->single();
     }
 
+    /**
+     * Return a lightweight list of active products for admin pickers (id, name, slug)
+     * @param int $limit
+     * @return array
+     */
+    public function getProductPickerList($limit = 200) {
+        $sql = "SELECT id, name, slug FROM products WHERE status = 'active' ORDER BY created_at DESC LIMIT :limit";
+        $this->db->query($sql);
+        $this->db->bind(':limit', (int) $limit, PDO::PARAM_INT);
+        return $this->db->resultSet();
+    }
+
     public function countActiveServices() {
         $this->db->query("SELECT COUNT(*) as total FROM user_services WHERE status = 'active'");
         $row = $this->db->single();

@@ -874,3 +874,222 @@
     "note": "non-ajax flow"
 }
 ---
+{
+    "time": "2026-05-13T19:56:06+02:00",
+    "post": {
+        "id": "1",
+        "csrf_token": "794e124d8e9fafce932673038cb21a94debd572c7b8f402437534cabc3f24a91",
+        "title": "G-Server",
+        "subtitle": "Cung cấp giải pháp máy chủ tốc độ cao, cấu hình mạnh mẽ chuyên biệt cho Game Server và Doanh nghiệp.",
+        "intro_duration": "5.00",
+        "partners_heading": "Đối Tác Hạ Tầng & Công Nghệ",
+        "modpacks_heading": "Hỗ Trợ Đa Dạng Modpack & Nền Tảng",
+        "gallery_heading": "Hình Ảnh Trải Nghiệm & Datacenter",
+        "content": "",
+        "uptime": "99.99%",
+        "uptime_icon": "",
+        "support": "24\/7\/365",
+        "support_icon": "",
+        "performance": "Ultra NVMe",
+        "performance_icon": "",
+        "section_title": [
+            "Hạ tầng mạng Tiêu chuẩn Công nghiệp",
+            "Tối ưu hóa cho Trải nghiệm Game Thuần túy",
+            "Kích hoạt Tức thì - Hỗ trợ Tận tâm"
+        ],
+        "section_content": [
+            "<p>G-Server vận hành trên nền tảng phần cứng mạnh mẽ với các thiết bị định tuyến từ <strong>Cisco<\/strong>, đảm bảo khả năng xử lý hàng triệu gói tin mỗi giây. Hệ thống của chúng tôi được tối ưu hóa cho các giao thức VPN (Site-to-Site, Teleworker) và định tuyến thông minh để giảm thiểu tối đa độ trễ (latency).<\/p><ul><li><strong>Chống DDoS đa tầng:<\/strong> Lọc traffic độc hại ngay tại cửa ngõ hạ tầng.<\/li><li><strong>Băng thông không giới hạn:<\/strong> Đảm bảo đường truyền luôn thông suốt kể cả trong giờ cao điểm.<\/li><\/ul>",
+            "<p>Chúng tôi hiểu rằng những thay đổi về cơ chế server có thể làm hỏng các cỗ máy redstone phức tạp hay các hệ thống farm trong Minecraft. Tại G-Server, chúng tôi cam kết:<\/p><ul><li><strong>Giữ nguyên cơ chế Vanilla:<\/strong> Không can thiệp vào hành vi của Piston, Villager hay tốc độ Tick-rate của server.<\/li><li><strong>Hỗ trợ đa nền tảng:<\/strong> Dễ dàng triển khai các bản Modpack nặng như RLCraft, SkyFactory hay các Script Roleplay chuyên sâu cho GTA V mà không gặp rào cản kỹ thuật.<\/li><\/ul>",
+            "<p>Thời gian của bạn là vàng. Hệ thống quản trị của G-Server cho phép khách hàng khởi tạo dịch vụ chỉ trong vài giây sau khi thanh toán thành công.<\/p><p>Đội ngũ hỗ trợ của chúng tôi bao gồm những kỹ thuật viên am hiểu sâu về quản trị hệ thống và phát triển game, sẵn sàng giúp bạn giải quyết các vấn đề từ cấu hình IP Route đến cài đặt Plugin\/Modpack phức tạp 24\/7.<\/p>"
+        ],
+        "years_active": "5 Năm",
+        "founded_year": "2021",
+        "partners_name": [
+            "Viettel IDC",
+            "Cisco Systems",
+            "Cloudflare"
+        ],
+        "partners_url": [
+            "https:\/\/viettelidc.com.vn",
+            "https:\/\/www.cisco.com",
+            "https:\/\/www.cloudflare.com"
+        ],
+        "partners_logo_text": [
+            "\/uploads\/viettelidc_logo.png",
+            "\/uploads\/cisco_logo.png",
+            "\/uploads\/cloudflare_logo.png"
+        ],
+        "modpacks_name": [
+            "Vanilla (Tối ưu cơ chế)",
+            "RLCraft",
+            "SkyFactory 4"
+        ],
+        "modpacks_url": [
+            "#",
+            "#",
+            "#"
+        ],
+        "modpacks_logo_text": [
+            "\/uploads\/vanilla_icon.png",
+            "\/uploads\/rlcraft_icon.png",
+            "\/uploads\/skyfactory_icon.png"
+        ],
+        "gallery_title": [
+            ""
+        ],
+        "gallery_caption": [
+            ""
+        ],
+        "cta_heading": "Sẵn sàng bắt đầu dự án của bạn cùng G-Server?",
+        "cta_text": "Khởi tạo Game Server hoặc Website của bạn ngay hôm nay với các gói dịch vụ lưu trữ linh hoạt, mạnh mẽ và tiết kiệm nhất.",
+        "cta_button_text": "Đăng Ký Ngay",
+        "cta_button_url": "\/san-pham",
+        "image_text": "img_6a049cbd0afe2.gif",
+        "background_text": "img_6a049cbd0b711.gif",
+        "intro_gif_text": "img_6a049d663be5a.gif"
+    },
+    "files": {
+        "partners_logo": {
+            "name": [
+                "",
+                "",
+                ""
+            ],
+            "size": [
+                0,
+                0,
+                0
+            ]
+        },
+        "modpacks_logo": {
+            "name": [
+                "",
+                "",
+                ""
+            ],
+            "size": [
+                0,
+                0,
+                0
+            ]
+        },
+        "gallery_images": {
+            "name": [
+                ""
+            ],
+            "size": [
+                0
+            ]
+        },
+        "image": {
+            "name": "",
+            "size": 0
+        },
+        "background": {
+            "name": "",
+            "size": 0
+        },
+        "intro_gif": {
+            "name": "",
+            "size": 0
+        }
+    },
+    "about_rows": [
+        {
+            "id": 1,
+            "title": "G-Server",
+            "subtitle": "Cung cấp giải pháp máy chủ tốc độ cao, cấu hình mạnh mẽ chuyên biệt cho Game Server và Doanh nghiệp.",
+            "services_heading": null,
+            "partners_heading": "Đối Tác Hạ Tầng & Công Nghệ",
+            "modpacks_heading": "Hỗ Trợ Đa Dạng Modpack & Nền Tảng",
+            "gallery_heading": "Hình Ảnh Trải Nghiệm & Datacenter",
+            "content": "",
+            "image": "img_6a049cbd0afe2.gif",
+            "admin_id": 9,
+            "uptime": "99.99%",
+            "support": "24\/7\/365",
+            "performance": "Ultra NVMe",
+            "years_active": "5 Năm",
+            "founded_year": 2021,
+            "partners": "[{\"name\":\"Viettel IDC\",\"url\":\"https:\\\/\\\/viettelidc.com.vn\",\"logo\":\"\\\/uploads\\\/viettelidc_logo.png\"},{\"name\":\"Cisco Systems\",\"url\":\"https:\\\/\\\/www.cisco.com\",\"logo\":\"\\\/uploads\\\/cisco_logo.png\"},{\"name\":\"Cloudflare\",\"url\":\"https:\\\/\\\/www.cloudflare.com\",\"logo\":\"\\\/uploads\\\/cloudflare_logo.png\"}]",
+            "modpacks": "[{\"name\":\"Vanilla (Tối ưu cơ chế)\",\"url\":\"#\",\"logo\":\"\\\/uploads\\\/vanilla_icon.png\"},{\"name\":\"RLCraft\",\"url\":\"#\",\"logo\":\"\\\/uploads\\\/rlcraft_icon.png\"},{\"name\":\"SkyFactory 4\",\"url\":\"#\",\"logo\":\"\\\/uploads\\\/skyfactory_icon.png\"}]",
+            "gallery": null,
+            "services": null,
+            "sections": "[{\"title\":\"Hạ tầng mạng Tiêu chuẩn Công nghiệp\",\"content\":\"<p>G-Server vận hành trên nền tảng phần cứng mạnh mẽ với các thiết bị định tuyến từ <strong>Cisco<\\\/strong>, đảm bảo khả năng xử lý hàng triệu gói tin mỗi giây. Hệ thống của chúng tôi được tối ưu hóa cho các giao thức VPN (Site-to-Site, Teleworker) và định tuyến thông minh để giảm thiểu tối đa độ trễ (latency).<\\\/p><ul><li><strong>Chống DDoS đa tầng:<\\\/strong> Lọc traffic độc hại ngay tại cửa ngõ hạ tầng.<\\\/li><li><strong>Băng thông không giới hạn:<\\\/strong> Đảm bảo đường truyền luôn thông suốt kể cả trong giờ cao điểm.<\\\/li><\\\/ul>\"},{\"title\":\"Tối ưu hóa cho Trải nghiệm Game Thuần túy\",\"content\":\"<p>Chúng tôi hiểu rằng những thay đổi về cơ chế server có thể làm hỏng các cỗ máy redstone phức tạp hay các hệ thống farm trong Minecraft. Tại G-Server, chúng tôi cam kết:<\\\/p><ul><li><strong>Giữ nguyên cơ chế Vanilla:<\\\/strong> Không can thiệp vào hành vi của Piston, Villager hay tốc độ Tick-rate của server.<\\\/li><li><strong>Hỗ trợ đa nền tảng:<\\\/strong> Dễ dàng triển khai các bản Modpack nặng như RLCraft, SkyFactory hay các Script Roleplay chuyên sâu cho GTA V mà không gặp rào cản kỹ thuật.<\\\/li><\\\/ul>\"},{\"title\":\"Kích hoạt Tức thì - Hỗ trợ Tận tâm\",\"content\":\"<p>Thời gian của bạn là vàng. Hệ thống quản trị của G-Server cho phép khách hàng khởi tạo dịch vụ chỉ trong vài giây sau khi thanh toán thành công.<\\\/p><p>Đội ngũ hỗ trợ của chúng tôi bao gồm những kỹ thuật viên am hiểu sâu về quản trị hệ thống và phát triển game, sẵn sàng giúp bạn giải quyết các vấn đề từ cấu hình IP Route đến cài đặt Plugin\\\/Modpack phức tạp 24\\\/7.<\\\/p>\"}]",
+            "cta_heading": "Sẵn sàng bắt đầu dự án của bạn cùng G-Server?",
+            "cta_text": "Khởi tạo Game Server hoặc Website của bạn ngay hôm nay với các gói dịch vụ lưu trữ linh hoạt, mạnh mẽ và tiết kiệm nhất.",
+            "cta_button_text": "Đăng Ký Ngay",
+            "cta_button_url": "\/san-pham",
+            "updated_at": "2026-05-13 22:48:54",
+            "background": "img_6a049cbd0b711.gif",
+            "intro_gif": "img_6a049d663be5a.gif",
+            "intro_duration": "5.00"
+        }
+    ]
+}
+---
+{
+    "time": "2026-05-13T19:56:06+02:00",
+    "payload": {
+        "id": 1,
+        "title": "G-Server",
+        "subtitle": "Cung cấp giải pháp máy chủ tốc độ cao, cấu hình mạnh mẽ chuyên biệt cho Game Server và Doanh nghiệp.",
+        "content": "",
+        "image": "img_6a049cbd0afe2.gif",
+        "background": "img_6a049cbd0b711.gif",
+        "intro_gif": "img_6a049d663be5a.gif",
+        "intro_duration": 5,
+        "admin_id": 9,
+        "uptime": "99.99%",
+        "support": "24\/7\/365",
+        "performance": "Ultra NVMe",
+        "years_active": "5 Năm",
+        "founded_year": 2021,
+        "partners": "[{\"name\":\"Viettel IDC\",\"url\":\"https:\\\/\\\/viettelidc.com.vn\",\"logo\":\"\\\/uploads\\\/viettelidc_logo.png\"},{\"name\":\"Cisco Systems\",\"url\":\"https:\\\/\\\/www.cisco.com\",\"logo\":\"\\\/uploads\\\/cisco_logo.png\"},{\"name\":\"Cloudflare\",\"url\":\"https:\\\/\\\/www.cloudflare.com\",\"logo\":\"\\\/uploads\\\/cloudflare_logo.png\"}]",
+        "modpacks": "[{\"name\":\"Vanilla (Tối ưu cơ chế)\",\"url\":\"#\",\"logo\":\"\\\/uploads\\\/vanilla_icon.png\"},{\"name\":\"RLCraft\",\"url\":\"#\",\"logo\":\"\\\/uploads\\\/rlcraft_icon.png\"},{\"name\":\"SkyFactory 4\",\"url\":\"#\",\"logo\":\"\\\/uploads\\\/skyfactory_icon.png\"}]",
+        "gallery": null,
+        "sections": "[{\"title\":\"Hạ tầng mạng Tiêu chuẩn Công nghiệp\",\"content\":\"<p>G-Server vận hành trên nền tảng phần cứng mạnh mẽ với các thiết bị định tuyến từ <strong>Cisco<\\\/strong>, đảm bảo khả năng xử lý hàng triệu gói tin mỗi giây. Hệ thống của chúng tôi được tối ưu hóa cho các giao thức VPN (Site-to-Site, Teleworker) và định tuyến thông minh để giảm thiểu tối đa độ trễ (latency).<\\\/p><ul><li><strong>Chống DDoS đa tầng:<\\\/strong> Lọc traffic độc hại ngay tại cửa ngõ hạ tầng.<\\\/li><li><strong>Băng thông không giới hạn:<\\\/strong> Đảm bảo đường truyền luôn thông suốt kể cả trong giờ cao điểm.<\\\/li><\\\/ul>\"},{\"title\":\"Tối ưu hóa cho Trải nghiệm Game Thuần túy\",\"content\":\"<p>Chúng tôi hiểu rằng những thay đổi về cơ chế server có thể làm hỏng các cỗ máy redstone phức tạp hay các hệ thống farm trong Minecraft. Tại G-Server, chúng tôi cam kết:<\\\/p><ul><li><strong>Giữ nguyên cơ chế Vanilla:<\\\/strong> Không can thiệp vào hành vi của Piston, Villager hay tốc độ Tick-rate của server.<\\\/li><li><strong>Hỗ trợ đa nền tảng:<\\\/strong> Dễ dàng triển khai các bản Modpack nặng như RLCraft, SkyFactory hay các Script Roleplay chuyên sâu cho GTA V mà không gặp rào cản kỹ thuật.<\\\/li><\\\/ul>\"},{\"title\":\"Kích hoạt Tức thì - Hỗ trợ Tận tâm\",\"content\":\"<p>Thời gian của bạn là vàng. Hệ thống quản trị của G-Server cho phép khách hàng khởi tạo dịch vụ chỉ trong vài giây sau khi thanh toán thành công.<\\\/p><p>Đội ngũ hỗ trợ của chúng tôi bao gồm những kỹ thuật viên am hiểu sâu về quản trị hệ thống và phát triển game, sẵn sàng giúp bạn giải quyết các vấn đề từ cấu hình IP Route đến cài đặt Plugin\\\/Modpack phức tạp 24\\\/7.<\\\/p>\"}]",
+        "partners_heading": "Đối Tác Hạ Tầng & Công Nghệ",
+        "modpacks_heading": "Hỗ Trợ Đa Dạng Modpack & Nền Tảng",
+        "gallery_heading": "Hình Ảnh Trải Nghiệm & Datacenter",
+        "cta_heading": "Sẵn sàng bắt đầu dự án của bạn cùng G-Server?",
+        "cta_text": "Khởi tạo Game Server hoặc Website của bạn ngay hôm nay với các gói dịch vụ lưu trữ linh hoạt, mạnh mẽ và tiết kiệm nhất.",
+        "cta_button_text": "Đăng Ký Ngay",
+        "cta_button_url": "\/san-pham",
+        "uptime_icon": "",
+        "support_icon": "",
+        "performance_icon": ""
+    },
+    "saved": {
+        "id": 1,
+        "title": "G-Server",
+        "subtitle": "Cung cấp giải pháp máy chủ tốc độ cao, cấu hình mạnh mẽ chuyên biệt cho Game Server và Doanh nghiệp.",
+        "services_heading": null,
+        "partners_heading": "Đối Tác Hạ Tầng & Công Nghệ",
+        "modpacks_heading": "Hỗ Trợ Đa Dạng Modpack & Nền Tảng",
+        "gallery_heading": "Hình Ảnh Trải Nghiệm & Datacenter",
+        "content": "",
+        "image": "img_6a049cbd0afe2.gif",
+        "admin_id": 9,
+        "uptime": "99.99%",
+        "support": "24\/7\/365",
+        "performance": "Ultra NVMe",
+        "years_active": "5 Năm",
+        "founded_year": 2021,
+        "partners": "[{\"name\":\"Viettel IDC\",\"url\":\"https:\\\/\\\/viettelidc.com.vn\",\"logo\":\"\\\/uploads\\\/viettelidc_logo.png\"},{\"name\":\"Cisco Systems\",\"url\":\"https:\\\/\\\/www.cisco.com\",\"logo\":\"\\\/uploads\\\/cisco_logo.png\"},{\"name\":\"Cloudflare\",\"url\":\"https:\\\/\\\/www.cloudflare.com\",\"logo\":\"\\\/uploads\\\/cloudflare_logo.png\"}]",
+        "modpacks": "[{\"name\":\"Vanilla (Tối ưu cơ chế)\",\"url\":\"#\",\"logo\":\"\\\/uploads\\\/vanilla_icon.png\"},{\"name\":\"RLCraft\",\"url\":\"#\",\"logo\":\"\\\/uploads\\\/rlcraft_icon.png\"},{\"name\":\"SkyFactory 4\",\"url\":\"#\",\"logo\":\"\\\/uploads\\\/skyfactory_icon.png\"}]",
+        "gallery": null,
+        "services": null,
+        "sections": "[{\"title\":\"Hạ tầng mạng Tiêu chuẩn Công nghiệp\",\"content\":\"<p>G-Server vận hành trên nền tảng phần cứng mạnh mẽ với các thiết bị định tuyến từ <strong>Cisco<\\\/strong>, đảm bảo khả năng xử lý hàng triệu gói tin mỗi giây. Hệ thống của chúng tôi được tối ưu hóa cho các giao thức VPN (Site-to-Site, Teleworker) và định tuyến thông minh để giảm thiểu tối đa độ trễ (latency).<\\\/p><ul><li><strong>Chống DDoS đa tầng:<\\\/strong> Lọc traffic độc hại ngay tại cửa ngõ hạ tầng.<\\\/li><li><strong>Băng thông không giới hạn:<\\\/strong> Đảm bảo đường truyền luôn thông suốt kể cả trong giờ cao điểm.<\\\/li><\\\/ul>\"},{\"title\":\"Tối ưu hóa cho Trải nghiệm Game Thuần túy\",\"content\":\"<p>Chúng tôi hiểu rằng những thay đổi về cơ chế server có thể làm hỏng các cỗ máy redstone phức tạp hay các hệ thống farm trong Minecraft. Tại G-Server, chúng tôi cam kết:<\\\/p><ul><li><strong>Giữ nguyên cơ chế Vanilla:<\\\/strong> Không can thiệp vào hành vi của Piston, Villager hay tốc độ Tick-rate của server.<\\\/li><li><strong>Hỗ trợ đa nền tảng:<\\\/strong> Dễ dàng triển khai các bản Modpack nặng như RLCraft, SkyFactory hay các Script Roleplay chuyên sâu cho GTA V mà không gặp rào cản kỹ thuật.<\\\/li><\\\/ul>\"},{\"title\":\"Kích hoạt Tức thì - Hỗ trợ Tận tâm\",\"content\":\"<p>Thời gian của bạn là vàng. Hệ thống quản trị của G-Server cho phép khách hàng khởi tạo dịch vụ chỉ trong vài giây sau khi thanh toán thành công.<\\\/p><p>Đội ngũ hỗ trợ của chúng tôi bao gồm những kỹ thuật viên am hiểu sâu về quản trị hệ thống và phát triển game, sẵn sàng giúp bạn giải quyết các vấn đề từ cấu hình IP Route đến cài đặt Plugin\\\/Modpack phức tạp 24\\\/7.<\\\/p>\"}]",
+        "cta_heading": "Sẵn sàng bắt đầu dự án của bạn cùng G-Server?",
+        "cta_text": "Khởi tạo Game Server hoặc Website của bạn ngay hôm nay với các gói dịch vụ lưu trữ linh hoạt, mạnh mẽ và tiết kiệm nhất.",
+        "cta_button_text": "Đăng Ký Ngay",
+        "cta_button_url": "\/san-pham",
+        "updated_at": "2026-05-13 22:48:54",
+        "background": "img_6a049cbd0b711.gif",
+        "intro_gif": "img_6a049d663be5a.gif",
+        "intro_duration": "5.00"
+    },
+    "note": "non-ajax flow"
+}
+---

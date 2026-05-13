@@ -107,4 +107,32 @@ class Comment {
         $this->db->bind(':id', $id);
         return $this->db->execute();
     }
+
+    /**
+     * Return a list of approved product reviews for admin pickers
+     * limited by $limit. Returns lightweight rows for dropdowns.
+     */
+    public function listApprovedProductReviewsForPicker($limit = 120) {
+        $sql = 'SELECT r.id, r.product_id, r.rating, r.comment, p.name AS product_name, u.username AS reviewer'
+             . ' FROM reviews r'
+             . ' LEFT JOIN products p ON r.product_id = p.id'
+             . ' LEFT JOIN users u ON r.user_id = u.id'
+             . " WHERE r.status = 'approved' AND r.product_id IS NOT NULL ORDER BY r.created_at DESC LIMIT :limit";
+        $this->db->query($sql);
+        $this->db->bind(':limit', (int) $limit, PDO::PARAM_INT);
+        return $this->db->resultSet();
+    }
+
+    /**
+     * Return latest five-star approved product review (single) or null.
+     */
+    public function getLatestFiveStarProductReview() {
+        $sql = "SELECT r.*, p.name AS product_name, u.username AS reviewer FROM reviews r"
+             . " LEFT JOIN products p ON r.product_id = p.id"
+             . " LEFT JOIN users u ON r.user_id = u.id"
+             . " WHERE r.status = 'approved' AND COALESCE(r.rating,0) >= 5 AND r.product_id IS NOT NULL"
+             . " ORDER BY r.created_at DESC LIMIT 1";
+        $this->db->query($sql);
+        return $this->db->single();
+    }
 }
