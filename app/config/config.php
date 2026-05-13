@@ -9,8 +9,7 @@ define('DB_NAME', 'cloud_arena');
 // App Root
 define('APPROOT', dirname(dirname(__FILE__)));
 // URL Root
-define('URLROOT', 'http://localhost/Cloud-Arena/Game%20Server%20Rental%20Platform');
-// Public root filesystem path (used for uploads)
+define('URLROOT', 'http://localhost/Cloud-Arena');// Public root filesystem path (used for uploads)
 define('PUBLICROOT', dirname(APPROOT) . '/public');
 // Site Name
 define('SITENAME', 'Cloud Arena');

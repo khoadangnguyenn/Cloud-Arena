@@ -6,14 +6,22 @@ class Product {
         $this->db = new Database;
     }
 
-    public function getProducts($limit, $offset, $keyword = '') {
+    public function getProducts($limit, $offset, $keyword = '', $isAdmin = false) {
         $sql = "SELECT p.*, c.name as category_name 
                 FROM products p 
-                LEFT JOIN categories c ON p.category_id = c.id 
-                WHERE p.status = 'active'";
+                LEFT JOIN categories c ON p.category_id = c.id";
         
+        $where = [];
+        // Nếu KHÔNG phải admin (client), thì chỉ lấy sản phẩm active
+        if (!$isAdmin) {
+            $where[] = "p.status = 'active'";
+        }
         if (!empty($keyword)) {
-            $sql .= " AND p.name LIKE :keyword";
+            $where[] = "p.name LIKE :keyword";
+        }
+        
+        if (count($where) > 0) {
+            $sql .= " WHERE " . implode(" AND ", $where);
         }
         
         $sql .= " ORDER BY p.created_at DESC LIMIT :limit OFFSET :offset";
@@ -30,11 +38,19 @@ class Product {
         return $this->db->resultSet();
     }
 
-    public function getTotalProducts($keyword = '') {
-        $sql = "SELECT COUNT(*) as total FROM products WHERE status = 'active'";
+    public function getTotalProducts($keyword = '', $isAdmin = false) {
+        $sql = "SELECT COUNT(*) as total FROM products";
         
+        $where = [];
+        if (!$isAdmin) {
+            $where[] = "status = 'active'";
+        }
         if (!empty($keyword)) {
-            $sql .= " AND name LIKE :keyword";
+            $where[] = "name LIKE :keyword";
+        }
+
+        if (count($where) > 0) {
+            $sql .= " WHERE " . implode(" AND ", $where);
         }
 
         $this->db->query($sql);
@@ -46,6 +62,7 @@ class Product {
         $row = $this->db->single();
         return $row->total;
     }
+
     public function getProductById($id) {
         $this->db->query("SELECT p.*, c.name as category_name 
                           FROM products p 
@@ -114,5 +131,18 @@ class Product {
                           WHERE p.slug = :slug AND p.status = 'active'");
         $this->db->bind(':slug', $slug);
         return $this->db->single();
+    }
+
+    // ==========================================
+    // THÊM HÀM NÀY CHO ADMIN DASHBOARD
+    // ==========================================
+    public function countActiveServices() {
+        $this->db->query("
+            SELECT COUNT(*) AS total 
+            FROM user_services 
+            WHERE status = 'active'
+        ");
+        $row = $this->db->single();
+        return $row ? (int)$row->total : 0;
     }
 }

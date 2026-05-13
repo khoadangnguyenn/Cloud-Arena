@@ -92,6 +92,7 @@ class Order {
         }
         return false;
     }
+    
     // --- CHO TRANG PROFILE KHÁCH HÀNG ---
     public function getOrdersByUserId($user_id) {
         $this->db->query("SELECT * FROM orders WHERE user_id = :user_id ORDER BY created_at DESC");
@@ -143,6 +144,7 @@ class Order {
         }
         return true;
     }
+    
     public function getOrderById($id) {
         $this->db->query("SELECT o.*, u.username, u.email, u.full_name 
                           FROM orders o 
@@ -150,5 +152,34 @@ class Order {
                           WHERE o.id = :id");
         $this->db->bind(':id', $id);
         return $this->db->single();
+    }
+
+    // ==========================================
+    // THÊM 2 HÀM CÒN THIẾU CHO ADMIN DASHBOARD
+    // ==========================================
+    
+    public function getLastFiveMonthRevenue() {
+        $this->db->query("
+            SELECT DATE_FORMAT(created_at, '%Y-%m') AS month_key, 
+                   SUM(total_amount) AS revenue
+            FROM orders
+            WHERE status = 'completed' 
+              AND created_at >= DATE_SUB(CURDATE(), INTERVAL 4 MONTH)
+            GROUP BY month_key
+            ORDER BY month_key ASC
+        ");
+        return $this->db->resultSet();
+    }
+
+    public function getMonthlyRevenue() {
+        $this->db->query("
+            SELECT SUM(total_amount) AS revenue
+            FROM orders
+            WHERE status = 'completed' 
+              AND MONTH(created_at) = MONTH(CURRENT_DATE()) 
+              AND YEAR(created_at) = YEAR(CURRENT_DATE())
+        ");
+        $row = $this->db->single();
+        return $row ? (float)$row->revenue : 0;
     }
 }

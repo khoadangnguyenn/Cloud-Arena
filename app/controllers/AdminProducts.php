@@ -16,9 +16,10 @@ class AdminProducts extends Controller {
         $offset = ($page - 1) * $limit;
         $keyword = isset($_GET['search']) ? trim($_GET['search']) : '';
 
-        $products = $this->productModel->getProducts($limit, $offset, $keyword);
-        $totalProducts = $this->productModel->getTotalProducts($keyword);
-        $totalPages = ceil($totalProducts / $limit);
+        // Sửa thành:
+        $total = $this->productModel->getTotalProducts($keyword, true);
+        $products = $this->productModel->getProducts($limit, $offset, $keyword, true);      
+        $totalPages = ceil($total / $limit);
 
         $data = [
             'products' => $products,
