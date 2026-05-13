@@ -64,7 +64,17 @@
                             <div class="form-group">
                                 <label for="image">Cập nhật hình ảnh đại diện</label>
                                 <div class="mb-3">
-                                    <img src="<?php echo URLROOT . '/' . $data['image_url']; ?>" alt="Ảnh hiện tại" class="img-thumbnail" style="max-height: 100px;">
+                                    <?php if (!empty($data['image_url'])): ?>
+                                        <?php 
+                                            // Căn chỉnh lại đường dẫn upload cho chuẩn
+                                            $imgPath = URLROOT . '/uploads/' . ltrim($data['image_url'], '/'); 
+                                        ?>
+                                        <img src="<?php echo $imgPath; ?>" alt="Ảnh hiện tại" class="img-thumbnail" style="max-height: 100px;">
+                                    <?php else: ?>
+                                        <div style="width: 150px; height: 100px; background-color: #f8f9fa; border: 1px dashed #ced4da; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                            <span style="color: #6c757d; font-size: 13px;">Chưa có ảnh</span>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
                                 <input type="file" class="form-control-file <?php echo (!empty($data['image_err'])) ? 'is-invalid' : ''; ?>" id="image" name="image">
                                 <small class="form-text text-muted">Bỏ trống nếu bạn muốn giữ nguyên ảnh cũ.</small>

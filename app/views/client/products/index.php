@@ -29,8 +29,16 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10" id="productsGrid">
         <?php foreach($data['products'] as $p): ?>
         <div class="group relative bg-gray-900 rounded-[2rem] overflow-hidden border border-gray-800 hover:border-cyan-500/50 transition-all duration-700 shadow-2xl product-card" data-aos="fade-up">
-            <div class="relative h-64 overflow-hidden">
-                <img src="<?= URLROOT . '/' . $p->image_url ?>" class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-1000 ease-in-out">
+            <div class="relative h-64 overflow-hidden bg-gray-800">
+                <?php if(!empty($p->image_url)): ?>
+                    <?php $imgPath = URLROOT . '/uploads/' . ltrim($p->image_url, '/'); ?>
+                    <img src="<?= $imgPath ?>" alt="img" class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-1000 ease-in-out">
+                <?php else: ?>
+                    <div class="w-full h-full flex flex-col items-center justify-center transform group-hover:scale-110 transition-transform duration-1000 ease-in-out opacity-60">
+                        <i class="fa-solid fa-server text-5xl text-gray-500 mb-3"></i>
+                        <span class="text-gray-500 text-xs font-bold tracking-widest uppercase">No Image</span>
+                    </div>
+                <?php endif; ?>
                 <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent opacity-60"></div>
                 
                 <div class="absolute inset-0 flex items-center justify-center gap-4 opacity-0 group-hover:opacity-100 transition-all duration-500 backdrop-blur-[2px]">
@@ -173,10 +181,14 @@
                     if(data.products && data.products.length > 0) {
                         let html = '';
                         data.products.forEach(p => {
-                            // Fix SEO URL: Dùng biến ${p.slug} thay vì PHP tag
+                            // Kiểm tra ảnh trong Javascript
+                            let imgHtml = p.image_url 
+                                ? `<img src="<?= URLROOT ?>/uploads/${p.image_url.replace(/^\/+/, '')}" class="w-12 h-12 object-cover rounded-lg border border-gray-700">`
+                                : `<div class="w-12 h-12 flex items-center justify-center bg-gray-800 rounded-lg border border-gray-700 flex-shrink-0"><i class="fa-solid fa-image text-gray-500"></i></div>`;
+
                             html += `
                             <a href="<?= URLROOT ?>/products/show/${p.slug}" class="flex items-center gap-4 p-3 hover:bg-gray-800 rounded-xl transition-colors">
-                                <img src="<?= URLROOT ?>/${p.image_url}" class="w-12 h-12 object-cover rounded-lg border border-gray-700">
+                                ${imgHtml}
                                 <div>
                                     <h4 class="text-white text-sm font-bold">${p.name}</h4>
                                     <span class="text-cyan-400 text-xs">${new Intl.NumberFormat('vi-VN').format(p.price)}đ/th</span>
