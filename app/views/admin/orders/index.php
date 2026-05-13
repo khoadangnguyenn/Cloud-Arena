@@ -56,6 +56,8 @@
                                                 <ul class="d-flex justify-content-center align-items-center list-unstyled mb-0">
                                                     <li class="mr-3">
                                                         <form action="<?php echo URLROOT; ?>/admin/orders/updateStatus/<?php echo $order->id; ?>" method="POST" class="mb-0">
+                                                            <input type="hidden" name="csrf_token" value="<?php echo $data['csrf_admin'] ?? ''; ?>">
+                                                            
                                                             <select name="status" class="form-control form-control-sm shadow-none border-secondary" onchange="this.form.submit()" style="height: 30px; padding: 2px 10px; cursor: pointer; border-radius: 4px;">
                                                                 <option value="pending" <?php echo ($order->status == 'pending') ? 'selected' : ''; ?>>Pending</option>
                                                                 <option value="processing" <?php echo ($order->status == 'processing') ? 'selected' : ''; ?>>Processing</option>

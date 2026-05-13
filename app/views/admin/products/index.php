@@ -45,7 +45,17 @@
                                         <tr>
                                             <th scope="row"><?php echo $product->id; ?></th>
                                             <td>
-                                                <img src="<?php echo URLROOT . '/' . $product->image_url; ?>" alt="img" class="img-fluid rounded" style="width: 60px; height: 60px; object-fit: cover;">
+                                                <?php if(!empty($product->image_url)): ?>
+                                                    <?php 
+                                                        // Đảm bảo đường dẫn ghép đúng, loại bỏ dấu / thừa ở đầu (nếu có)
+                                                        $imgPath = URLROOT . '/uploads/' . ltrim($product->image_url, '/'); 
+                                                    ?>
+                                                    <img src="<?php echo $imgPath; ?>" alt="img" class="img-fluid rounded" style="width: 60px; height: 60px; object-fit: cover;">
+                                                <?php else: ?>
+                                                    <div style="width: 60px; height: 60px; background-color: #e9ecef; display: inline-flex; align-items: center; justify-content: center; border-radius: .25rem;">
+                                                        <i class="ti-image" style="color: #adb5bd; font-size: 24px;"></i>
+                                                    </div>
+                                                <?php endif; ?>
                                             </td>
                                             <td class="text-left">
                                                 <strong><?php echo $product->name; ?></strong><br>

@@ -27,41 +27,14 @@ class AdminOrders extends Controller {
 
         $this->view('admin/orders/index', $data);
     }
-
-    // public function updateStatus($orderId) {
-    //     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    //         // Lấy dữ liệu gửi lên (có thể là form-data hoặc JSON raw tùy cách fetch)
-    //         $inputData = json_decode(file_get_contents('php://input'), true);
-    //         $status = isset($inputData['status']) ? filter_var($inputData['status'], FILTER_SANITIZE_STRING) : filter_input(INPUT_POST, 'status', FILTER_SANITIZE_STRING);
-
-    //         $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
-            
-    //         $valid_statuses = ['pending', 'processing', 'completed', 'cancelled'];
-    //         if (!in_array($status, $valid_statuses)) {
-    //             if ($isAjax) {
-    //                 echo json_encode(['success' => false, 'message' => 'Trạng thái không hợp lệ.']);
-    //                 exit;
-    //             }
-    //             die('Trạng thái không hợp lệ.');
-    //         }
-
-    //         if ($this->orderModel->updateOrderStatus($orderId, $status)) {
-    //             if ($isAjax) {
-    //                 echo json_encode(['success' => true, 'message' => 'Cập nhật trạng thái thành công!', 'new_status' => $status]);
-    //                 exit;
-    //             }
-    //             header('Location: ' . URLROOT . '/adminorders');
-    //         } else {
-    //             if ($isAjax) {
-    //                 echo json_encode(['success' => false, 'message' => 'Lỗi cập nhật CSDL.']);
-    //                 exit;
-    //             }
-    //             die('Có lỗi xảy ra khi cập nhật trạng thái.');
-    //         }
-    //     }
-    // }
     public function updateStatus($orderId) {
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            
+            // 1. Kiểm tra mã bảo mật CSRF (Khớp với thẻ input hidden ở View)
+            if (!$this->verifyCsrf('csrf_admin')) {
+                die('Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+            }
+
             $status = filter_input(INPUT_POST, 'status', FILTER_SANITIZE_STRING);
             
             $valid_statuses = ['pending', 'processing', 'completed', 'cancelled'];
@@ -69,7 +42,7 @@ class AdminOrders extends Controller {
                 die('Trạng thái không hợp lệ.');
             }
 
-            // Nếu Admin duyệt đơn thành Completed -> Cấp phát Server
+            // 2. Nếu Admin duyệt đơn thành Completed -> Cấp phát Server
             if ($status == 'completed') {
                 $currentOrder = $this->orderModel->getOrderById($orderId);
                 
@@ -78,8 +51,10 @@ class AdminOrders extends Controller {
                 }
             }
 
+            // 3. Cập nhật vào DB và chuyển hướng
             if ($this->orderModel->updateOrderStatus($orderId, $status)) {
                 header('Location: ' . URLROOT . '/admin/orders');
+                exit(); // Thêm exit để dừng thực thi sau khi chuyển hướng
             } else {
                 die('Có lỗi xảy ra khi cập nhật trạng thái.');
             }
