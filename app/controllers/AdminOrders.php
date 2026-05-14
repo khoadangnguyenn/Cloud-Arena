@@ -53,7 +53,7 @@ class AdminOrders extends Controller {
 
             // 3. Cập nhật vào DB và chuyển hướng
             if ($this->orderModel->updateOrderStatus($orderId, $status)) {
-                header('Location: ' . URLROOT . '/admin/orders');
+                header('Location: ' . URLROOT . '/adminorders');
                 exit(); // Thêm exit để dừng thực thi sau khi chuyển hướng
             } else {
                 die('Có lỗi xảy ra khi cập nhật trạng thái.');

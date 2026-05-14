@@ -24,6 +24,8 @@
         $activeSection = 'dashboard';
     } elseif (strpos($currentUrl, 'admin/products') === 0 || strpos($currentUrl, 'admin/services') === 0) {
         $activeSection = 'services';
+    } elseif (strpos($currentUrl, 'admin/orders') === 0) {
+        $activeSection = 'orders';
     } elseif (strpos($currentUrl, 'admin/contacts') === 0 || strpos($currentUrl, 'admin/tickets') === 0) {
         $activeSection = 'tickets';
     } elseif (strpos($currentUrl, 'admin/ads') === 0) {
@@ -82,6 +84,10 @@
                 <a class="admin-nav-link <?php echo $activeSection === 'services' ? 'active' : ''; ?>" href="<?php echo URLROOT; ?>/admin/products">
                     <i class="ti-package"></i>
                     <span class="admin-link-text">Dịch vụ</span>
+                </a>
+                <a class="admin-nav-link <?php echo $activeSection === 'orders' ? 'active' : ''; ?>" href="<?php echo URLROOT; ?>/adminorders">
+                    <i class="ti-shopping-cart"></i>
+                    <span class="admin-link-text">Đơn hàng</span>
                 </a>
                 <a class="admin-nav-link <?php echo $activeSection === 'tickets' ? 'active' : ''; ?>" href="<?php echo URLROOT; ?>/admin/contacts">
                     <i class="ti-email"></i>

@@ -210,4 +210,53 @@ class Users extends Controller
         $data = ['title' => 'Dashboard cá nhân', 'services' => $services];
         $this->view('client/users/dashboard', $data);
     }
+
+    /**
+     * Hiển thị danh sách đơn hàng của tôi
+     */
+    public function orders() {
+        if (!isset($_SESSION['user_id'])) {
+            header('Location: ' . URLROOT . '/users/login');
+            exit();
+        }
+
+        $orderModel = $this->model('Order');
+        // Lấy toàn bộ đơn hàng của user hiện tại
+        $orders = $orderModel->getOrdersByUserId($_SESSION['user_id']);
+
+        $data = [
+            'title' => 'Đơn hàng của tôi',
+            'orders' => $orders
+        ];
+
+        $this->view('client/users/orders', $data);
+    }
+
+    /**
+     * Chi tiết và theo dõi trạng thái một đơn hàng cụ thể
+     */
+    public function order_detail($id) {
+        if (!isset($_SESSION['user_id'])) {
+            header('Location: ' . URLROOT . '/users/login');
+            exit();
+        }
+
+        $orderModel = $this->model('Order');
+        $order = $orderModel->getOrderById($id);
+
+        // Bảo mật: Chỉ cho phép xem đơn hàng của chính mình
+        if (!$order || $order->user_id != $_SESSION['user_id']) {
+            die('Bạn không có quyền xem đơn hàng này!');
+        }
+
+        $items = $orderModel->getOrderItems($id);
+
+        $data = [
+            'title' => 'Theo dõi đơn hàng #' . $id,
+            'order' => $order,
+            'items' => $items
+        ];
+
+        $this->view('client/users/order_detail', $data);
+    }
 }

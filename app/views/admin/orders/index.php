@@ -16,7 +16,7 @@
                                     <th>Tổng tiền</th>
                                     <th>Ngày đặt</th>
                                     <th>Trạng thái</th>
-                                    <th>Thao tác</th>
+                                    <th>Chi tiết</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -32,46 +32,28 @@
                                             </td>
                                             <td class="text-danger font-weight-bold align-middle"><?php echo number_format($order->total_amount, 0, ',', '.'); ?>đ</td>
                                             <td class="align-middle"><?php echo date('d/m/Y H:i', strtotime($order->created_at)); ?></td>
+                                            
                                             <td class="align-middle">
-                                            <?php
-                                                $bgColor = '#6c757d'; // Màu xám mặc định
-                                                $textColor = '#ffffff'; // Chữ trắng
-
-                                                if ($order->status == 'completed') { 
-                                                    $bgColor = '#28a745'; // Xanh lá
-                                                } elseif ($order->status == 'pending') { 
-                                                    $bgColor = '#ffc107'; // Vàng
-                                                    $textColor = '#000000'; // Chữ đen cho dễ đọc
-                                                } elseif ($order->status == 'processing') { 
-                                                    $bgColor = '#17a2b8'; // Xanh dương
-                                                } elseif ($order->status == 'cancelled') { 
-                                                    $bgColor = '#dc3545'; // Đỏ
-                                                }
-                                            ?>
-                                            <span style="background-color: <?php echo $bgColor; ?>; color: <?php echo $textColor; ?>; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: bold; display: inline-block;">
-                                                <?php echo strtoupper($order->status); ?>
-                                            </span>
-                                        </td>
-                                            <td class="align-middle">
-                                                <ul class="d-flex justify-content-center align-items-center list-unstyled mb-0">
-                                                    <li class="mr-3">
-                                                        <form action="<?php echo URLROOT; ?>/admin/orders/updateStatus/<?php echo $order->id; ?>" method="POST" class="mb-0">
-                                                            <input type="hidden" name="csrf_token" value="<?php echo $data['csrf_admin'] ?? ''; ?>">
-                                                            
-                                                            <select name="status" class="form-control form-control-sm shadow-none border-secondary" onchange="this.form.submit()" style="height: 30px; padding: 2px 10px; cursor: pointer; border-radius: 4px;">
-                                                                <option value="pending" <?php echo ($order->status == 'pending') ? 'selected' : ''; ?>>Pending</option>
-                                                                <option value="processing" <?php echo ($order->status == 'processing') ? 'selected' : ''; ?>>Processing</option>
-                                                                <option value="completed" <?php echo ($order->status == 'completed') ? 'selected' : ''; ?>>Completed</option>
-                                                                <option value="cancelled" <?php echo ($order->status == 'cancelled') ? 'selected' : ''; ?>>Cancelled</option>
-                                                            </select>
-                                                        </form>
-                                                    </li>
-                                                    <li>
-                                                        <a href="<?php echo URLROOT; ?>/admin/orders/show/<?php echo $order->id; ?>" class="text-info" title="Xem chi tiết đơn hàng" style="font-size: 22px;">
-                                                            <i class="ti-eye"></i>
-                                                        </a>
-                                                    </li>
-                                                </ul>
+                                                <form action="<?php echo URLROOT; ?>/adminorders/updateStatus/<?php echo $order->id; ?>" method="POST" class="d-flex align-items-center justify-content-center gap-2 mb-0">
+                                                    <input type="hidden" name="csrf_token" value="<?php echo $data['csrf_admin']; ?>">
+                                                    
+                                                    <select name="status" class="form-control form-control-sm" style="width: 130px; border-radius: 8px; font-size: 13px;">
+                                                        <option value="pending" <?php echo $order->status == 'pending' ? 'selected' : ''; ?>>Chờ xử lý</option>
+                                                        <option value="processing" <?php echo $order->status == 'processing' ? 'selected' : ''; ?>>Đang thiết lập</option>
+                                                        <option value="completed" <?php echo $order->status == 'completed' ? 'selected' : ''; ?>>Hoàn tất</option>
+                                                        <option value="cancelled" <?php echo $order->status == 'cancelled' ? 'selected' : ''; ?>>Đã hủy</option>
+                                                    </select>
+                                                    
+                                                    <button type="submit" class="btn btn-sm btn-primary" style="padding: 4px 8px;" title="Lưu thay đổi">
+                                                        <i class="ti-save"></i>
+                                                    </button>
+                                                </form>
+                                            </td>
+                                            
+                                            <td class="align-middle text-center">
+                                                <a href="<?php echo URLROOT; ?>/adminorders/show/<?php echo $order->id; ?>" class="text-info" title="Xem chi tiết đơn hàng" style="font-size: 22px;">
+                                                    <i class="ti-eye"></i>
+                                                </a>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
@@ -86,7 +68,7 @@
                         <ul>
                             <?php for ($i = 1; $i <= $data['totalPages']; $i++) : ?>
                                 <li class="<?php echo $data['currentPage'] == $i ? 'active' : ''; ?>">
-                                    <a href="<?php echo URLROOT; ?>/admin/orders?page=<?php echo $i; ?>"><?php echo $i; ?></a>
+                                    <a href="<?php echo URLROOT; ?>/adminorders?page=<?php echo $i; ?>"><?php echo $i; ?></a>
                                 </li>
                             <?php endfor; ?>
                         </ul>

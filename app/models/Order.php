@@ -93,6 +93,7 @@ class Order {
         return false;
     }
     
+    
     // --- CHO TRANG PROFILE KHÁCH HÀNG ---
     public function getOrdersByUserId($user_id) {
         $this->db->query("SELECT * FROM orders WHERE user_id = :user_id ORDER BY created_at DESC");
@@ -181,5 +182,15 @@ class Order {
         ");
         $row = $this->db->single();
         return $row ? (float)$row->revenue : 0;
+    }
+
+    public function getAllOrders() {
+        $this->db->query("
+            SELECT o.*, u.username, u.full_name 
+            FROM orders o 
+            LEFT JOIN users u ON o.user_id = u.id 
+            ORDER BY o.created_at DESC
+        ");
+        return $this->db->resultSet();
     }
 }

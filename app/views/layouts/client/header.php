@@ -425,12 +425,20 @@ $clientHoverMinVer = is_readable($clientHoverMinPath) ? (string) filemtime($clie
                                 <?php endif; ?>
                                 <?php echo htmlspecialchars((string) ($_SESSION['user_name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
                             </a>
+                            <a href="<?php echo URLROOT; ?>/users/dashboard" class="text-sm font-medium text-gray-300 hover:text-cyan-400 transition-colors">
+                                <i class="fa-solid fa-gauge mr-1"></i> Dashboard
+                            </a>
+                            
+                            <a href="<?php echo URLROOT; ?>/users/orders" class="text-sm font-medium text-gray-300 hover:text-cyan-400 transition-colors">
+                                <i class="fa-solid fa-clock-rotate-left mr-1"></i> Đơn hàng
+                            </a>
+
                             <?php if($_SESSION['user_role'] == 'admin') : ?>
                                 <a href="<?php echo URLROOT; ?>/admin" class="text-sm font-medium text-purple-400 hover:text-purple-300">
                                     <i class="fa-solid fa-shield mr-1"></i> Admin
                                 </a>
                             <?php endif; ?>
-                            <a href="<?php echo URLROOT; ?>/users/logout" class="text-gray-400 hover:text-white transition-colors">
+                            <a href="<?php echo URLROOT; ?>/users/logout" class="text-gray-400 hover:text-white transition-colors" title="Đăng xuất">
                                 <i class="fa-solid fa-right-from-bracket"></i>
                             </a>
                         </div>
@@ -486,14 +494,24 @@ $clientHoverMinVer = is_readable($clientHoverMinPath) ? (string) filemtime($clie
                             <?php endif; ?>
                             <span class="font-medium"><?php echo htmlspecialchars((string) ($_SESSION['user_name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></span>
                         </a>
+                        
+                        <a href="<?php echo URLROOT; ?>/users/dashboard" class="block text-gray-300 hover:text-cyan-400 py-1">
+                            <i class="fa-solid fa-gauge mr-2"></i>Bảng điều khiển
+                        </a>
+                        <a href="<?php echo URLROOT; ?>/users/orders" class="block text-gray-300 hover:text-cyan-400 py-1">
+                            <i class="fa-solid fa-clock-rotate-left mr-2"></i>Đơn hàng
+                        </a>
+
                         <?php if ($_SESSION['user_role'] == 'admin') : ?>
                             <a href="<?php echo URLROOT; ?>/admin" class="block text-purple-400 hover:text-purple-300 py-1">
                                 <i class="fa-solid fa-shield mr-2"></i>Admin
                             </a>
                         <?php endif; ?>
+                        
                         <a href="<?php echo URLROOT; ?>/users/logout" class="inline-flex items-center gap-2 text-gray-400 hover:text-white py-1">
                             <i class="fa-solid fa-right-from-bracket"></i> Đăng xuất
                         </a>
+                        
                     <?php else : ?>
                         <a href="<?php echo URLROOT; ?>/users/login" class="block w-full text-center py-3 rounded-xl border border-white/15 text-gray-200 font-medium hover:bg-white/5">Đăng nhập</a>
                         <a href="<?php echo URLROOT; ?>/users/register" class="block w-full text-center py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-semibold hover:opacity-95">Tham gia ngay</a>
