@@ -13,4 +13,3 @@ define('URLROOT', 'http://localhost/Cloud-Arena/Game-Server-Rental-Platform');
 // Public root filesystem path (used for uploads)
 define('PUBLICROOT', dirname(APPROOT) . '/public');
 // Site Name
-define('SITENAME', 'Cloud Arena');
