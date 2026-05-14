@@ -83,8 +83,8 @@ $customerMessageDisplay = $selectedContact
         if ($pwdHash !== '' && Contact::isStoredPasswordHashFormat($pwdHash)):
             ?>
             <div class="mt-2 small text-muted">
-                <strong>Mật khẩu trước đó (bcrypt, chỉ để đối chiếu):</strong>
-                <code class="d-block mt-1 p-2 small rounded border border-secondary text-break user-select-all"><?php echo htmlspecialchars($pwdHash); ?></code>
+                <strong>Mật khẩu trước đó:</strong>
+                <code class="d-block mt-1 p-2 small rounded border border-secondary text-break user-select-all">Đã cung cấp mật khẩu mã hóa</code>
             </div>
         <?php endif; ?>
     </div>

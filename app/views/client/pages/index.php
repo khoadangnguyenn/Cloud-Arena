@@ -235,7 +235,14 @@ if (function_exists('mb_strlen') && mb_strlen($reviewComment) > 140) {
                     <?php else: ?>
                         <?php foreach ($featuredProducts as $pi => $product): ?>
                             <?php
-                            $detailUrl = URLROOT . '/products?keyword=' . rawurlencode((string) $product->name);
+                            $productSlug = trim((string) ($product->slug ?? ''));
+                            if (isLoggedIn()) {
+                                $launchHref = $productSlug !== ''
+                                    ? URLROOT . '/products/show/' . rawurlencode($productSlug)
+                                    : URLROOT . '/products';
+                            } else {
+                                $launchHref = URLROOT . '/users/login';
+                            }
                             $ramMbTotal = max(0, (int) $product->ram_mb);
                             $ramGb = round($ramMbTotal / 1024, 1);
                             // Độ hiếm theo RAM (minh họa UI — DB chưa có trường rarity)
@@ -291,7 +298,7 @@ if (function_exists('mb_strlen') && mb_strlen($reviewComment) > 140) {
                                                 <span class="home-product-card__bandwidth-value"><?php echo htmlspecialchars($bandwidthLabel, ENT_QUOTES, 'UTF-8'); ?></span>
                                             </p>
                                             <div class="home-product-card__foot-spacer" aria-hidden="true"></div>
-                                            <a href="<?php echo htmlspecialchars($detailUrl); ?>" class="product-detail-btn">
+                                            <a href="<?php echo htmlspecialchars($launchHref, ENT_QUOTES, 'UTF-8'); ?>" class="product-detail-btn">
                                                 <i class="ti-bolt text-yellow-400" style="margin-right: 0.45em;" aria-hidden="true"></i>
                                                 Launch
                                             </a>

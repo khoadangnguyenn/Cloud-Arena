@@ -8,16 +8,36 @@
             <h2 class="text-4xl font-black text-white tracking-tighter mb-2">SERVER CỦA BẠN.</h2>
             <p class="text-gray-400">Chọn cấu hình phù hợp nhất cho dự án của bạn.</p>
         </div>
-        <form action="<?= URLROOT ?>/products" method="GET" class="relative w-full md:w-96 group" id="searchForm">
-            <input type="text" name="search" id="searchInput" value="<?= $data['keyword'] ?>" placeholder="Tìm kiếm server..." 
-                   class="w-full bg-gray-900 border border-gray-800 text-white px-6 py-4 rounded-2xl focus:outline-none focus:border-cyan-500 transition-all duration-500">
-            <button type="submit" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 group-hover:text-cyan-400 transition-colors">
-                <i class="fa-solid fa-magnifying-glass"></i>
-            </button>
-            <div id="liveSearchResults" class="absolute z-50 w-full mt-2 bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl overflow-hidden hidden transform origin-top transition-all duration-300">
-                <div class="p-2 max-h-[350px] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-700 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-600 transition-colors" id="liveSearchContent">
+        <form action="<?= URLROOT ?>/products" method="GET" class="w-full flex flex-col md:flex-row gap-4" id="searchForm">
+            <div class="relative flex-1 group">
+                <input type="text" name="search" id="searchInput" value="<?= htmlspecialchars($data['keyword'] ?? '', ENT_QUOTES) ?>" placeholder="Tìm kiếm server..." 
+                       class="w-full bg-gray-900 border border-gray-800 text-white px-6 py-4 rounded-2xl focus:outline-none focus:border-cyan-500 transition-all duration-500">
+                <button type="submit" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 group-hover:text-cyan-400 transition-colors">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+
+                <div id="liveSearchResults" class="absolute z-50 w-full mt-2 bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl overflow-hidden hidden transform origin-top transition-all duration-300">
+                    <div class="p-2 max-h-[350px] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-700 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-600 transition-colors" id="liveSearchContent">
                     </div>
+                </div>
             </div>
+
+            <select name="category" id="categoryFilter" class="bg-gray-900 border border-gray-800 text-gray-300 px-6 py-4 rounded-2xl focus:outline-none focus:border-cyan-500 cursor-pointer">
+                <option value="">Tất cả danh mục</option>
+                <?php foreach($data['categories'] ?? [] as $cat): ?>
+                    <option value="<?= (int)$cat->id ?>" <?= (isset($data['categoryId']) && $data['categoryId'] == $cat->id) ? 'selected' : '' ?>><?= htmlspecialchars($cat->name, ENT_QUOTES) ?></option>
+                <?php endforeach; ?>
+            </select>
+
+            <div class="flex gap-2">
+                <input type="number" name="min_price" id="minPrice" value="<?= htmlspecialchars($data['minPrice'] ?? '', ENT_QUOTES) ?>" placeholder="Giá từ..." class="w-28 bg-gray-900 border border-gray-800 text-white px-4 py-4 rounded-2xl focus:outline-none focus:border-cyan-500">
+                <span class="text-gray-500 self-center">-</span>
+                <input type="number" name="max_price" id="maxPrice" value="<?= htmlspecialchars($data['maxPrice'] ?? '', ENT_QUOTES) ?>" placeholder="Đến..." class="w-28 bg-gray-900 border border-gray-800 text-white px-4 py-4 rounded-2xl focus:outline-none focus:border-cyan-500">
+            </div>
+
+            <button type="submit" class="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-8 py-4 rounded-2xl font-bold transition-all shadow-lg shadow-cyan-500/25">
+                <i class="fa-solid fa-filter mr-2"></i> Lọc
+            </button>
         </form>
     </div>
 
@@ -29,15 +49,34 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10" id="productsGrid">
         <?php foreach($data['products'] as $p): ?>
         <div class="group relative bg-gray-900 rounded-[2rem] overflow-hidden border border-gray-800 hover:border-cyan-500/50 transition-all duration-700 shadow-2xl product-card" data-aos="fade-up">
-            <div class="relative h-64 overflow-hidden">
-                <img src="<?= URLROOT . '/' . $p->image_url ?>" class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-1000 ease-in-out">
+            <div class="relative h-64 overflow-hidden bg-gray-800">
+                <?php
+                $img = !empty($p->image_url) ? $p->image_url : (!empty($p->image) ? $p->image : '');
+                if (!empty($img)):
+                    // If already a full URL or data URI, use it as-is. Otherwise build uploads URL and encode path segments.
+                    if (preg_match('#^https?://#i', $img) || strpos($img, 'data:') === 0) {
+                        $imgPath = $img;
+                    } else {
+                        // support values like "media/xxx", "uploads/xxx" or "branding/xxx"
+                        $segments = explode('/', ltrim($img, '/'));
+                        $encSegments = array_map('rawurlencode', $segments);
+                        $imgPath = rtrim(URLROOT, '/') . '/' . implode('/', $encSegments);
+                    }
+                ?>
+                    <img src="<?= htmlspecialchars($imgPath, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($p->name, ENT_QUOTES, 'UTF-8') ?>" class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-1000 ease-in-out">
+                <?php else: ?>
+                    <div class="w-full h-full flex flex-col items-center justify-center transform group-hover:scale-110 transition-transform duration-1000 ease-in-out opacity-60">
+                        <i class="fa-solid fa-server text-5xl text-gray-500 mb-3"></i>
+                        <span class="text-gray-500 text-xs font-bold tracking-widest uppercase">No Image</span>
+                    </div>
+                <?php endif; ?>
                 <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent opacity-60"></div>
-                
+
                 <div class="absolute inset-0 flex items-center justify-center gap-4 opacity-0 group-hover:opacity-100 transition-all duration-500 backdrop-blur-[2px]">
-                    <button type="button" data-product-id="<?= $p->id ?>" class="add-to-cart bg-white text-black rounded-full flex items-center justify-center hover:bg-cyan-500 hover:text-white transform translate-y-10 group-hover:translate-y-0 transition-all duration-500 shadow-xl" style="width: 3.5rem; height: 3.5rem; outline:none;">
+                    <button type="button" data-product-id="<?= (int)$p->id ?>" class="add-to-cart bg-white text-black rounded-full flex items-center justify-center hover:bg-cyan-500 hover:text-white transform translate-y-10 group-hover:translate-y-0 transition-all duration-500 shadow-xl" style="width: 3.5rem; height: 3.5rem; outline:none;">
                         <i class="fa-solid fa-cart-plus text-xl"></i>
                     </button>
-                    <a href="<?= URLROOT ?>/products/show/<?= $p->slug ?>" class="w-14 h-14 bg-gray-800 text-white rounded-full flex items-center justify-center hover:bg-purple-500 transform translate-y-10 group-hover:translate-y-0 transition-all duration-500 delay-75 shadow-xl border border-gray-700">
+                    <a href="<?= URLROOT ?>/products/show/<?= htmlspecialchars($p->slug, ENT_QUOTES, 'UTF-8') ?>" class="w-14 h-14 bg-gray-800 text-white rounded-full flex items-center justify-center hover:bg-purple-500 transform translate-y-10 group-hover:translate-y-0 transition-all duration-500 delay-75 shadow-xl border border-gray-700">
                         <i class="fa-solid fa-expand text-xl"></i>
                     </a>
                 </div>
@@ -45,10 +84,10 @@
 
             <div class="p-8">
                 <div class="flex justify-between items-start mb-4">
-                    <span class="text-cyan-400 text-[10px] font-black uppercase tracking-[0.2em]"><?= $p->category_name ?></span>
+                    <span class="text-cyan-400 text-[10px] font-black uppercase tracking-[0.2em]"><?= htmlspecialchars($p->category_name ?? '', ENT_QUOTES, 'UTF-8') ?></span>
                     <span class="text-white font-bold"><?= number_format($p->price, 0, ',', '.') ?>đ<span class="text-gray-500 text-xs font-normal">/th</span></span>
                 </div>
-                <h3 class="text-2xl font-bold text-white mb-6 group-hover:text-cyan-400 transition-colors"><?= $p->name ?></h3>
+                <h3 class="text-2xl font-bold text-white mb-6 group-hover:text-cyan-400 transition-colors"><?= htmlspecialchars($p->name, ENT_QUOTES, 'UTF-8') ?></h3>
                 
                 <div class="grid grid-cols-3 gap-2 py-4 border-t border-gray-800">
                     <div class="text-center">
@@ -78,9 +117,17 @@
 
     <?php if(isset($data['totalPages']) && $data['totalPages'] > 1): ?>
     <div class="mt-20 flex justify-center items-center gap-4">
-        <?php for($i=1; $i<=$data['totalPages']; $i++): ?>
-            <a href="?page=<?= $i ?>&search=<?= $data['keyword'] ?>" 
-               class="w-12 h-12 flex items-center justify-center rounded-xl border <?= $data['currentPage'] == $i ? 'bg-cyan-500 border-cyan-500 text-black font-bold focus:ring-2 focus:ring-cyan-500/50' : 'bg-gray-900 border-gray-800 text-gray-400 hover:border-cyan-500 transition-colors' ?> pagination-link" data-page="<?= $i ?>">
+        <?php for($i=1; $i<=$data['totalPages']; $i++): 
+            $qs = http_build_query([
+                'page' => $i,
+                'search' => $data['keyword'] ?? '',
+                'category' => $data['categoryId'] ?? '',
+                'min_price' => $data['minPrice'] ?? '',
+                'max_price' => $data['maxPrice'] ?? ''
+            ]);
+        ?>
+            <a href="?<?= $qs ?>" 
+               class="w-12 h-12 flex items-center justify-center rounded-xl border <?= ($data['currentPage'] ?? 1) == $i ? 'bg-cyan-500 border-cyan-500 text-black font-bold focus:ring-2 focus:ring-cyan-500/50' : 'bg-gray-900 border-gray-800 text-gray-400 hover:border-cyan-500 transition-colors' ?> pagination-link" data-page="<?= $i ?>">
                 <?= $i ?>
             </a>
         <?php endfor; ?>
@@ -174,14 +221,18 @@
                         let html = '';
                         data.products.forEach(p => {
                             // Fix SEO URL: Dùng biến ${p.slug} thay vì PHP tag
+                            // build safe image URL from product.image_url (strip leading slash, encode segments)
+                            var root = <?= json_encode(rtrim(URLROOT, '/')) ?>;
+                            var cleaned = (p.image_url || '').replace(/^\//, '');
+                            var imgSrc = cleaned ? root + '/' + cleaned.split('/').map(encodeURIComponent).join('/') : '';
                             html += `
-                            <a href="<?= URLROOT ?>/products/show/${p.slug}" class="flex items-center gap-4 p-3 hover:bg-gray-800 rounded-xl transition-colors">
-                                <img src="<?= URLROOT ?>/${p.image_url}" class="w-12 h-12 object-cover rounded-lg border border-gray-700">
-                                <div>
-                                    <h4 class="text-white text-sm font-bold">${p.name}</h4>
-                                    <span class="text-cyan-400 text-xs">${new Intl.NumberFormat('vi-VN').format(p.price)}đ/th</span>
-                                </div>
-                            </a>`;
+                                <a href="<?= URLROOT ?>/products/show/${p.slug}" class="flex items-center gap-4 p-3 hover:bg-gray-800 rounded-xl transition-colors">
+                                    <img src="${imgSrc}" class="w-12 h-12 object-cover rounded-lg border border-gray-700">
+                                    <div>
+                                        <h4 class="text-white text-sm font-bold">${p.name}</h4>
+                                        <span class="text-cyan-400 text-xs">${new Intl.NumberFormat('vi-VN').format(p.price)}đ/th</span>
+                                    </div>
+                                </a>`;
                         });
                         liveSearchContent.innerHTML = html;
                         liveSearchResults.classList.remove('hidden');

@@ -45,7 +45,29 @@ body.admin-modern.admin-theme-dark {
     inset: 0 auto 0 0;
     z-index: 1030;
     overflow-y: auto;
+    overscroll-behavior: contain;
     transition: transform 0.25s ease, width 0.2s ease;
+    scrollbar-width: thin;
+    scrollbar-color: #46618b #172a48;
+}
+
+.admin-sidebar::-webkit-scrollbar {
+    width: 8px;
+}
+
+.admin-sidebar::-webkit-scrollbar-track {
+    background: #172a48;
+    border-radius: 999px;
+}
+
+.admin-sidebar::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #4d6b98, #3d5478);
+    border-radius: 999px;
+    border: 1px solid #172a48;
+}
+
+.admin-sidebar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #5a79a7, #476188);
 }
 
 .admin-main {
@@ -1196,9 +1218,16 @@ body.admin-modern.admin-theme-dark .admin-custom-select-option.active {
     color: #ffffff;
 }
 
-.admin-custom-select-menu.menu-dropup {
+/* Chỉ áp dụng khi menu còn absolute trong .admin-custom-select. Khi .menu-floating
+   (fixed + append ra body) JS tự tính top/left — rule cũ với bottom: calc(100%...)
+   xung đột viewport và làm menu bị co thành ô nhỏ phía trên. */
+.admin-custom-select-menu.menu-dropup:not(.menu-floating) {
     top: auto;
     bottom: calc(100% + 0.35rem);
+    transform-origin: bottom center;
+}
+
+.admin-custom-select-menu.menu-floating.menu-dropup {
     transform-origin: bottom center;
 }
 
@@ -1489,18 +1518,18 @@ textarea:focus-visible {
 }
 
 .ticket-detail-field-label {
-    font-weight: 600;
-    color: var(--admin-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--admin-text);
+    
+    
+    font-size: 0.9rem;
 }
 
 .ticket-detail-ticket-type-value {
     display: block;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--admin-text);
+    font-size: 0.8rem;
+    font-weight: 300;
+    color: var(--admin-muted);
 }
 
 .ticket-purchase-order-display {
@@ -1896,11 +1925,11 @@ body.admin-modern.admin-theme-dark .ticket-user-meta small {
 }
 
 body.admin-modern.admin-theme-dark .ticket-detail-ticket-type-value {
-    color: #e8f0ff;
+    color: var(--admin-muted);
 }
 
 body.admin-modern.admin-theme-dark .ticket-detail-field-label {
-    color: #9cb0d2;
+    color: var(--admin-text);
 }
 
 body.admin-modern.admin-theme-dark .ticket-purchase-order-display {

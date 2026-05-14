@@ -206,6 +206,27 @@
 })();
 </script>
 
+<style>
+/* Small-screen responsive overrides for About page */
+@media (max-width: 992px) {
+    .stats-row{flex-wrap:wrap !important;}
+    .stat-card{flex:1 1 260px !important;min-width:160px !important;margin-bottom:12px;}
+    .info-row{flex-direction:column !important;align-items:flex-start !important;gap:12px !important;}
+    .info-row .info-image{width:100% !important;}
+    .info-row img{width:100% !important;max-width:100% !important;height:auto !important;}
+    .section-content{max-height:none !important;overflow:visible !important;}
+    .about-hero-inner{padding:0 1rem !important;}
+    .hero-outer{padding:2.4rem 0 !important;}
+    .panel-inner{padding:18px !important;}
+    .hero-media img{height:auto !important;max-height:420px !important;border-radius:12px !important;}
+}
+@media (max-width:480px){
+    .stat-card{flex:1 1 100% !important;min-width:0 !important;}
+    .about-title{font-size:1.4rem !important;}
+    .about-hero-inner{padding:0 .75rem !important;}
+}
+</style>
+
 <section id="about-section" class="relative bg-gradient-to-b from-gray-900 via-gray-950 to-black text-white overflow-hidden" style="opacity:0;transition:opacity .35s ease;padding-top:5.6rem">
     <?php
         // Build background style: prefer explicit background field if present, otherwise fallback to gradient
@@ -275,8 +296,8 @@
             @keyframes loaderMove{0%{transform:translateX(-120%)}100%{transform:translateX(220%)}}
 
             /* Stats & cards animations */
-            .stats-row{display:flex;gap:18px;align-items:stretch;flex-wrap:nowrap}
-            .stat-card{flex:1;display:flex;align-items:center;gap:18px;padding:22px;border-radius:16px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.06));box-shadow:0 14px 40px rgba(2,6,23,0.55);transition:transform .32s ease, box-shadow .32s;opacity:0;transform:translateY(8px) scale(.995);animation:statEntrance .7s forwards}
+            .stats-row{display:flex;gap:18px;align-items:stretch;flex-wrap:wrap}
+            .stat-card{flex:1 1 260px;min-width:180px;display:flex;align-items:center;gap:18px;padding:22px;border-radius:16px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.06));box-shadow:0 14px 40px rgba(2,6,23,0.55);transition:transform .32s ease, box-shadow .32s;opacity:0;transform:translateY(8px) scale(.995);animation:statEntrance .7s forwards}
             .stats-row .stat-card:nth-child(1){animation-delay:.06s}.stats-row .stat-card:nth-child(2){animation-delay:.12s}.stats-row .stat-card:nth-child(3){animation-delay:.18s}
             .stat-card:hover{transform:translateY(-6px) scale(1.03);box-shadow:0 20px 60px rgba(2,6,23,0.6)}
             .stat-icon{width:76px;height:76px;border-radius:14px;background:linear-gradient(135deg,#06b6d4,#9333ea);display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;flex:0 0 76px;background-size:200% 200%;animation:iconShift 6s linear infinite}
@@ -599,8 +620,8 @@
         <!-- Stats row (moved up under hero) -->
         <div class="mt-8">
             <style>
-                .stats-row{display:flex;gap:18px;align-items:stretch;flex-wrap:nowrap}
-                .stat-card{flex:1;display:flex;align-items:center;gap:18px;padding:22px;border-radius:16px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.06));box-shadow:0 14px 40px rgba(2,6,23,0.55)}
+                .stats-row{display:flex;gap:18px;align-items:stretch;flex-wrap:wrap}
+                .stat-card{flex:1 1 260px;min-width:180px;display:flex;align-items:center;gap:18px;padding:22px;border-radius:16px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.06));box-shadow:0 14px 40px rgba(2,6,23,0.55)}
                 .stat-icon{width:76px;height:76px;border-radius:14px;background:linear-gradient(135deg,#06b6d4,#9333ea);display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;flex:0 0 76px}
                 .stat-value{font-size:2rem;font-weight:900;color:#fff;margin-bottom:2px}
                 .stat-label{color:#9fb6cc;font-size:0.95rem}
@@ -715,7 +736,7 @@
                 <?php if(!empty($data['about']->gallery_heading)): ?><h3 class="text-3xl font-bold mb-6"><?php echo htmlspecialchars($data['about']->gallery_heading); ?></h3><?php endif; ?>
                 <style>
                     .info-row{display:flex;align-items:center;gap:24px;padding:18px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.04));margin-bottom:18px}
-                    .info-row img{width:320px;height:200px;object-fit:cover;border-radius:10px}
+                    .info-row img{width:100%;max-width:320px;height:auto;object-fit:cover;border-radius:10px}
                     .info-text{flex:1;color:#e6eef8}
                     .info-title{font-size:1.25rem;font-weight:700;margin-bottom:6px}
                     .info-desc{color:#bcd3ea}
