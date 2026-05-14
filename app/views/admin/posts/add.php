@@ -14,9 +14,13 @@
 
                 <form action="<?php echo URLROOT; ?>/admin/posts/add" method="POST" enctype="multipart/form-data" id="post-form">
                     <div class="row g-3">
-                        <div class="col-12">
+                        <div class="col-md-8">
                             <label for="title" class="form-label">Tiêu đề <span class="text-danger">*</span></label>
                             <input type="text" name="title" id="title" class="form-control" required placeholder="Nhập tiêu đề...">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="slug" class="form-label">Slug (URL)</label>
+                            <input type="text" name="slug" id="slug" class="form-control" placeholder="tieu-de-bai-viet">
                         </div>
                         <div class="col-md-6">
                             <label for="category_id" class="form-label">Danh mục</label>

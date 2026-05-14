@@ -16,8 +16,30 @@
 
         <div class="article-meta-v2 flex flex-wrap items-center gap-8 py-6 border-y border-white/10">
             <div class="meta-author flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center text-xs font-bold">
-                    <?php echo substr($data['article']->author_name, 0, 1); ?>
+                <div class="w-12 h-12 rounded-full overflow-hidden border-2 border-cyan-500/30 flex-shrink-0 shadow-lg shadow-cyan-500/20 bg-gray-900">
+                    <?php 
+                        $authorAvatar = $data['article']->author_avatar;
+                        $finalAuthorAvatar = '';
+                        if (!empty($authorAvatar)) {
+                            if (strpos($authorAvatar, 'http') === 0) {
+                                $finalAuthorAvatar = $authorAvatar;
+                            } else {
+                                $cleanPath = ltrim($authorAvatar, '/');
+                                if (strpos($cleanPath, 'uploads/') === 0 || strpos($cleanPath, 'public/uploads/') === 0) {
+                                    $finalAuthorAvatar = URLROOT . '/' . $cleanPath;
+                                } else {
+                                    $finalAuthorAvatar = URLROOT . '/public/uploads/' . $cleanPath;
+                                }
+                            }
+                        }
+                    ?>
+                    <?php if($finalAuthorAvatar): ?>
+                        <img src="<?php echo $finalAuthorAvatar; ?>" class="w-full h-full object-cover" alt="">
+                    <?php else: ?>
+                        <div class="w-full h-full bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center text-sm font-bold text-white">
+                            <?php echo substr($data['article']->author_name, 0, 1); ?>
+                        </div>
+                    <?php endif; ?>
                 </div>
                 <div>
                     <div class="text-[10px] text-gray-500 uppercase tracking-widest">Written by</div>
@@ -94,10 +116,25 @@
                 <h2 class="text-3xl font-black font-serif-premium mb-10">Join the Conversation</h2>
                 
                 <?php if(isset($_SESSION['user_id'])): ?>
-                    <form action="<?php echo URLROOT; ?>/posts/comment/<?php echo $data['article']->id; ?>" method="POST" class="mb-12">
-                        <textarea name="comment" class="w-full bg-white/5 border border-white/10 rounded-2xl p-6 focus:outline-none focus:border-cyan-500 transition-all min-h-[150px] mb-4" placeholder="Share your thoughts..."></textarea>
-                        <button type="submit" class="bg-white text-black font-bold px-8 py-3 rounded-full hover:bg-cyan-500 hover:text-white transition-all transform active:scale-95">Post Comment</button>
-                    </form>
+                    <div class="flex gap-6 mb-12" data-aos="fade-up">
+                        <div class="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border border-white/10 shadow-lg">
+                            <?php if (!empty($sessionAvatarUrl)): ?>
+                                <img src="<?php echo $sessionAvatarUrl; ?>" alt="Your Avatar" class="w-full h-full object-cover">
+                            <?php else: ?>
+                                <div class="w-full h-full bg-gray-800 flex items-center justify-center">
+                                    <i class="fa-solid fa-user text-xs text-gray-500"></i>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                        <form action="<?php echo URLROOT; ?>/posts/comment/<?php echo $data['article']->id; ?>" method="POST" class="flex-1">
+                            <textarea name="comment" class="w-full bg-white/5 border border-white/10 rounded-2xl p-6 focus:outline-none focus:border-cyan-500 transition-all min-h-[120px] mb-4 text-sm text-gray-200" placeholder="Viết bình luận của bạn..."></textarea>
+                            <div class="flex justify-end">
+                                <button type="submit" class="bg-cyan-500 text-white font-bold px-8 py-3 rounded-full hover:bg-cyan-600 transition-all transform active:scale-95 shadow-lg shadow-cyan-500/20 flex items-center gap-2">
+                                    Gửi bình luận <i class="fa-solid fa-paper-plane text-xs"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 <?php else: ?>
                     <div class="p-8 rounded-2xl bg-white/5 border border-dashed border-white/20 text-center mb-12">
                         <p class="text-gray-400">Please <a href="<?php echo URLROOT; ?>/users/login" class="text-cyan-400 font-bold">login</a> to participate in the discussion.</p>
@@ -287,12 +324,32 @@ aside .sticky::-webkit-scrollbar {
         let lastCommentId = <?php echo !empty($data['comments']) ? $data['comments'][0]->id : 0; ?>;
 
         function renderComment(comment) {
-            const avatar = comment.avatar ? `<img src="<?php echo URLROOT; ?>/public/uploads/${comment.avatar}" alt="Avatar" class="w-full h-full object-cover">` : `<div class="w-full h-full bg-gray-800 flex items-center justify-center border border-gray-700 rounded-full"><i class="fa-solid fa-user text-xs"></i></div>`;
+            let avatarHtml = '';
+            let avatarUrl = (comment.avatar || '').trim();
+            
+            if (avatarUrl.startsWith('http')) {
+                // Link ngoài
+                avatarHtml = `<img src="${avatarUrl}" alt="Avatar" class="w-full h-full object-cover">`;
+            } else if (avatarUrl !== '') {
+                // Link nội bộ - Xử lý để tránh trùng lặp "uploads"
+                let finalPath = avatarUrl;
+                if (avatarUrl.startsWith('/')) finalPath = avatarUrl.substring(1);
+                
+                // Nếu path chưa có uploads/ thì mới thêm vào
+                if (!finalPath.startsWith('uploads/') && !finalPath.startsWith('public/uploads/')) {
+                    finalPath = 'public/uploads/' + finalPath;
+                }
+                
+                avatarHtml = `<img src="<?php echo URLROOT; ?>/${finalPath}" alt="Avatar" class="w-full h-full object-cover">`;
+            } else {
+                // Mặc định
+                avatarHtml = `<img src="https://ui-avatars.com/api/?name=${encodeURIComponent(comment.username)}&background=random" alt="Avatar" class="w-full h-full object-cover">`;
+            }
             
             return `
                 <div class="comment-item-v2 flex gap-6 group" data-id="${comment.id}">
-                    <div class="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
-                        ${avatar}
+                    <div class="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border border-white/10">
+                        ${avatarHtml}
                     </div>
                     <div class="flex-1 pb-8 border-b border-white/5">
                         <div class="flex justify-between items-center mb-2">

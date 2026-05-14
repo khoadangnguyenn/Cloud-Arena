@@ -72,7 +72,7 @@ function initCloudArenaUi() {
         });
 
         var closeIfDesktop = function () {
-            if (window.matchMedia && window.matchMedia('(min-width: 768px)').matches) {
+            if (window.matchMedia && window.matchMedia('(min-width: 1024px)').matches) {
                 setMenuOpen(false);
             }
         };

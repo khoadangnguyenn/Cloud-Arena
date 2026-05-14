@@ -16,6 +16,7 @@
       $category = isset($_GET['category']) ? trim($_GET['category']) : '';
 
       $news = $this->postModel->getNews($keyword, $category);
+      $categories = $this->postModel->getCategories();
       $breaking = $this->postModel->getBreakingNews();
       $trending = $this->postModel->getTrendingNews(5);
       $ads = $this->adModel->getActiveAdsByPosition('sticky-sidebar');
@@ -27,6 +28,7 @@
         'trending' => $trending,
         'search' => $keyword,
         'category' => $category,
+        'categories' => $categories,
         'ads' => $ads
       ];
 

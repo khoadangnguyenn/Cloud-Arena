@@ -43,7 +43,7 @@
                                         <td><?php echo (int) $article->id; ?></td>
                                         <td>
                                             <?php if (!empty($article->thumbnail)): ?>
-                                                <img src="<?php echo htmlspecialchars(URLROOT . '/public/uploads/' . $article->thumbnail, ENT_QUOTES, 'UTF-8'); ?>" class="admin-post-thumb" alt="">
+                                                <img src="<?php echo htmlspecialchars(URLROOT . '/uploads/' . $article->thumbnail, ENT_QUOTES, 'UTF-8'); ?>" class="admin-post-thumb" alt="">
                                             <?php else: ?>
                                                 <span class="badge rounded-pill badge-soft-primary small">No image</span>
                                             <?php endif; ?>

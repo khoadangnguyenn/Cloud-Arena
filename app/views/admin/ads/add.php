@@ -22,15 +22,7 @@
                             <label for="link_url" class="form-label">Link URL <span class="text-danger">*</span></label>
                             <input type="url" class="form-control" name="link_url" id="link_url" required placeholder="https://...">
                         </div>
-                        <div class="col-md-6">
-                            <label for="position" class="form-label">Vị trí</label>
-                            <select class="form-select" name="position" id="position" data-admin-custom-select="true">
-                                <option value="sticky-sidebar">Thanh bên (sticky)</option>
-                                <option value="header-top">Trên header</option>
-                                <option value="footer-bottom">Dưới footer</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
+                        <div class="col-12">
                             <label for="status" class="form-label">Trạng thái</label>
                             <select class="form-select" name="status" id="status" data-admin-custom-select="true">
                                 <option value="active">Hoạt động</option>

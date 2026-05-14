@@ -17,9 +17,13 @@
 
                 <form action="<?php echo URLROOT; ?>/admin/posts/edit/<?php echo (int) $data['article']->id; ?>" method="POST" enctype="multipart/form-data" id="post-form">
                     <div class="row g-3">
-                        <div class="col-12">
+                        <div class="col-md-8">
                             <label for="title" class="form-label">Tiêu đề <span class="text-danger">*</span></label>
                             <input type="text" name="title" id="title" class="form-control" required value="<?php echo htmlspecialchars((string) $data['article']->title, ENT_QUOTES, 'UTF-8'); ?>">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="slug" class="form-label">Slug (URL)</label>
+                            <input type="text" name="slug" id="slug" class="form-control" value="<?php echo htmlspecialchars((string) $data['article']->slug, ENT_QUOTES, 'UTF-8'); ?>">
                         </div>
                         <div class="col-md-6">
                             <label for="category_id" class="form-label">Danh mục</label>
@@ -49,7 +53,7 @@
                             <label class="form-label">Thumbnail</label>
                             <?php if ($data['article']->thumbnail): ?>
                                 <div class="admin-current-thumb-row" id="current-thumb-container">
-                                    <img src="<?php echo htmlspecialchars(URLROOT . '/public/uploads/' . $data['article']->thumbnail, ENT_QUOTES, 'UTF-8'); ?>" alt="">
+                                    <img src="<?php echo htmlspecialchars(URLROOT . '/uploads/' . $data['article']->thumbnail, ENT_QUOTES, 'UTF-8'); ?>" alt="">
                                     <span><?php echo htmlspecialchars((string) $data['article']->thumbnail, ENT_QUOTES, 'UTF-8'); ?></span>
                                 </div>
                             <?php endif; ?>

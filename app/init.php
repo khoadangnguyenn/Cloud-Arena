@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/config/config.php';
+date_default_timezone_set('Asia/Ho_Chi_Minh');
 
 if (session_status() === PHP_SESSION_NONE) {
     $isSecure = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';

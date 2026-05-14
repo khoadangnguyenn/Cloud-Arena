@@ -50,6 +50,11 @@ $seoTruncate = static function ($text, $maxLen) {
     return strlen($text) > $maxLen ? substr($text, 0, $maxLen - 1) . '...' : $text;
 };
 
+$cartCount = 0;
+if (isset($_SESSION['cart']) && is_array($_SESSION['cart'])) {
+    $cartCount = array_sum($_SESSION['cart']);
+}
+
 $defaultMetaDescription = trim((string) ($publicSettings['site_about_snippet'] ?? ''));
 if ($defaultMetaDescription === '') {
     $defaultMetaDescription = SITENAME;
@@ -111,6 +116,12 @@ $navItems = [
         'label' => 'Tin tức',
         'href' => URLROOT . '/posts',
         'is_active' => $currentController === 'posts',
+        'nav_spy' => null,
+    ],
+    [
+        'label' => 'Hỏi đáp',
+        'href' => URLROOT . '/faq',
+        'is_active' => ($currentController === 'pages' && $currentMethod === 'faq') || ($currentController === 'faq'),
         'nav_spy' => null,
     ],
     [
@@ -209,9 +220,13 @@ $clientHoverMinVer = is_readable($clientHoverMinPath) ? (string) filemtime($clie
         .site-nav-link {
             position: relative;
             color: #94a3b8;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 500;
             transition: color 0.2s ease;
+            white-space: nowrap;
+        }
+        @media (min-width: 1280px) {
+            .site-nav-link { font-size: 0.9rem; }
         }
         .site-nav-link::after {
             content: '';
@@ -363,8 +378,8 @@ $clientHoverMinVer = is_readable($clientHoverMinPath) ? (string) filemtime($clie
     <!-- Navbar -->
     <nav id="site-header" class="site-header fixed top-0 inset-x-0 z-50 <?php echo $isHomePage ? 'header-home' : 'header-inner'; ?>">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="h-20 grid grid-cols-[auto_1fr_auto] items-center gap-6">
-                <div class="flex items-center">
+            <div class="h-20 grid grid-cols-[auto_1fr_auto] items-center gap-4">
+                <div class="flex items-center flex-shrink-0">
                     <a href="<?php echo URLROOT; ?>" class="site-header-brand flex-shrink-0 flex items-center gap-3">
                         <?php if ($siteLogoImageUrl !== ''): ?>
                             <img src="<?php echo htmlspecialchars($siteLogoImageUrl); ?>" alt="Logo thương hiệu" class="hvr-glow site-brand-logo-glow w-10 h-10 rounded-lg object-cover shadow-lg shadow-cyan-500/20">
@@ -379,8 +394,8 @@ $clientHoverMinVer = is_readable($clientHoverMinPath) ? (string) filemtime($clie
                     </a>
                 </div>
 
-                <div class="hidden md:flex items-center justify-center">
-                    <div class="site-nav-links flex items-center justify-center gap-8">
+                <div class="hidden lg:flex items-center justify-center px-4">
+                    <div class="site-nav-links flex items-center justify-center gap-4 xl:gap-8">
                         <?php foreach ($navItems as $item): ?>
                             <?php
                             $navSpy = isset($item['nav_spy']) && $item['nav_spy'] !== null && $item['nav_spy'] !== ''
@@ -396,11 +411,11 @@ $clientHoverMinVer = is_readable($clientHoverMinPath) ? (string) filemtime($clie
                     </div>
                 </div>
 
-                <div class="flex items-center justify-end gap-2 sm:gap-3 md:gap-6">
-                    <div class="flex items-center gap-2 md:hidden">
+                <div class="flex items-center justify-end gap-2 sm:gap-3 lg:gap-6 flex-shrink-0">
+                    <div class="flex items-center gap-2 lg:hidden">
                         <a href="<?php echo URLROOT; ?>/cart" class="text-gray-300 hover:text-cyan-400 relative inline-flex p-2.5 rounded-xl border border-white/10 bg-white/[0.06] transition-colors" aria-label="Giỏ hàng">
                             <i class="fa-solid fa-cart-shopping text-lg" aria-hidden="true"></i>
-                            <span class="absolute top-1 right-1 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center border-2 border-gray-950">0</span>
+                            <span class="cart-badge absolute top-1 right-1 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center border-2 border-gray-950"><?php echo $cartCount; ?></span>
                         </a>
                         <button type="button"
                                 id="site-mobile-menu-toggle"
@@ -413,7 +428,7 @@ $clientHoverMinVer = is_readable($clientHoverMinPath) ? (string) filemtime($clie
                         </button>
                     </div>
 
-                    <div class="hidden md:flex items-center gap-6">
+                    <div class="hidden lg:flex items-center gap-6">
                     <?php if(isset($_SESSION['user_id'])) : ?>
                         <div class="flex items-center gap-4">
                             <a href="<?php echo URLROOT; ?>/users/profile" class="text-sm font-medium text-gray-300 hover:text-cyan-400 transition-colors flex items-center gap-2">
@@ -455,16 +470,16 @@ $clientHoverMinVer = is_readable($clientHoverMinPath) ? (string) filemtime($clie
 
                     <a href="<?php echo URLROOT; ?>/cart" class="text-gray-400 hover:text-cyan-400 relative p-2 transition-colors">
                         <i class="fa-solid fa-cart-shopping text-xl"></i>
-                        <span class="absolute top-0 right-0 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center border-2 border-gray-950">0</span>
+                        <span class="cart-badge absolute top-0 right-0 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center border-2 border-gray-950"><?php echo $cartCount; ?></span>
                     </a>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div id="site-mobile-menu-backdrop" class="site-mobile-menu-backdrop md:hidden" aria-hidden="true"></div>
+        <div id="site-mobile-menu-backdrop" class="site-mobile-menu-backdrop lg:hidden" aria-hidden="true"></div>
         <div id="site-mobile-menu"
-             class="site-mobile-menu-panel md:hidden"
+             class="site-mobile-menu-panel lg:hidden"
              role="region"
              aria-label="Menu điều hướng"
              aria-hidden="true">

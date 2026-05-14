@@ -24,7 +24,7 @@ class AdminAds extends Controller {
             $data = [
                 'title' => trim($_POST['title']),
                 'link_url' => trim($_POST['link_url']),
-                'position' => $_POST['position'],
+                'position' => 'sticky-sidebar',
                 'status' => $_POST['status'],
                 'start_at' => $_POST['start_at'],
                 'end_at' => $_POST['end_at'],
@@ -34,16 +34,21 @@ class AdminAds extends Controller {
             // Image Upload
             if (!empty($_FILES['image']['name'])) {
                 $target_dir = APPROOT . '/../public/uploads/ads/';
-                if (!is_dir($target_dir)) mkdir($target_dir, 0777, true);
+                if (!is_dir($target_dir)) @mkdir($target_dir, 0777, true);
 
                 $imageFileType = strtolower(pathinfo($_FILES["image"]["name"], PATHINFO_EXTENSION));
                 $new_filename = uniqid() . '_ad.' . $imageFileType;
                 $target_file = $target_dir . $new_filename;
 
                 if (move_uploaded_file($_FILES["image"]["tmp_name"], $target_file)) {
+                    @chmod($target_file, 0644);
                     $data['image_url'] = '/uploads/ads/' . $new_filename;
                 }
             }
+
+            // Fix Datetime
+            $data['start_at'] = !empty($data['start_at']) ? str_replace('T', ' ', $data['start_at']) : null;
+            $data['end_at'] = !empty($data['end_at']) ? str_replace('T', ' ', $data['end_at']) : null;
 
             if ($this->adModel->addAd($data)) {
                 flash('ad_message', 'Đã thêm quảng cáo thành công');
@@ -70,7 +75,7 @@ class AdminAds extends Controller {
                 'id' => $id,
                 'title' => trim($_POST['title']),
                 'link_url' => trim($_POST['link_url']),
-                'position' => $_POST['position'],
+                'position' => 'sticky-sidebar',
                 'status' => $_POST['status'],
                 'start_at' => $_POST['start_at'],
                 'end_at' => $_POST['end_at'],
@@ -79,16 +84,21 @@ class AdminAds extends Controller {
 
             if (!empty($_FILES['image']['name'])) {
                 $target_dir = APPROOT . '/../public/uploads/ads/';
-                if (!is_dir($target_dir)) mkdir($target_dir, 0777, true);
+                if (!is_dir($target_dir)) @mkdir($target_dir, 0777, true);
 
                 $imageFileType = strtolower(pathinfo($_FILES["image"]["name"], PATHINFO_EXTENSION));
                 $new_filename = uniqid() . '_ad.' . $imageFileType;
                 $target_file = $target_dir . $new_filename;
 
                 if (move_uploaded_file($_FILES["image"]["tmp_name"], $target_file)) {
+                    @chmod($target_file, 0644);
                     $data['image_url'] = '/uploads/ads/' . $new_filename;
                 }
             }
+
+            // Fix Datetime
+            $data['start_at'] = !empty($data['start_at']) ? str_replace('T', ' ', $data['start_at']) : null;
+            $data['end_at'] = !empty($data['end_at']) ? str_replace('T', ' ', $data['end_at']) : null;
 
             if ($this->adModel->updateAd($data)) {
                 flash('ad_message', 'Đã cập nhật quảng cáo thành công');

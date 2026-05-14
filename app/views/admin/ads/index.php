@@ -24,7 +24,6 @@
                             <tr>
                                 <th>Banner</th>
                                 <th>Thông tin</th>
-                                <th>Vị trí</th>
                                 <th>Trạng thái</th>
                                 <th>Thời gian</th>
                                 <th class="text-end">Thao tác</th>
@@ -35,7 +34,11 @@
                                 <?php foreach ($data['ads'] as $ad): ?>
                                     <tr>
                                         <td>
-                                            <img src="<?php echo htmlspecialchars(URLROOT . $ad->image_url, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars((string) $ad->title, ENT_QUOTES, 'UTF-8'); ?>" class="rounded" style="max-width: 150px;">
+                                            <?php if (!empty($ad->image_url)): ?>
+                                                <img src="<?php echo htmlspecialchars(URLROOT . $ad->image_url, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars((string) $ad->title, ENT_QUOTES, 'UTF-8'); ?>" class="rounded" style="max-width: 150px;">
+                                            <?php else: ?>
+                                                <span class="badge rounded-pill badge-soft-primary small">No image</span>
+                                            <?php endif; ?>
                                         </td>
                                         <td>
                                             <strong><?php echo htmlspecialchars((string) $ad->title, ENT_QUOTES, 'UTF-8'); ?></strong>
@@ -43,7 +46,6 @@
                                                 <a href="<?php echo htmlspecialchars((string) $ad->link_url, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" class="text-break"><?php echo htmlspecialchars((string) $ad->link_url, ENT_QUOTES, 'UTF-8'); ?></a>
                                             </div>
                                         </td>
-                                        <td><span class="badge rounded-pill badge-soft-primary"><?php echo htmlspecialchars((string) $ad->position, ENT_QUOTES, 'UTF-8'); ?></span></td>
                                         <td>
                                             <?php if ($ad->status === 'active'): ?>
                                                 <span class="pill-badge pill-status-replied">Hoạt động</span>

@@ -24,9 +24,10 @@
 
     public function add(){
         if($_SERVER['REQUEST_METHOD'] == 'POST'){
+            $slug = !empty($_POST['slug']) ? $this->slugify(trim($_POST['slug'])) : $this->slugify(trim($_POST['title']));
             $data = [
                 'title' => trim($_POST['title']),
-                'slug' => $this->slugify(trim($_POST['title'])),
+                'slug' => $slug,
                 'content' => $_POST['content'],
                 'meta_keywords' => trim($_POST['meta_keywords']),
                 'meta_description' => trim($_POST['meta_description']),
@@ -34,8 +35,8 @@
                 'author_id' => $_SESSION['user_id'],
                 'thumbnail' => '',
                 'is_breaking' => isset($_POST['is_breaking']) ? 1 : 0,
-                'breaking_until' => !empty($_POST['breaking_until']) ? $_POST['breaking_until'] : null,
-                'publish_at' => !empty($_POST['publish_at']) ? $_POST['publish_at'] : null,
+                'breaking_until' => !empty($_POST['breaking_until']) ? str_replace('T', ' ', $_POST['breaking_until']) : null,
+                'publish_at' => !empty($_POST['publish_at']) ? str_replace('T', ' ', $_POST['publish_at']) : null,
                 'category_id' => !empty($_POST['category_id']) ? $_POST['category_id'] : null
             ];
 
@@ -67,16 +68,20 @@
     public function uploadImage(){
         if($_SERVER['REQUEST_METHOD'] == 'POST' && !empty($_FILES['file'])){
             $target_dir = APPROOT . '/../public/uploads/';
-            if(!is_dir($target_dir)) mkdir($target_dir, 0777, true);
+            if(!is_dir($target_dir)) {
+                @mkdir($target_dir, 0777, true);
+            }
             
             $imageFileType = strtolower(pathinfo($_FILES["file"]["name"], PATHINFO_EXTENSION));
             $new_filename = uniqid() . '_news.' . $imageFileType;
             $target_file = $target_dir . $new_filename;
 
             if(move_uploaded_file($_FILES["file"]["tmp_name"], $target_file)) {
+                @chmod($target_file, 0644);
                 echo json_encode(['success' => true, 'filename' => $new_filename]);
             } else {
-                echo json_encode(['success' => false, 'message' => 'Failed to move file']);
+                error_log("Upload failed: " . $_FILES["file"]["error"] . " to " . $target_file);
+                echo json_encode(['success' => false, 'message' => 'Failed to move file to ' . $target_dir]);
             }
             exit();
         }
@@ -90,18 +95,19 @@
             exit();
         }
         if($_SERVER['REQUEST_METHOD'] == 'POST'){
+            $slug = !empty($_POST['slug']) ? $this->slugify(trim($_POST['slug'])) : $this->slugify(trim($_POST['title']));
             $data = [
                 'id' => $id,
                 'title' => trim($_POST['title']),
-                'slug' => $this->slugify(trim($_POST['title'])),
+                'slug' => $slug,
                 'content' => $_POST['content'],
                 'meta_keywords' => trim($_POST['meta_keywords']),
                 'meta_description' => trim($_POST['meta_description']),
                 'status' => $_POST['status'],
                 'thumbnail' => $article->thumbnail,
                 'is_breaking' => isset($_POST['is_breaking']) ? 1 : 0,
-                'breaking_until' => !empty($_POST['breaking_until']) ? $_POST['breaking_until'] : null,
-                'publish_at' => !empty($_POST['publish_at']) ? $_POST['publish_at'] : null,
+                'breaking_until' => !empty($_POST['breaking_until']) ? str_replace('T', ' ', $_POST['breaking_until']) : null,
+                'publish_at' => !empty($_POST['publish_at']) ? str_replace('T', ' ', $_POST['publish_at']) : null,
                 'category_id' => !empty($_POST['category_id']) ? $_POST['category_id'] : null
             ];
 

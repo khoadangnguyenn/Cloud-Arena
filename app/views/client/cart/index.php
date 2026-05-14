@@ -119,6 +119,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('subtotal-' + productId).innerText = data.itemSubtotal;
                 document.getElementById('cartTotalAmount').innerText = data.totalAmount;
                 
+                // Cập nhật lại số lượng trên Header badge
+                document.querySelectorAll('.cart-badge').forEach(badge => {
+                    badge.textContent = data.cartCount;
+                });
+
                 // Hiển thị Toast thông báo nhẹ nhàng
                 const Toast = Swal.mixin({
                     toast: true,
@@ -214,6 +219,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                 row.remove();
                                 document.getElementById('cartTotalAmount').innerText = data.totalAmount;
                                 
+                                // Cập nhật lại số lượng trên Header badge
+                                document.querySelectorAll('.cart-badge').forEach(badge => {
+                                    badge.textContent = data.cartCount;
+                                });
+
                                 // Nếu xoá hết thì hiện div empty
                                 if(data.isEmpty) {
                                     document.getElementById('fullCartDiv').classList.add('hidden');

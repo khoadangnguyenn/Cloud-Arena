@@ -24,7 +24,9 @@ class AdminAbout extends Controller
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // If both $_POST and $_FILES are empty, it's often caused by PHP upload/post limits
             $hasPost = !empty($_POST);
-            $hasFiles = !empty($_FILES) && array_filter($_FILES, function($f){ return !empty($f['name']); });
+            $hasFiles = !empty($_FILES) && array_filter($_FILES, function ($f) {
+                return !empty($f['name']);
+            });
             if (!$hasPost && !$hasFiles) {
                 // record diagnostic info to help identify server-side POST issues (post_max_size, upload_max_filesize, max_input_vars)
                 try {
@@ -39,7 +41,8 @@ class AdminAbout extends Controller
                         'raw' => @file_get_contents('php://input')
                     ];
                     @file_put_contents(APPROOT . '/../public/debug-about-empty-request.log', json_encode($debugEmpty, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n---\n", FILE_APPEND);
-                } catch (Throwable $e) {}
+                } catch (Throwable $e) {
+                }
 
                 $_SESSION['flash_error'] = 'Form submission failed — request body appears empty. This is commonly caused by PHP limits (post_max_size, upload_max_filesize, or max_input_vars). Try submitting without files or increase those limits in php.ini.';
                 header('Location: ' . URLROOT . '/admin/about');
@@ -59,7 +62,8 @@ class AdminAbout extends Controller
                         'raw' => @file_get_contents('php://input')
                     ];
                     @file_put_contents(APPROOT . '/../public/debug-about-empty-request.log', json_encode($debugEmpty2, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n---\n", FILE_APPEND);
-                } catch (Throwable $e) {}
+                } catch (Throwable $e) {
+                }
 
                 $_SESSION['flash_error'] = 'Form submission failed — request body may be too large. Try removing file uploads or increasing post_max_size in PHP settings.';
                 header('Location: ' . URLROOT . '/admin/about');
@@ -76,7 +80,10 @@ class AdminAbout extends Controller
     public function update()
     {
         // Log invocation immediately for diagnosis
-        try { @file_put_contents(APPROOT . '/../public/debug-about-invoked.log', date('c') . " - update invoked - METHOD=" . ($_SERVER['REQUEST_METHOD'] ?? '') . "\n", FILE_APPEND); } catch (Throwable $e) {}
+        try {
+            @file_put_contents(APPROOT . '/../public/debug-about-invoked.log', date('c') . " - update invoked - METHOD=" . ($_SERVER['REQUEST_METHOD'] ?? '') . "\n", FILE_APPEND);
+        } catch (Throwable $e) {
+        }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $aboutModel = $this->model('About');
@@ -100,7 +107,9 @@ class AdminAbout extends Controller
                 $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
                 $msg = 'Yêu cầu không hợp lệ. Vui lòng thử lại.';
                 if ($isAjax) {
-                    if (ob_get_length()) { @ob_clean(); }
+                    if (ob_get_length()) {
+                        @ob_clean();
+                    }
                     header('Content-Type: application/json', true, 400);
                     echo json_encode(['success' => false, 'message' => $msg]);
                     exit;
