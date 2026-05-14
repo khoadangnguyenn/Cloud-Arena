@@ -128,6 +128,10 @@ $navItems = [
 
 $clientHoverMinPath = dirname(APPROOT) . '/public/admin_assets/css/hover-min.css';
 $clientHoverMinVer = is_readable($clientHoverMinPath) ? (string) filemtime($clientHoverMinPath) : '1';
+require_once APPROOT . '/models/CartModel.php';
+$headerCartModel = new CartModel();
+$headerCartId = $headerCartModel->getCartId();
+$cartCount = $headerCartModel->getTotalItemCount($headerCartId);
 ?>
 <!DOCTYPE html>
 <html lang="vi" class="bg-black">
@@ -399,7 +403,7 @@ $clientHoverMinVer = is_readable($clientHoverMinPath) ? (string) filemtime($clie
                     <div class="flex items-center gap-2 md:hidden">
                         <a href="<?php echo URLROOT; ?>/cart" class="text-gray-300 hover:text-cyan-400 relative inline-flex p-2.5 rounded-xl border border-white/10 bg-white/[0.06] transition-colors" aria-label="Giỏ hàng">
                             <i class="fa-solid fa-cart-shopping text-lg" aria-hidden="true"></i>
-                            <span class="absolute top-1 right-1 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center border-2 border-gray-950">0</span>
+                            <span class="cart-badge-count absolute top-1 right-1 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center border-2 border-gray-950"><?php echo $cartCount; ?></span>
                         </a>
                         <button type="button"
                                 id="site-mobile-menu-toggle"
@@ -454,7 +458,7 @@ $clientHoverMinVer = is_readable($clientHoverMinPath) ? (string) filemtime($clie
 
                     <a href="<?php echo URLROOT; ?>/cart" class="text-gray-400 hover:text-cyan-400 relative p-2 transition-colors">
                         <i class="fa-solid fa-cart-shopping text-xl"></i>
-                        <span class="absolute top-0 right-0 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center border-2 border-gray-950">0</span>
+                        <span class="cart-badge-count absolute top-0 right-0 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center border-2 border-gray-950"><?php echo $cartCount; ?></span>
                     </a>
                     </div>
                 </div>

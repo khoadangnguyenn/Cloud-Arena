@@ -36,7 +36,7 @@
               </thead>
               <tbody class="divide-y divide-gray-800" id="cartTableBody">
                 <?php foreach($data['cartItems'] as $item): ?>
-                  <tr class="hover:bg-white/5 transition-colors" id="cart-item-<?php echo $item->id; ?>">
+                  <tr class="hover:bg-white/5 transition-colors" id="cart-item-<?php echo $item->product_id; ?>">
                     <td class="px-8 py-6 whitespace-nowrap">
                       <div class="flex items-center">
                         <div class="flex-shrink-0 h-12 w-12 rounded-xl overflow-hidden border border-gray-700">
@@ -59,16 +59,16 @@
                     </td>
                     <td class="px-8 py-6 whitespace-nowrap">
                       <div class="flex items-center bg-gray-800 rounded-lg max-w-[120px] p-1 border border-gray-700">
-                          <button type="button" class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 rounded-md transition-colors qty-btn-minus" data-id="<?php echo $item->id; ?>"><i class="fa-solid fa-minus text-xs"></i></button>
-                          <input type="number" name="quantities[<?php echo $item->id; ?>]" id="qty-input-<?php echo $item->id; ?>" value="<?php echo $item->quantity; ?>" min="1" class="w-10 bg-transparent py-1 text-sm text-white text-center outline-none qty-input" data-id="<?php echo $item->id; ?>">
-                          <button type="button" class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 rounded-md transition-colors qty-btn-plus" data-id="<?php echo $item->id; ?>"><i class="fa-solid fa-plus text-xs"></i></button>
+                          <button type="button" class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 rounded-md transition-colors qty-btn-minus" data-id="<?php echo $item->product_id; ?>"><i class="fa-solid fa-minus text-xs"></i></button>
+                          <input type="number" name="quantities[<?php echo $item->product_id; ?>]" id="qty-input-<?php echo $item->product_id; ?>" value="<?php echo $item->quantity; ?>" min="1" class="w-10 bg-transparent py-1 text-sm text-white text-center outline-none qty-input" data-id="<?php echo $item->product_id; ?>">
+                          <button type="button" class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 rounded-md transition-colors qty-btn-plus" data-id="<?php echo $item->product_id; ?>"><i class="fa-solid fa-plus text-xs"></i></button>
                       </div>
                     </td>
-                    <td class="px-8 py-6 whitespace-nowrap text-sm font-bold text-cyan-400 subtotal-text" id="subtotal-<?php echo $item->id; ?>">
+                    <td class="px-8 py-6 whitespace-nowrap text-sm font-bold text-cyan-400 subtotal-text" id="subtotal-<?php echo $item->product_id; ?>">
                       <?php echo number_format($item->subtotal, 0, ',', '.'); ?>đ
                     </td>
                     <td class="px-8 py-6 whitespace-nowrap text-right text-sm font-medium">
-                      <button type="button" class="text-rose-500 hover:text-rose-400 transition-colors remove-btn" data-id="<?php echo $item->id; ?>">
+                      <button type="button" class="text-rose-500 hover:text-rose-400 transition-colors remove-btn" data-id="<?php echo $item->product_id; ?>">
                         <i class="fa-solid fa-trash-can"></i>
                       </button>
                     </td>
@@ -120,6 +120,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('subtotal-' + productId).innerText = data.itemSubtotal;
                 document.getElementById('cartTotalAmount').innerText = data.totalAmount;
                 
+                // Cập nhật số đếm trên icon Giỏ hàng ở Header (Desktop & Mobile)
+                document.querySelectorAll('.cart-badge-count').forEach(el => {
+                    el.innerText = data.cartCount;
+                });
+                
                 // Hiển thị Toast thông báo nhẹ nhàng
                 const Toast = Swal.mixin({
                     toast: true,
@@ -131,6 +136,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 Toast.fire({
                     icon: 'success',
                     title: 'Đã cập nhật giỏ hàng'
+                });
+            } else {
+                // Hiển thị popup lỗi nếu backend trả về false
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Lỗi cập nhật!',
+                    text: data.message || 'Có lỗi xảy ra khi thay đổi số lượng.',
+                    confirmButtonColor: '#06b6d4'
                 });
             }
         })
@@ -205,39 +218,52 @@ document.addEventListener('DOMContentLoaded', function() {
                     .then(res => res.json())
                     .then(data => {
                         if(data.success) {
-                            // Xóa row tương ứng với hiệu ứng
-                            const row = document.getElementById('cart-item-' + productId);
-                            row.style.transition = 'all 0.4s ease';
-                            row.style.opacity = '0';
-                            row.style.transform = 'translateX(-20px)';
-                            
-                            setTimeout(() => {
-                                row.remove();
-                                document.getElementById('cartTotalAmount').innerText = data.totalAmount;
-                                
-                                // Nếu xoá hết thì hiện div empty
-                                if(data.isEmpty) {
-                                    document.getElementById('fullCartDiv').classList.add('hidden');
-                                    document.getElementById('emptyCartDiv').classList.remove('hidden');
-                                    // Bật animation fade in cho emptyDiv
-                                    const emptyDiv = document.getElementById('emptyCartDiv');
-                                    emptyDiv.style.opacity = '0';
-                                    setTimeout(() => {
-                                        emptyDiv.style.transition = 'opacity 0.5s ease';
-                                        emptyDiv.style.opacity = '1';
-                                    }, 50);
-                                }
-                            }, 400);
+                          // 1. Cập nhật số đếm trên icon Giỏ hàng ở Header (Desktop & Mobile)
+                          document.querySelectorAll('.cart-badge-count').forEach(el => {
+                              el.innerText = data.cartCount;
+                          });
 
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Đã xóa!',
-                                text: data.message,
-                                timer: 1500,
-                                showConfirmButton: false
-                            });
-                        }
-                    })
+                          // 2. Xóa row tương ứng với hiệu ứng
+                          const row = document.getElementById('cart-item-' + productId);
+                          row.style.transition = 'all 0.4s ease';
+                          row.style.opacity = '0';
+                          row.style.transform = 'translateX(-20px)';
+                          
+                          setTimeout(() => {
+                              row.remove();
+                              document.getElementById('cartTotalAmount').innerText = data.totalAmount;
+                              
+                              // Nếu xoá hết thì hiện div empty
+                              if(data.isEmpty) {
+                                  document.getElementById('fullCartDiv').classList.add('hidden');
+                                  document.getElementById('emptyCartDiv').classList.remove('hidden');
+                                  
+                                  const emptyDiv = document.getElementById('emptyCartDiv');
+                                  emptyDiv.style.opacity = '0';
+                                  setTimeout(() => {
+                                      emptyDiv.style.transition = 'opacity 0.5s ease';
+                                      emptyDiv.style.opacity = '1';
+                                  }, 50);
+                              }
+                          }, 400);
+
+                              Swal.fire({
+                                  icon: 'success',
+                                  title: 'Đã xóa!',
+                                  text: data.message,
+                                  timer: 1500,
+                                  showConfirmButton: false
+                              });
+                          } else {
+                              // Báo lỗi nếu xóa thất bại (ví dụ: lỗi kết nối Database)
+                              Swal.fire({
+                                  icon: 'error',
+                                  title: 'Lỗi!',
+                                  text: data.message || 'Không thể xóa sản phẩm vào lúc này.',
+                                  confirmButtonColor: '#06b6d4'
+                              });
+                          }
+                      })
                     .catch(err => console.error(err));
                 }
             });

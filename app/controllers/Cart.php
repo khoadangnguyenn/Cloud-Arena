@@ -2,25 +2,23 @@
 class Cart extends Controller {
     private $orderModel;
     private $productModel;
+    private $cartModel;
 
     public function __construct() {
         $this->orderModel = $this->model('Order');
         $this->productModel = $this->model('Product');
+        $this->cartModel = $this->model('CartModel'); // Khởi tạo CartModel mới
     }
 
     public function index() {
-        $cartItems = [];
+        $cartId = $this->cartModel->getCartId();
+        $cartItems = $this->cartModel->getCartItems($cartId);
         $totalAmount = 0;
 
-        if (isset($_SESSION['cart'])) {
-            foreach ($_SESSION['cart'] as $productId => $quantity) {
-                $product = $this->productModel->getProductById($productId);
-                if ($product) {
-                    $product->quantity = $quantity;
-                    $product->subtotal = $product->price * $quantity;
-                    $totalAmount += $product->subtotal;
-                    $cartItems[] = $product;
-                }
+        // Tính tổng tiền dựa trên subtotal đã query từ DB
+        if (!empty($cartItems)) {
+            foreach ($cartItems as $item) {
+                $totalAmount += $item->subtotal;
             }
         }
 
@@ -35,16 +33,15 @@ class Cart extends Controller {
     }
 
     public function add($productId = null) {
-        // 1. Kiểm tra ID truyền vào
         if (!$productId) {
             header('Location: ' . URLROOT . '/products');
             exit;
         }
 
-        // 2. Kiểm tra sản phẩm có thực sự tồn tại trong Database không
         $product = $this->productModel->getProductById($productId);
+        $isAjax = (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') || (isset($_GET['ajax']) && $_GET['ajax'] == '1') || (isset($_SERVER['HTTP_ACCEPT']) && strpos(strtolower($_SERVER['HTTP_ACCEPT']), 'application/json') !== false);
+        
         if (!$product) {
-            $isAjax = (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') || (isset($_GET['ajax']) && $_GET['ajax'] == '1');
             if ($isAjax) {
                 header('Content-Type: application/json');
                 echo json_encode(['success' => false, 'message' => 'Sản phẩm không tồn tại hoặc đã bị ẩn!']);
@@ -54,13 +51,7 @@ class Cart extends Controller {
             exit;
         }
 
-        $acceptHeader = isset($_SERVER['HTTP_ACCEPT']) ? strtolower($_SERVER['HTTP_ACCEPT']) : '';
-        $isAjax = (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
-            || (isset($_GET['ajax']) && $_GET['ajax'] == '1')
-            || (strpos($acceptHeader, 'application/json') !== false);
-        
         $quantity = 1;
-
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $rawInput = file_get_contents('php://input');
             $inputData = json_decode($rawInput, true);
@@ -81,21 +72,13 @@ class Cart extends Controller {
             exit; 
         }
 
-        if (!isset($_SESSION['cart'])) {
-            $_SESSION['cart'] = [];
-        }
-
-        if (isset($_SESSION['cart'][$productId])) {
-            $_SESSION['cart'][$productId] += $quantity;
-        } else {
-            $_SESSION['cart'][$productId] = $quantity;
-        }
-
-        $cartCount = array_sum($_SESSION['cart']);
+        // GỌI DB THÊM VÀO GIỎ HÀNG
+        $cartId = $this->cartModel->getCartId();
+        $this->cartModel->addItem($cartId, $productId, $quantity);
+        $cartCount = $this->cartModel->getTotalItemCount($cartId);
 
         if ($isAjax) {
             header('Content-Type: application/json');
-            // Trả về kèm tên sản phẩm để thông báo thân thiện hơn
             echo json_encode([
                 'success' => true, 
                 'message' => 'Đã thêm ' . $product->name . ' vào giỏ hàng!', 
@@ -108,35 +91,128 @@ class Cart extends Controller {
         exit;
     }
 
-    public function remove($productId) {
-        $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+    public function remove($productId = null) {
+        $acceptHeader = isset($_SERVER['HTTP_ACCEPT']) ? strtolower($_SERVER['HTTP_ACCEPT']) : '';
+        $isAjax = (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') 
+            || (isset($_GET['ajax']) && $_GET['ajax'] == '1')
+            || (strpos($acceptHeader, 'application/json') !== false);
 
-        if (isset($_SESSION['cart'][$productId])) {
-            unset($_SESSION['cart'][$productId]);
+        // BẮT BỆNH Ở ĐÂY: Nếu URL không có $productId, ta lôi nó ra từ cục JSON Javascript gửi lên
+        if ($_SERVER['REQUEST_METHOD'] == 'POST' && !$productId) {
+            $rawInput = file_get_contents('php://input');
+            $inputData = json_decode($rawInput, true);
+            if (is_array($inputData) && isset($inputData['productId'])) {
+                $productId = $inputData['productId'];
+            } elseif (isset($_POST['productId'])) {
+                $productId = $_POST['productId'];
+            }
         }
+
+        // Nếu nỗ lực tìm kiếm ID vẫn thất bại, báo lỗi đàng hoàng cho JS
+        if (!$productId) {
+            if ($isAjax) {
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode(['success' => false, 'message' => 'Không tìm thấy ID sản phẩm để xóa']);
+                exit;
+            }
+            header('Location: ' . URLROOT . '/cart');
+            exit;
+        }
+
+        $cartId = $this->cartModel->getCartId();
+        $this->cartModel->removeItem($cartId, $productId);
         
         if ($isAjax) {
-            // Recalculate totals
-            $cartCount = empty($_SESSION['cart']) ? 0 : array_sum($_SESSION['cart']);
+            $cartItems = $this->cartModel->getCartItems($cartId);
+            $cartCount = $this->cartModel->getTotalItemCount($cartId);
             $totalAmount = 0;
-            if (!empty($_SESSION['cart'])) {
-                foreach ($_SESSION['cart'] as $pId => $qty) {
-                    $product = $this->productModel->getProductById($pId);
-                    if ($product) {
-                        $totalAmount += $product->price * $qty;
-                    }
+            
+            if (!empty($cartItems)) {
+                foreach ($cartItems as $item) {
+                    $totalAmount += $item->subtotal;
                 }
             }
+            
+            header('Content-Type: application/json; charset=utf-8');
             echo json_encode([
                 'success' => true, 
                 'message' => 'Đã xóa sản phẩm khỏi giỏ hàng',
                 'cartCount' => $cartCount,
                 'totalAmount' => number_format($totalAmount, 0, ',', '.') . 'đ',
-                'isEmpty' => empty($_SESSION['cart'])
+                'isEmpty' => empty($cartItems)
             ]);
             exit;
         }
 
+        header('Location: ' . URLROOT . '/cart');
+        exit;
+    }
+
+    public function update() {
+        $acceptHeader = isset($_SERVER['HTTP_ACCEPT']) ? strtolower($_SERVER['HTTP_ACCEPT']) : '';
+        $isAjax = (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') 
+            || (isset($_GET['ajax']) && $_GET['ajax'] == '1')
+            || (strpos($acceptHeader, 'application/json') !== false);
+
+        $cartId = $this->cartModel->getCartId();
+
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $productId = null;
+            $quantity = null;
+
+            // Đọc dữ liệu JSON từ các nút bấm (+), (-) 
+            $rawInput = file_get_contents('php://input');
+            $inputData = json_decode($rawInput, true);
+
+            if (is_array($inputData) && isset($inputData['productId']) && isset($inputData['quantity'])) {
+                $productId = (int)$inputData['productId'];
+                $quantity = (int)$inputData['quantity'];
+            } elseif (isset($_POST['productId']) && isset($_POST['quantity'])) {
+                $productId = (int)$_POST['productId'];
+                $quantity = (int)$_POST['quantity'];
+            }
+
+            if ($productId !== null && $quantity !== null) {
+                if ($quantity > 0) {
+                    $this->cartModel->updateItemQuantity($cartId, $productId, $quantity);
+                } else {
+                    $this->cartModel->removeItem($cartId, $productId);
+                }
+                
+                $cartItems = $this->cartModel->getCartItems($cartId);
+                $cartCount = $this->cartModel->getTotalItemCount($cartId);
+                $itemSubtotal = 0;
+                $totalAmount = 0;
+                
+                if (!empty($cartItems)) {
+                    foreach ($cartItems as $item) {
+                        $totalAmount += $item->subtotal;
+                        if ($item->product_id == $productId) {
+                            $itemSubtotal = $item->subtotal;
+                        }
+                    }
+                }
+                
+                if ($isAjax) {
+                    header('Content-Type: application/json; charset=utf-8');
+                    echo json_encode([
+                        'success' => true,
+                        'itemSubtotal' => number_format($itemSubtotal, 0, ',', '.') . 'đ',
+                        'totalAmount' => number_format($totalAmount, 0, ',', '.') . 'đ',
+                        'cartCount' => $cartCount
+                    ]);
+                    exit;
+                }
+            } elseif (isset($_POST['quantities'])) {
+                foreach ($_POST['quantities'] as $pId => $qty) {
+                    if ((int)$qty > 0) {
+                        $this->cartModel->updateItemQuantity($cartId, $pId, (int)$qty);
+                    } else {
+                        $this->cartModel->removeItem($cartId, $pId);
+                    }
+                }
+            }
+        }
         header('Location: ' . URLROOT . '/cart');
         exit;
     }
@@ -147,7 +223,10 @@ class Cart extends Controller {
             exit;
         }
 
-        if ($_SERVER['REQUEST_METHOD'] == 'POST' && !empty($_SESSION['cart'])) {
+        $cartId = $this->cartModel->getCartId();
+        $cartItems = $this->cartModel->getCartItems($cartId);
+
+        if ($_SERVER['REQUEST_METHOD'] == 'POST' && !empty($cartItems)) {
             $userId = $_SESSION['user_id'];
             
             $address = isset($_POST['address']) ? filter_input(INPUT_POST, 'address', FILTER_SANITIZE_STRING) : '';
@@ -158,19 +237,24 @@ class Cart extends Controller {
                 exit;
             }
 
+            // Tính tổng tiền và format lại mảng cart giống cấu trúc $_SESSION cũ
+            // để OrderModel->createOrder() nhận diện được ($productId => $quantity)
             $totalAmount = 0;
-            foreach ($_SESSION['cart'] as $productId => $quantity) {
-                $product = $this->productModel->getProductById($productId);
-                if ($product) {
-                    $totalAmount += $product->price * $quantity;
-                }
+            $orderCartData = []; 
+            
+            foreach ($cartItems as $item) {
+                $totalAmount += $item->subtotal;
+                $orderCartData[$item->product_id] = $item->quantity; 
             }
             
-            $orderId = $this->orderModel->createOrder($userId, $_SESSION['cart'], $totalAmount, $address, $phone);
+            // Tiến hành ghi order xuống DB
+            $orderId = $this->orderModel->createOrder($userId, $orderCartData, $totalAmount, $address, $phone);
             
             if ($orderId) {
-                unset($_SESSION['cart']); 
+                // Đặt hàng thành công -> Xóa giỏ hàng trong Database
+                $this->cartModel->clearCart($cartId); 
                 header('Location: ' . URLROOT . '/pages/success');
+                exit;
             } else {
                 die('Có lỗi xảy ra khi đặt hàng.');
             }
@@ -181,62 +265,5 @@ class Cart extends Controller {
             ];
             $this->view('client/cart/checkout', $data);
         }
-    }
-    public function update() {
-        $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
-
-        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            if ($isAjax && isset($_POST['productId']) && isset($_POST['quantity'])) {
-                $productId = (int)$_POST['productId'];
-                $quantity = (int)$_POST['quantity'];
-                
-                if ($quantity > 0) {
-                    $_SESSION['cart'][$productId] = $quantity;
-                } else {
-                    unset($_SESSION['cart'][$productId]);
-                }
-                
-                // Calculate new totals
-                $itemSubtotal = 0;
-                $totalAmount = 0;
-                
-                // Tránh lỗi khi mảng rỗng
-                $cartCount = !empty($_SESSION['cart']) ? array_sum($_SESSION['cart']) : 0;
-                
-                if (!empty($_SESSION['cart'])) {
-                    foreach ($_SESSION['cart'] as $pId => $qty) {
-                        $product = $this->productModel->getProductById($pId);
-                        if ($product) {
-                            $sub = $product->price * $qty;
-                            $totalAmount += $sub;
-                            if ($pId == $productId) {
-                                $itemSubtotal = $sub;
-                            }
-                        }
-                    }
-                }
-                
-                header('Content-Type: application/json');
-                echo json_encode([
-                    'success' => true,
-                    'itemSubtotal' => number_format($itemSubtotal, 0, ',', '.') . 'đ',
-                    'totalAmount' => number_format($totalAmount, 0, ',', '.') . 'đ',
-                    'cartCount' => $cartCount
-                ]);
-                exit;
-            } elseif (isset($_POST['quantities'])) {
-                foreach ($_POST['quantities'] as $productId => $quantity) {
-                    if ((int)$quantity > 0) {
-                        // Cập nhật lại số lượng mới
-                        $_SESSION['cart'][$productId] = (int)$quantity;
-                    } else {
-                        // Nếu người dùng nhập số lượng là 0 thì xoá khỏi giỏ hàng
-                        unset($_SESSION['cart'][$productId]);
-                    }
-                }
-            }
-        }
-        header('Location: ' . URLROOT . '/cart');
-        exit;
     }
 }
