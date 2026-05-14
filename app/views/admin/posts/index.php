@@ -1,209 +1,79 @@
 <?php require APPROOT . '/views/layouts/admin/header.php'; ?>
 
-<div class="content-header">
-    <div class="header-left">
-        <h1>Quản lý tin tức</h1>
-        <p>Xem, thêm, sửa và xóa các bài viết tin tức trên hệ thống.</p>
-    </div>
-    <div class="header-right">
-        <a href="<?php echo URLROOT; ?>/admin/posts/add" class="btn-primary">
-            <i class="fas fa-plus"></i> Thêm bài viết mới
-        </a>
-    </div>
-</div>
+<div class="row g-3">
+    <div class="col-12">
+        <section class="card panel-card">
+            <div class="card-body">
+                <div class="admin-module-header">
+                    <div>
+                        <h1 class="admin-module-title">Quản lý tin tức</h1>
+                        <p class="admin-module-lead">Thêm, sửa và xóa bài viết.</p>
+                    </div>
+                    <a href="<?php echo URLROOT; ?>/admin/posts/add" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus"></i> Thêm bài viết
+                    </a>
+                </div>
 
-<div class="admin-table-container">
-    <table class="admin-table">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Thumbnail</th>
-                <th>Tiêu đề</th>
-                <th>Tác giả</th>
-                <th>Trạng thái</th>
-                <th>Lượt xem</th>
-                <th>Ngày đăng</th>
-                <th>Hành động</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php if(empty($data['news'])): ?>
-                <tr>
-                    <td colspan="8" class="text-center">Chưa có bài viết nào.</td>
-                </tr>
-            <?php else: ?>
-                <?php foreach($data['news'] as $article): ?>
-                    <tr>
-                        <td><?php echo $article->id; ?></td>
-                        <td>
-                            <?php if($article->thumbnail): ?>
-                                <img src="<?php echo URLROOT; ?>/public/uploads/<?php echo $article->thumbnail; ?>" class="table-thumb" alt="">
+                <div class="table-responsive">
+                    <table class="table admin-table align-middle">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Ảnh</th>
+                                <th>Tiêu đề</th>
+                                <th>Tác giả</th>
+                                <th>Trạng thái</th>
+                                <th>Lượt xem</th>
+                                <th>Ngày</th>
+                                <th class="text-end">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($data['news'])): ?>
+                                <tr>
+                                    <td colspan="8" class="text-center py-4 text-muted">Chưa có bài viết.</td>
+                                </tr>
                             <?php else: ?>
-                                <span class="no-thumb">No Image</span>
+                                <?php foreach ($data['news'] as $article): ?>
+                                    <tr>
+                                        <td><?php echo (int) $article->id; ?></td>
+                                        <td>
+                                            <?php if (!empty($article->thumbnail)): ?>
+                                                <img src="<?php echo htmlspecialchars(URLROOT . '/public/uploads/' . $article->thumbnail, ENT_QUOTES, 'UTF-8'); ?>" class="admin-post-thumb" alt="">
+                                            <?php else: ?>
+                                                <span class="badge rounded-pill badge-soft-primary small">No image</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="text-start">
+                                            <strong><?php echo htmlspecialchars((string) $article->title, ENT_QUOTES, 'UTF-8'); ?></strong>
+                                            <div class="admin-post-slug"><?php echo htmlspecialchars((string) $article->slug, ENT_QUOTES, 'UTF-8'); ?></div>
+                                        </td>
+                                        <td><?php echo htmlspecialchars((string) $article->author_name, ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <td>
+                                            <?php if ($article->status === 'published'): ?>
+                                                <span class="pill-badge pill-status-replied">Đã đăng</span>
+                                            <?php else: ?>
+                                                <span class="pill-badge pill-priority-high">Bản nháp</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td><?php echo (int) $article->views_count; ?></td>
+                                        <td><?php echo htmlspecialchars(date('d/m/Y', strtotime($article->created_at)), ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <td class="text-end admin-post-actions">
+                                            <a href="<?php echo URLROOT; ?>/posts/show/<?php echo htmlspecialchars((string) $article->slug, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-soft btn-sm btn-icon" title="Xem"><i class="fas fa-eye"></i></a>
+                                            <a href="<?php echo URLROOT; ?>/admin/posts/edit/<?php echo (int) $article->id; ?>" class="btn btn-soft btn-sm btn-icon" title="Sửa"><i class="fas fa-edit"></i></a>
+                                            <form action="<?php echo URLROOT; ?>/admin/posts/delete/<?php echo (int) $article->id; ?>" method="POST" class="d-inline" onsubmit="return confirm('Xóa bài viết này?');">
+                                                <button type="submit" class="btn btn-soft btn-sm btn-icon text-danger" title="Xóa"><i class="fas fa-trash"></i></button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
                             <?php endif; ?>
-                        </td>
-                        <td>
-                            <strong><?php echo $article->title; ?></strong>
-                            <div class="small-slug"><?php echo $article->slug; ?></div>
-                        </td>
-                        <td><?php echo $article->author_name; ?></td>
-                        <td>
-                            <span class="status-badge <?php echo $article->status; ?>">
-                                <?php echo $article->status == 'published' ? 'Đã đăng' : 'Bản nháp'; ?>
-                            </span>
-                        </td>
-                        <td><?php echo $article->views_count; ?></td>
-                        <td><?php echo date('d/m/Y', strtotime($article->created_at)); ?></td>
-                        <td class="actions">
-                            <a href="<?php echo URLROOT; ?>/posts/show/<?php echo $article->slug; ?>" target="_blank" class="btn-icon view" title="Xem bài viết">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                            <a href="<?php echo URLROOT; ?>/admin/posts/edit/<?php echo $article->id; ?>" class="btn-icon edit" title="Chỉnh sửa">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            <form action="<?php echo URLROOT; ?>/admin/posts/delete/<?php echo $article->id; ?>" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn xóa bài viết này?')">
-                                <button type="submit" class="btn-icon delete" title="Xóa">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-            <?php endif; ?>
-        </tbody>
-    </table>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
 </div>
-
-<style>
-.content-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 30px;
-}
-
-.header-left h1 {
-    font-size: 1.8rem;
-    margin-bottom: 5px;
-}
-
-.header-left p {
-    color: #888;
-}
-
-.btn-primary {
-    background: #3a7bd5;
-    color: #fff;
-    padding: 10px 20px;
-    border-radius: 8px;
-    text-decoration: none;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.btn-primary:hover {
-    background: #00d2ff;
-    transform: translateY(-2px);
-}
-
-.admin-table-container {
-    background: #1a1a1a;
-    border-radius: 12px;
-    padding: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    overflow-x: auto;
-}
-
-.admin-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.admin-table th {
-    text-align: left;
-    padding: 15px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    color: #aaa;
-    font-weight: 600;
-    text-transform: uppercase;
-    font-size: 0.8rem;
-}
-
-.admin-table td {
-    padding: 15px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    vertical-align: middle;
-}
-
-.table-thumb {
-    width: 60px;
-    height: 40px;
-    object-fit: cover;
-    border-radius: 4px;
-}
-
-.no-thumb {
-    font-size: 0.7rem;
-    color: #555;
-    background: #222;
-    padding: 5px 10px;
-    border-radius: 4px;
-}
-
-.small-slug {
-    font-size: 0.75rem;
-    color: #666;
-}
-
-.status-badge {
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 600;
-}
-
-.status-badge.published {
-    background: rgba(40, 167, 69, 0.1);
-    color: #28a745;
-}
-
-.status-badge.draft {
-    background: rgba(255, 193, 7, 0.1);
-    color: #ffc107;
-}
-
-.actions {
-    display: flex;
-    gap: 10px;
-}
-
-.btn-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-decoration: none;
-    transition: all 0.3s ease;
-    border: none;
-    cursor: pointer;
-    background: #222;
-    color: #888;
-}
-
-.btn-icon:hover {
-    color: #fff;
-}
-
-.btn-icon.view:hover { background: #17a2b8; }
-.btn-icon.edit:hover { background: #3a7bd5; }
-.btn-icon.delete:hover { background: #dc3545; }
-
-.text-center { text-align: center; }
-</style>
 
 <?php require APPROOT . '/views/layouts/admin/footer.php'; ?>

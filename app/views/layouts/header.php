@@ -26,7 +26,7 @@
             <a href="<?php echo URLROOT; ?>" class="px-2">Home</a>
             <a href="<?php echo URLROOT; ?>/pages/about" class="px-2">About</a>
             <a href="<?php echo URLROOT; ?>/products" class="px-2">Products</a>
-            <a href="<?php echo URLROOT; ?>/pages/contact" class="px-2">Contact</a>
+            <a href="<?php echo URLROOT; ?>/contact" class="px-2">Contact</a>
         </nav>
     </div>
 </header>

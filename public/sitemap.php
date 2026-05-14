@@ -22,7 +22,7 @@ $add = static function ($loc, $lastmod = null) use (&$items, $base) {
 };
 
 $add('/', null);
-foreach (['pages/contact', 'pages/faq', 'products', 'news'] as $p) {
+foreach (['contact', 'pages/faq', 'products', 'news'] as $p) {
     $add($p, null);
 }
 

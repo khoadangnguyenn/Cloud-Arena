@@ -31,47 +31,6 @@ function initCloudArenaUi() {
         window.addEventListener('scroll', updateHeaderState);
     }
 
-    // Homepage: sync nav underline with hero vs #about-us while scrolling.
-    (function initHomeNavScrollSpy() {
-        var headerEl = document.getElementById('site-header');
-        var aboutEl = document.getElementById('about-us');
-        if (!headerEl || !aboutEl || !headerEl.classList.contains('header-home')) {
-            return;
-        }
-        var homeLinks = document.querySelectorAll('a[data-nav-spy="home-top"]');
-        var aboutLinks = document.querySelectorAll('a[data-nav-spy="about-us"]');
-        if (!homeLinks.length || !aboutLinks.length) {
-            return;
-        }
-
-        var rafId = null;
-        var applySpy = function() {
-            rafId = null;
-            var headerH = headerEl.offsetHeight || 80;
-            var threshold = headerH + 40;
-            var inAbout = aboutEl.getBoundingClientRect().top <= threshold;
-            homeLinks.forEach(function(link) {
-                link.classList.toggle('is-active', !inAbout);
-            });
-            aboutLinks.forEach(function(link) {
-                link.classList.toggle('is-active', inAbout);
-            });
-        };
-
-        var scheduleSpy = function() {
-            if (rafId !== null) {
-                return;
-            }
-            rafId = window.requestAnimationFrame(applySpy);
-        };
-
-        applySpy();
-        window.addEventListener('scroll', scheduleSpy, { passive: true });
-        window.addEventListener('resize', scheduleSpy);
-        window.addEventListener('load', scheduleSpy);
-        window.addEventListener('hashchange', scheduleSpy);
-    })();
-
     (function initClientMobileMenu() {
         var toggle = document.getElementById('site-mobile-menu-toggle');
         var panel = document.getElementById('site-mobile-menu');
@@ -201,7 +160,7 @@ function initCloudArenaUi() {
 
             var type = typeInput ? typeInput.value : 'products';
             var keyword = keywordInput ? keywordInput.value.trim() : '';
-            var targetUrl = type === 'news' ? '/news' : '/products';
+            var targetUrl = type === 'news' ? '/posts' : '/products';
 
             if (keyword !== '') {
                 // Use 'search' param to match server controllers (Products/Posts expect 'search')

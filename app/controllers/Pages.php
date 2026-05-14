@@ -80,6 +80,12 @@ class Pages extends Controller {
     }
 
     public function contact() {
+        $rawUrl = isset($_GET['url']) ? trim((string) $_GET['url'], '/') : '';
+        if (($_SERVER['REQUEST_METHOD'] ?? '') === 'GET' && strcasecmp($rawUrl, 'pages/contact') === 0) {
+            header('Location: ' . URLROOT . '/contact', true, 301);
+            exit();
+        }
+
         $isLoggedIn = isset($_SESSION['user_id']);
         $currentUser = null;
 
@@ -155,7 +161,7 @@ class Pages extends Controller {
             // Honeypot – silently succeed if a bot filled the hidden field
             if (trim((string) ($_POST['website'] ?? '')) !== '') {
                 $_SESSION['contact_success'] = 'Gửi ticket thành công. Kỹ sư hỗ trợ sẽ phản hồi sớm nhất.';
-                header('Location: ' . URLROOT . '/pages/contact');
+                header('Location: ' . URLROOT . '/contact');
                 exit();
             }
 
@@ -306,7 +312,7 @@ class Pages extends Controller {
                         $_SESSION['contact_success'] = 'Gửi ticket thành công. Kỹ sư hỗ trợ sẽ phản hồi sớm nhất.';
                         $_SESSION['contact_last_submit'] = time();
                         $_SESSION['csrf_contact'] = bin2hex(random_bytes(32));
-                        header('Location: ' . URLROOT . '/pages/contact');
+                        header('Location: ' . URLROOT . '/contact');
                         exit();
                     }
                 }

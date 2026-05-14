@@ -124,14 +124,34 @@ class Comment {
     }
 
     /**
+     * Single approved product review by product_id and review id (home_review_key "productId:reviewId").
+     * Includes user display fields for homepage card.
+     */
+    public function getApprovedProductReviewByKey($productId, $reviewId) {
+        $sql = 'SELECT r.*, p.name AS product_name, u.full_name, u.username, u.avatar'
+             . ' FROM reviews r'
+             . ' LEFT JOIN products p ON r.product_id = p.id'
+             . ' LEFT JOIN users u ON r.user_id = u.id'
+             . " WHERE r.status = 'approved' AND r.product_id IS NOT NULL"
+             . ' AND r.id = :review_id AND r.product_id = :product_id'
+             . ' LIMIT 1';
+        $this->db->query($sql);
+        $this->db->bind(':review_id', (int) $reviewId, PDO::PARAM_INT);
+        $this->db->bind(':product_id', (int) $productId, PDO::PARAM_INT);
+        $row = $this->db->single();
+        return $row ?: null;
+    }
+
+    /**
      * Return latest five-star approved product review (single) or null.
      */
     public function getLatestFiveStarProductReview() {
-        $sql = "SELECT r.*, p.name AS product_name, u.username AS reviewer FROM reviews r"
-             . " LEFT JOIN products p ON r.product_id = p.id"
-             . " LEFT JOIN users u ON r.user_id = u.id"
+        $sql = 'SELECT r.*, p.name AS product_name, u.full_name, u.username, u.avatar'
+             . ' FROM reviews r'
+             . ' LEFT JOIN products p ON r.product_id = p.id'
+             . ' LEFT JOIN users u ON r.user_id = u.id'
              . " WHERE r.status = 'approved' AND COALESCE(r.rating,0) >= 5 AND r.product_id IS NOT NULL"
-             . " ORDER BY r.created_at DESC LIMIT 1";
+             . ' ORDER BY r.created_at DESC LIMIT 1';
         $this->db->query($sql);
         return $this->db->single();
     }

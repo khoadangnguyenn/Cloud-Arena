@@ -43,7 +43,13 @@ $adminFaviconMime = $useBrandingFavicon ? ($faviconMimeTypes[$faviconExt] ?? 'im
         $activeSection = 'services';
     } elseif (strpos($currentUrl, 'admin/orders') === 0) {
         $activeSection = 'orders';
-    } elseif (strpos($currentUrl, 'admin/contacts') === 0 || strpos($currentUrl, 'admin/tickets') === 0) {
+    } elseif (strpos($currentUrl, 'admin/reviews') === 0) {
+        $activeSection = 'reviews';
+    } elseif (
+        strpos($currentUrl, 'admin/contacts') === 0
+        || strpos($currentUrl, 'admin/tickets') === 0
+        || strpos($currentUrl, 'admincontacts') === 0
+    ) {
         $activeSection = 'tickets';
     } elseif (strpos($currentUrl, 'admin/ads') === 0) {
         $activeSection = 'ads';

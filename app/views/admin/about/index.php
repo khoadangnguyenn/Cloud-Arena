@@ -1,14 +1,15 @@
 <?php require APPROOT . '/views/layouts/admin/header.php'; ?>
 
-<div class="main-content-inner">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body">
+<div class="row g-3">
+    <div class="col-12">
+        <section class="card panel-card">
+            <div class="card-body">
                     <form id="about-form" action="<?php echo URLROOT; ?>/admin/about" method="post" enctype="multipart/form-data">
                         <div class="row gx-4">
                             <div class="col-md-7">
-                                <h4 class="card_title">Quản lý Giới thiệu</h4>
+                                <div class="panel-header mb-3">
+                                    <h2 class="panel-title mb-0">Quản lý Giới thiệu</h2>
+                                </div>
                                 <?php // session handled globally
                                     if(!empty($_SESSION['flash_error'])): ?>
                                 <div class="alert alert-danger mb-3"><?php echo htmlspecialchars($_SESSION['flash_error']); ?></div>
@@ -212,8 +213,8 @@
                                 </div>
                             </div>
                             <div class="col-md-5">
-                                <h5 class="mb-3">Preview ảnh chính (chọn từ Gallery)</h5>
-                                <div class="card">
+                                <h5 class="mb-3 panel-muted">Preview ảnh chính (chọn từ Gallery)</h5>
+                                <div class="card panel-card admin-nested-card">
                                     <div class="card-body text-center">
                                         <?php $gallery = isset($data['about']->gallery) && $data['about']->gallery ? json_decode($data['about']->gallery, true) : []; ?>
                                         <?php $initialMain = isset($data['about']->image) && $data['about']->image ? $data['about']->image : (isset($gallery[0]['image']) ? $gallery[0]['image'] : null); ?>
@@ -268,9 +269,9 @@
                             </div>
                             
                         </div>
-                    </form> </div>
+                    </form>
             </div>
-        </div>
+        </section>
     </div>
 </div>
 

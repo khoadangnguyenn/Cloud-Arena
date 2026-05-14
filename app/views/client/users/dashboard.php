@@ -76,7 +76,7 @@
 
                         <div class="pt-4 border-t border-gray-800 mt-4">
                             <p class="text-[10px] uppercase font-black text-gray-600 tracking-[0.2em] mb-4 text-center">Hỗ trợ kỹ thuật 24/7</p>
-                            <a href="<?php echo URLROOT; ?>/contacts" class="block w-full py-3 text-center rounded-xl border border-gray-800 text-gray-400 hover:text-white hover:border-gray-600 transition-all text-sm font-bold">
+                            <a href="<?php echo URLROOT; ?>/contact" class="block w-full py-3 text-center rounded-xl border border-gray-800 text-gray-400 hover:text-white hover:border-gray-600 transition-all text-sm font-bold">
                                 Gửi yêu cầu hỗ trợ
                             </a>
                         </div>
