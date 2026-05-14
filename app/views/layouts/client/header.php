@@ -99,7 +99,7 @@ $navItems = [
         'label' => 'Trang chủ',
         'href' => URLROOT . '/',
         'is_active' => $isHomePage,
-        'nav_spy' => $isHomePage ? 'home-top' : null,
+        'nav_spy' => null,
     ],
     [
         'label' => 'Sản phẩm',
@@ -116,12 +116,12 @@ $navItems = [
     [
         'label' => 'Chúng tôi',
         'href' => $aboutAnchorHref,
-        'is_active' => false,
-        'nav_spy' => $isHomePage ? 'about-us' : null,
+        'is_active' => ($currentController === 'about') || ($currentController === 'pages' && $currentMethod === 'about'),
+        'nav_spy' => null,
     ],
     [
         'label' => 'Liên hệ',
-        'href' => URLROOT . '/pages/contact',
+        'href' => URLROOT . '/contact',
         'is_active' => $currentController === 'pages' && $currentMethod === 'contact',
         'nav_spy' => null,
     ]

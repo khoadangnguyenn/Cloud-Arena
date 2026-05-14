@@ -10,7 +10,7 @@ function initCloudArenaUi() {
                 offset: 56,
                 anchorPlacement: 'top-bottom'
             });
-            window.addEventListener('load', function() {
+            window.addEventListener('load', function () {
                 if (typeof window.AOS !== 'undefined') {
                     window.AOS.refresh();
                 }
@@ -20,7 +20,7 @@ function initCloudArenaUi() {
 
     var siteHeader = document.getElementById('site-header');
     if (siteHeader) {
-        var updateHeaderState = function() {
+        var updateHeaderState = function () {
             if ((window.scrollY || window.pageYOffset) > 24) {
                 siteHeader.classList.add('is-scrolled');
             } else {
@@ -31,47 +31,6 @@ function initCloudArenaUi() {
         window.addEventListener('scroll', updateHeaderState);
     }
 
-    // Homepage: sync nav underline with hero vs #about-us while scrolling.
-    (function initHomeNavScrollSpy() {
-        var headerEl = document.getElementById('site-header');
-        var aboutEl = document.getElementById('about-us');
-        if (!headerEl || !aboutEl || !headerEl.classList.contains('header-home')) {
-            return;
-        }
-        var homeLinks = document.querySelectorAll('a[data-nav-spy="home-top"]');
-        var aboutLinks = document.querySelectorAll('a[data-nav-spy="about-us"]');
-        if (!homeLinks.length || !aboutLinks.length) {
-            return;
-        }
-
-        var rafId = null;
-        var applySpy = function() {
-            rafId = null;
-            var headerH = headerEl.offsetHeight || 80;
-            var threshold = headerH + 40;
-            var inAbout = aboutEl.getBoundingClientRect().top <= threshold;
-            homeLinks.forEach(function(link) {
-                link.classList.toggle('is-active', !inAbout);
-            });
-            aboutLinks.forEach(function(link) {
-                link.classList.toggle('is-active', inAbout);
-            });
-        };
-
-        var scheduleSpy = function() {
-            if (rafId !== null) {
-                return;
-            }
-            rafId = window.requestAnimationFrame(applySpy);
-        };
-
-        applySpy();
-        window.addEventListener('scroll', scheduleSpy, { passive: true });
-        window.addEventListener('resize', scheduleSpy);
-        window.addEventListener('load', scheduleSpy);
-        window.addEventListener('hashchange', scheduleSpy);
-    })();
-
     (function initClientMobileMenu() {
         var toggle = document.getElementById('site-mobile-menu-toggle');
         var panel = document.getElementById('site-mobile-menu');
@@ -80,7 +39,7 @@ function initCloudArenaUi() {
             return;
         }
 
-        var setMenuOpen = function(isOpen) {
+        var setMenuOpen = function (isOpen) {
             toggle.classList.toggle('is-open', isOpen);
             panel.classList.toggle('is-open', isOpen);
             backdrop.classList.toggle('is-open', isOpen);
@@ -91,28 +50,28 @@ function initCloudArenaUi() {
             document.body.classList.toggle('site-mobile-menu-open', isOpen);
         };
 
-        toggle.addEventListener('click', function() {
+        toggle.addEventListener('click', function () {
             setMenuOpen(!panel.classList.contains('is-open'));
         });
 
-        backdrop.addEventListener('click', function() {
+        backdrop.addEventListener('click', function () {
             setMenuOpen(false);
         });
 
-        panel.addEventListener('click', function(event) {
+        panel.addEventListener('click', function (event) {
             var anchor = event.target.closest('a');
             if (anchor && anchor.getAttribute('href')) {
                 setMenuOpen(false);
             }
         });
 
-        document.addEventListener('keydown', function(event) {
+        document.addEventListener('keydown', function (event) {
             if (event.key === 'Escape' && panel.classList.contains('is-open')) {
                 setMenuOpen(false);
             }
         });
 
-        var closeIfDesktop = function() {
+        var closeIfDesktop = function () {
             if (window.matchMedia && window.matchMedia('(min-width: 768px)').matches) {
                 setMenuOpen(false);
             }
@@ -123,9 +82,9 @@ function initCloudArenaUi() {
     var hero = document.getElementById('hero-parallax');
     if (hero) {
         var layers = hero.querySelectorAll('.parallax-layer');
-        window.addEventListener('scroll', function() {
+        window.addEventListener('scroll', function () {
             var scrollTop = window.scrollY || window.pageYOffset;
-            layers.forEach(function(layer) {
+            layers.forEach(function (layer) {
                 var speed = parseFloat(layer.getAttribute('data-speed') || '0.2');
                 layer.style.transform = 'translate3d(0, ' + Math.round(scrollTop * speed) + 'px, 0)';
             });
@@ -158,18 +117,18 @@ function initCloudArenaUi() {
             var pauseFullMs = 1800;
             var pauseEmptyMs = 1500;
 
-            var applyHeroText = function() {
+            var applyHeroText = function () {
                 heroTypewriter.textContent = fullHeroTitle.slice(0, visibleLen);
             };
 
-            var typeStep = function() {
+            var typeStep = function () {
                 if (phase === 'forward') {
                     if (visibleLen < fullHeroTitle.length) {
                         visibleLen += 1;
                         applyHeroText();
                         window.setTimeout(typeStep, typeForwardMs);
                     } else {
-                        window.setTimeout(function() {
+                        window.setTimeout(function () {
                             phase = 'backward';
                             typeStep();
                         }, pauseFullMs);
@@ -180,7 +139,7 @@ function initCloudArenaUi() {
                         applyHeroText();
                         window.setTimeout(typeStep, typeBackwardMs);
                     } else {
-                        window.setTimeout(function() {
+                        window.setTimeout(function () {
                             phase = 'forward';
                             typeStep();
                         }, pauseEmptyMs);
@@ -194,14 +153,14 @@ function initCloudArenaUi() {
 
     var quickSearchForm = document.getElementById('quick-resource-search');
     if (quickSearchForm) {
-        quickSearchForm.addEventListener('submit', function(event) {
+        quickSearchForm.addEventListener('submit', function (event) {
             event.preventDefault();
             var typeInput = document.getElementById('resource_type');
             var keywordInput = document.getElementById('resource_keyword');
 
             var type = typeInput ? typeInput.value : 'products';
             var keyword = keywordInput ? keywordInput.value.trim() : '';
-            var targetUrl = type === 'news' ? '/news' : '/products';
+            var targetUrl = type === 'news' ? '/posts' : '/products';
 
             if (keyword !== '') {
                 // Use 'search' param to match server controllers (Products/Posts expect 'search')
@@ -212,14 +171,14 @@ function initCloudArenaUi() {
         });
     }
 
-    var initAdminCustomSelects = function(rootNode) {
+    var initAdminCustomSelects = function (rootNode) {
         var scope = rootNode && rootNode.querySelectorAll ? rootNode : document;
         var selects = scope.querySelectorAll('select[data-admin-custom-select="true"]');
         if (!selects.length) {
             return;
         }
 
-        var positionCustomSelectMenu = function(toggle, menu) {
+        var positionCustomSelectMenu = function (toggle, menu) {
             var viewportPadding = 12;
             var spacing = 6;
             var toggleRect = toggle.getBoundingClientRect();
@@ -260,9 +219,9 @@ function initCloudArenaUi() {
             menu.style.top = Math.round(top) + 'px';
         };
 
-        var closeCustomSelectMenus = function(exceptMenu) {
+        var closeCustomSelectMenus = function (exceptMenu) {
             var openMenus = document.querySelectorAll('.admin-custom-select-menu.show');
-            openMenus.forEach(function(openMenu) {
+            openMenus.forEach(function (openMenu) {
                 if (exceptMenu && openMenu === exceptMenu) {
                     return;
                 }
@@ -292,7 +251,7 @@ function initCloudArenaUi() {
             });
         };
 
-        selects.forEach(function(select) {
+        selects.forEach(function (select) {
             if (select.getAttribute('data-admin-custom-select-bound') === '1') {
                 return;
             }
@@ -319,11 +278,11 @@ function initCloudArenaUi() {
             menu.setAttribute('role', 'listbox');
             menu._adminSelectOwner = customWrap;
 
-            var syncUi = function() {
+            var syncUi = function () {
                 var activeOption = select.options[select.selectedIndex] || select.options[0];
                 label.textContent = activeOption ? activeOption.textContent : 'Chọn';
                 var optionButtons = menu.querySelectorAll('.admin-custom-select-option');
-                optionButtons.forEach(function(btn) {
+                optionButtons.forEach(function (btn) {
                     var isActive = btn.getAttribute('data-value') === select.value;
                     btn.classList.toggle('active', isActive);
                     btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
@@ -332,7 +291,7 @@ function initCloudArenaUi() {
                 toggle.setAttribute('aria-disabled', select.disabled ? 'true' : 'false');
             };
 
-            Array.prototype.forEach.call(select.options, function(option) {
+            Array.prototype.forEach.call(select.options, function (option) {
                 var optionBtn = document.createElement('button');
                 optionBtn.type = 'button';
                 optionBtn.className = 'admin-custom-select-option';
@@ -342,7 +301,7 @@ function initCloudArenaUi() {
                 if (option.disabled) {
                     optionBtn.disabled = true;
                 }
-                optionBtn.addEventListener('click', function() {
+                optionBtn.addEventListener('click', function () {
                     syncUi();
                     if (optionBtn.disabled || select.disabled) {
                         return;
@@ -355,11 +314,11 @@ function initCloudArenaUi() {
                 menu.appendChild(optionBtn);
             });
 
-            menu.addEventListener('wheel', function(ev) {
+            menu.addEventListener('wheel', function (ev) {
                 ev.stopPropagation();
             }, { passive: true });
 
-            toggle.addEventListener('click', function(event) {
+            toggle.addEventListener('click', function (event) {
                 event.preventDefault();
                 event.stopPropagation();
                 syncUi();
@@ -373,7 +332,7 @@ function initCloudArenaUi() {
                     menu.classList.add('menu-floating');
                     menu.style.visibility = 'hidden';
                     menu.classList.add('show');
-                    window.requestAnimationFrame(function() {
+                    window.requestAnimationFrame(function () {
                         try {
                             positionCustomSelectMenu(toggle, menu);
                         } finally {
@@ -399,23 +358,23 @@ function initCloudArenaUi() {
         if (document.body.getAttribute('data-admin-custom-select-global-bound') !== '1') {
             document.body.setAttribute('data-admin-custom-select-global-bound', '1');
 
-            document.addEventListener('mousedown', function(event) {
+            document.addEventListener('mousedown', function (event) {
                 if (!event.target.closest('.admin-custom-select') && !event.target.closest('.admin-custom-select-menu')) {
                     closeCustomSelectMenus();
                 }
             });
 
-            document.addEventListener('keydown', function(event) {
+            document.addEventListener('keydown', function (event) {
                 if (event.key !== 'Escape') {
                     return;
                 }
                 closeCustomSelectMenus();
             });
 
-            window.addEventListener('resize', function() {
+            window.addEventListener('resize', function () {
                 closeCustomSelectMenus();
             });
-            document.addEventListener('scroll', function(event) {
+            document.addEventListener('scroll', function (event) {
                 var openMenu = document.querySelector('.admin-custom-select-menu.show');
                 if (!openMenu) {
                     return;
@@ -446,10 +405,10 @@ function initCloudArenaUi() {
         var sidebarOverlay = document.getElementById('adminOverlay');
         var themeToggle = document.getElementById('adminThemeToggle');
         var desktopSidebarHidden = false;
-        var isDesktop = function() {
+        var isDesktop = function () {
             return window.innerWidth >= 992;
         };
-        var syncToggleState = function() {
+        var syncToggleState = function () {
             if (!sidebarToggle) {
                 return;
             }
@@ -459,15 +418,15 @@ function initCloudArenaUi() {
                 sidebarToggle.setAttribute('aria-expanded', document.body.classList.contains('admin-sidebar-open') ? 'true' : 'false');
             }
         };
-        var closeSidebar = function() {
+        var closeSidebar = function () {
             document.body.classList.remove('admin-sidebar-open');
             syncToggleState();
         };
-        var openSidebar = function() {
+        var openSidebar = function () {
             document.body.classList.add('admin-sidebar-open');
             syncToggleState();
         };
-        var setDesktopSidebarState = function(isHidden) {
+        var setDesktopSidebarState = function (isHidden) {
             desktopSidebarHidden = !!isHidden;
             if (desktopSidebarHidden) {
                 document.body.classList.add('admin-sidebar-hidden');
@@ -476,7 +435,7 @@ function initCloudArenaUi() {
             }
             syncToggleState();
         };
-        var setThemeState = function(isDark) {
+        var setThemeState = function (isDark) {
             if (isDark) {
                 document.body.classList.add('admin-theme-dark');
             } else {
@@ -509,13 +468,13 @@ function initCloudArenaUi() {
             }
 
             if (sidebarToggle) {
-                sidebarToggle.addEventListener('click', function() {
+                sidebarToggle.addEventListener('click', function () {
                     if (isDesktop()) {
                         var nextState = !document.body.classList.contains('admin-sidebar-hidden');
                         setDesktopSidebarState(nextState);
                         try {
                             window.localStorage.setItem(STORAGE_SIDEBAR_KEY, nextState ? '1' : '0');
-                        } catch (e) {}
+                        } catch (e) { }
                     } else {
                         if (document.body.classList.contains('admin-sidebar-open')) {
                             closeSidebar();
@@ -531,16 +490,16 @@ function initCloudArenaUi() {
             }
 
             if (themeToggle) {
-                themeToggle.addEventListener('click', function() {
+                themeToggle.addEventListener('click', function () {
                     var toDark = !document.body.classList.contains('admin-theme-dark');
                     setThemeState(toDark);
                     try {
                         window.localStorage.setItem(STORAGE_THEME_KEY, toDark ? 'dark' : 'light');
-                    } catch (e) {}
+                    } catch (e) { }
                 });
             }
 
-            window.addEventListener('resize', function() {
+            window.addEventListener('resize', function () {
                 if (isDesktop()) {
                     closeSidebar();
                     setDesktopSidebarState(desktopSidebarHidden);
@@ -561,7 +520,7 @@ function initCloudArenaUi() {
         var filterSelect = document.getElementById('dashboardRevenueFilter');
         var totalLabel = document.getElementById('revenueTotalLabel');
         var revenueSeries = Array.isArray(window.adminRevenueSeries) ? window.adminRevenueSeries : [];
-        var escapeHtmlAttr = function(value) {
+        var escapeHtmlAttr = function (value) {
             return String(value || '').replace(/&/g, '&amp;')
                 .replace(/"/g, '&quot;')
                 .replace(/</g, '&lt;')
@@ -577,11 +536,11 @@ function initCloudArenaUi() {
                 chartWrap.appendChild(revenueTooltip);
             }
         }
-        var hideRevenueTooltip = function() {
+        var hideRevenueTooltip = function () {
             if (!revenueTooltip) return;
             revenueTooltip.classList.remove('is-visible');
         };
-        var showRevenueTooltip = function(clientX, clientY, label, revenue) {
+        var showRevenueTooltip = function (clientX, clientY, label, revenue) {
             if (!revenueTooltip || !chartWrap) return;
             revenueTooltip.innerHTML =
                 '<strong>' + label + '</strong>' +
@@ -601,13 +560,13 @@ function initCloudArenaUi() {
             revenueTooltip.style.top = top + 'px';
         };
 
-        var formatCurrency = function(value) {
+        var formatCurrency = function (value) {
             return '$' + Number(value || 0).toLocaleString(undefined, {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
             });
         };
-        var parseRevenueValue = function(value) {
+        var parseRevenueValue = function (value) {
             if (typeof value === 'number') {
                 return isNaN(value) ? 0 : value;
             }
@@ -620,7 +579,7 @@ function initCloudArenaUi() {
             return isNaN(fallback) ? 0 : fallback;
         };
 
-        var renderRevenueChart = function(limit) {
+        var renderRevenueChart = function (limit) {
             if (!chartSvg || !areaPath || !linePath || !pointsGroup || !axisLabels || revenueSeries.length === 0) {
                 return;
             }
@@ -675,8 +634,8 @@ function initCloudArenaUi() {
             areaPath.setAttribute('d', areaParts.join(' '));
             pointsGroup.innerHTML = circleMarkup.join('');
             var pointNodes = pointsGroup.querySelectorAll('circle');
-            pointNodes.forEach(function(node) {
-                var onMove = function(evt) {
+            pointNodes.forEach(function (node) {
+                var onMove = function (evt) {
                     var label = node.getAttribute('data-label') || '';
                     var revenue = parseRevenueValue(node.getAttribute('data-revenue'));
                     showRevenueTooltip(evt.clientX, evt.clientY, label, revenue);
@@ -684,7 +643,7 @@ function initCloudArenaUi() {
                 node.addEventListener('mouseenter', onMove);
                 node.addEventListener('mousemove', onMove);
                 node.addEventListener('mouseleave', hideRevenueTooltip);
-                node.addEventListener('focus', function() {
+                node.addEventListener('focus', function () {
                     var rect = node.getBoundingClientRect();
                     var label = node.getAttribute('data-label') || '';
                     var revenue = parseRevenueValue(node.getAttribute('data-revenue'));
@@ -692,9 +651,9 @@ function initCloudArenaUi() {
                 });
                 node.addEventListener('blur', hideRevenueTooltip);
             });
-            
+
             axisLabels.style.gridTemplateColumns = 'repeat(' + points.length + ', minmax(0, 1fr))';
-            axisLabels.innerHTML = points.map(function(item) {
+            axisLabels.innerHTML = points.map(function (item) {
                 return '<span>' + item.label + '</span>';
             }).join('');
 
@@ -709,7 +668,7 @@ function initCloudArenaUi() {
             }
         };
 
-        var showAdminToast = function(message, variant) {
+        var showAdminToast = function (message, variant) {
             var container = document.getElementById('adminFloatingToastContainer');
             if (!container) {
                 container = document.createElement('div');
@@ -723,13 +682,13 @@ function initCloudArenaUi() {
             toast.textContent = message;
             container.appendChild(toast);
 
-            window.requestAnimationFrame(function() {
+            window.requestAnimationFrame(function () {
                 toast.classList.add('is-visible');
             });
 
-            window.setTimeout(function() {
+            window.setTimeout(function () {
                 toast.classList.remove('is-visible');
-                window.setTimeout(function() {
+                window.setTimeout(function () {
                     if (toast.parentNode) {
                         toast.parentNode.removeChild(toast);
                     }
@@ -737,7 +696,7 @@ function initCloudArenaUi() {
             }, 2600);
         };
 
-        var initAdminLoginNotificationToast = function() {
+        var initAdminLoginNotificationToast = function () {
             var stateNode = document.getElementById('adminLoginNotificationState');
             if (!stateNode || stateNode.getAttribute('data-bound') === '1') {
                 return;
@@ -751,19 +710,19 @@ function initCloudArenaUi() {
             }
 
             var label = count > 99 ? '99+' : String(count);
-            window.setTimeout(function() {
+            window.setTimeout(function () {
                 showAdminToast('Có ' + label + ' thông báo mới', 'success');
             }, 350);
         };
 
-        var initAdminAutoSaveForms = function(rootNode) {
+        var initAdminAutoSaveForms = function (rootNode) {
             var scope = rootNode && rootNode.querySelectorAll ? rootNode : document;
             var forms = scope.querySelectorAll('form[data-admin-autosave="true"]');
             if (!forms.length) {
                 return;
             }
 
-            forms.forEach(function(form) {
+            forms.forEach(function (form) {
                 if (form.getAttribute('data-admin-autosave-bound') === '1') {
                     return;
                 }
@@ -774,7 +733,7 @@ function initCloudArenaUi() {
                     return;
                 }
 
-                input.addEventListener('change', function() {
+                input.addEventListener('change', function () {
                     var formData = new FormData(form);
                     var oldValue = input.getAttribute('data-prev-value') || '';
                     input.disabled = true;
@@ -782,7 +741,7 @@ function initCloudArenaUi() {
                     var actionUrl = form.action;
                     try {
                         actionUrl = new URL(form.getAttribute('action') || form.action, window.location.href).href;
-                    } catch (ignoreUrl) {}
+                    } catch (ignoreUrl) { }
 
                     window.fetch(actionUrl, {
                         method: 'POST',
@@ -792,8 +751,8 @@ function initCloudArenaUi() {
                             'X-Requested-With': 'XMLHttpRequest',
                             'Accept': 'application/json'
                         }
-                    }).then(function(response) {
-                        return response.text().then(function(text) {
+                    }).then(function (response) {
+                        return response.text().then(function (text) {
                             var payload = null;
                             if (text) {
                                 try {
@@ -809,7 +768,7 @@ function initCloudArenaUi() {
                                 text: text
                             };
                         });
-                    }).then(function(result) {
+                    }).then(function (result) {
                         if (!result.ok || !result.payload || !result.payload.success) {
                             var msg = (result.payload && result.payload.message) ? result.payload.message : '';
                             if (!msg) {
@@ -848,14 +807,14 @@ function initCloudArenaUi() {
                                 }
                             }
                         }
-                    }).catch(function(error) {
+                    }).catch(function (error) {
                         input.value = oldValue || input.value;
                         var em = (error && error.message) ? String(error.message) : '';
                         if (em === 'Failed to fetch' || (error && error.name === 'TypeError')) {
                             em = 'Không thể kết nối tới máy chủ. Kiểm tra URLROOT/.env (đường dẫn public) và thử lại.';
                         }
                         showAdminToast(em || 'Không thể tự động cập nhật.', 'error');
-                    }).finally(function() {
+                    }).finally(function () {
                         input.disabled = false;
                     });
                 });
@@ -864,7 +823,7 @@ function initCloudArenaUi() {
             });
         };
 
-        var initAdminSettingsFormValidation = function() {
+        var initAdminSettingsFormValidation = function () {
             var forms = document.querySelectorAll('form[data-admin-settings-form="true"]');
             if (!forms.length) {
                 return;
@@ -906,10 +865,10 @@ function initCloudArenaUi() {
             };
 
             function adminSettingsClearJsErrors(form) {
-                form.querySelectorAll('.js-admin-settings-err').forEach(function(n) {
+                form.querySelectorAll('.js-admin-settings-err').forEach(function (n) {
                     n.remove();
                 });
-                form.querySelectorAll('.is-invalid').forEach(function(el) {
+                form.querySelectorAll('.is-invalid').forEach(function (el) {
                     el.classList.remove('is-invalid');
                 });
             }
@@ -975,7 +934,7 @@ function initCloudArenaUi() {
 
             function adminApplyMaxlengthAttrs(form) {
                 var ok = true;
-                form.querySelectorAll('input[maxlength]:not([type="hidden"]):not([type="file"]), textarea[maxlength]').forEach(function(inp) {
+                form.querySelectorAll('input[maxlength]:not([type="hidden"]):not([type="file"]), textarea[maxlength]').forEach(function (inp) {
                     var mx = parseInt(inp.getAttribute('maxlength'), 10);
                     if (!mx || mx <= 0) {
                         return;
@@ -1054,7 +1013,7 @@ function initCloudArenaUi() {
                     ['profile_btn_update_password', 'Nhãn nút cập nhật mật khẩu không được để trống.']
                 ];
                 var ok = true;
-                pairs.forEach(function(p) {
+                pairs.forEach(function (p) {
                     var el = form.querySelector('[name="' + p[0] + '"]');
                     if (!valTrim(el)) {
                         adminSettingsFieldError(el, p[1]);
@@ -1083,7 +1042,7 @@ function initCloudArenaUi() {
                     ['contact_page_title', 'Tiêu đề trang (meta) không được để trống.'],
                     ['contact_page_intro', 'Mô tả trang (meta) không được để trống.']
                 ];
-                reqPairs.forEach(function(p) {
+                reqPairs.forEach(function (p) {
                     var el = form.querySelector('[name="' + p[0] + '"]');
                     if (!valTrim(el)) {
                         adminSettingsFieldError(el, p[1]);
@@ -1113,7 +1072,7 @@ function initCloudArenaUi() {
                     adminSettingsFieldError(discBlock, 'Nội dung terminal tối đa 2000 ký tự.');
                     ok = false;
                 }
-                Object.keys(CONTACT_SETTINGS_UI_MAX).forEach(function(fieldName) {
+                Object.keys(CONTACT_SETTINGS_UI_MAX).forEach(function (fieldName) {
                     var el = form.querySelector('[name="' + fieldName + '"]');
                     if (!el) {
                         return;
@@ -1130,12 +1089,12 @@ function initCloudArenaUi() {
                 return ok;
             }
 
-            forms.forEach(function(form) {
+            forms.forEach(function (form) {
                 if (form.getAttribute('data-admin-settings-validate-bound') === '1') {
                     return;
                 }
                 form.setAttribute('data-admin-settings-validate-bound', '1');
-                form.addEventListener('submit', function(ev) {
+                form.addEventListener('submit', function (ev) {
                     adminSettingsClearJsErrors(form);
                     var secInput = form.querySelector('input[name="settings_section"]');
                     var sec = secInput ? String(secInput.value || '').trim() : '';
@@ -1163,7 +1122,7 @@ function initCloudArenaUi() {
             });
         };
 
-        var initAdminGlobalSearch = function() {
+        var initAdminGlobalSearch = function () {
             var searchForm = document.getElementById('adminGlobalSearchForm');
             var searchInput = document.getElementById('adminGlobalSearchInput');
             if (!searchForm || !searchInput || searchForm.getAttribute('data-admin-search-bound') === '1') {
@@ -1181,7 +1140,7 @@ function initCloudArenaUi() {
                 { keywords: ['cài đặt', 'cai dat', 'setting', 'settings'], path: '/admin/settings/homepage' }
             ];
 
-            searchForm.addEventListener('submit', function(event) {
+            searchForm.addEventListener('submit', function (event) {
                 event.preventDefault();
                 var keyword = (searchInput.value || '').trim();
                 if (keyword === '') {
@@ -1191,11 +1150,11 @@ function initCloudArenaUi() {
 
                 var normalized = keyword.toLowerCase();
                 var moduleTarget = null;
-                moduleRoutes.forEach(function(routeItem) {
+                moduleRoutes.forEach(function (routeItem) {
                     if (moduleTarget !== null) {
                         return;
                     }
-                    routeItem.keywords.forEach(function(itemKeyword) {
+                    routeItem.keywords.forEach(function (itemKeyword) {
                         if (moduleTarget === null && normalized.indexOf(itemKeyword) !== -1) {
                             moduleTarget = routeItem.path;
                         }
@@ -1215,7 +1174,7 @@ function initCloudArenaUi() {
             });
         };
 
-        var initBrandingUploadZone = function() {
+        var initBrandingUploadZone = function () {
             var zone = document.getElementById('brandingUploadZone');
             var input = document.getElementById('branding_asset');
             var browseButton = document.getElementById('brandingUploadBrowse');
@@ -1225,28 +1184,28 @@ function initCloudArenaUi() {
                 return;
             }
 
-            var updateLabel = function() {
+            var updateLabel = function () {
                 if (fileLabel) {
                     fileLabel.textContent = input.files && input.files.length ? input.files[0].name : '';
                 }
             };
 
             if (browseButton) {
-                browseButton.addEventListener('click', function() {
+                browseButton.addEventListener('click', function () {
                     input.click();
                 });
             }
 
             input.addEventListener('change', updateLabel);
 
-            zone.addEventListener('dragover', function(event) {
+            zone.addEventListener('dragover', function (event) {
                 event.preventDefault();
                 zone.classList.add('is-dragging');
             });
-            zone.addEventListener('dragleave', function() {
+            zone.addEventListener('dragleave', function () {
                 zone.classList.remove('is-dragging');
             });
-            zone.addEventListener('drop', function(event) {
+            zone.addEventListener('drop', function (event) {
                 event.preventDefault();
                 zone.classList.remove('is-dragging');
                 if (event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files.length) {
@@ -1256,7 +1215,7 @@ function initCloudArenaUi() {
             });
         };
 
-        var initHeroBgUploadZone = function() {
+        var initHeroBgUploadZone = function () {
             var zone = document.getElementById('heroBgUploadZone');
             var input = document.getElementById('hero_bg_asset');
             var browseButton = document.getElementById('heroBgUploadBrowse');
@@ -1264,25 +1223,25 @@ function initCloudArenaUi() {
             if (!zone || !input) {
                 return;
             }
-            var updateLabel = function() {
+            var updateLabel = function () {
                 if (fileLabel) {
                     fileLabel.textContent = input.files && input.files.length ? input.files[0].name : '';
                 }
             };
             if (browseButton) {
-                browseButton.addEventListener('click', function() {
+                browseButton.addEventListener('click', function () {
                     input.click();
                 });
             }
             input.addEventListener('change', updateLabel);
-            zone.addEventListener('dragover', function(event) {
+            zone.addEventListener('dragover', function (event) {
                 event.preventDefault();
                 zone.classList.add('is-dragging');
             });
-            zone.addEventListener('dragleave', function() {
+            zone.addEventListener('dragleave', function () {
                 zone.classList.remove('is-dragging');
             });
-            zone.addEventListener('drop', function(event) {
+            zone.addEventListener('drop', function (event) {
                 event.preventDefault();
                 zone.classList.remove('is-dragging');
                 if (event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files.length) {
@@ -1292,7 +1251,7 @@ function initCloudArenaUi() {
             });
         };
 
-        var initMapPreview = function() {
+        var initMapPreview = function () {
             var mapInput = document.getElementById('site_map_embed_url');
             var mapFrame = document.getElementById('mapPreviewFrame');
             var mapPlaceholder = document.getElementById('mapPreviewPlaceholder');
@@ -1300,7 +1259,7 @@ function initCloudArenaUi() {
                 return;
             }
 
-            var updatePreview = function() {
+            var updatePreview = function () {
                 var value = (mapInput.value || '').trim();
                 var isValid = /^https?:\/\/.+/i.test(value);
 
@@ -1319,14 +1278,14 @@ function initCloudArenaUi() {
             updatePreview();
         };
 
-        var initUserActionDropdowns = function() {
+        var initUserActionDropdowns = function () {
             var toggles = document.querySelectorAll('.user-actions-toggle');
             if (!toggles.length) {
                 return;
             }
             var globalListenersBound = document.body.getAttribute('data-user-dropdown-global-bound') === '1';
 
-            var positionMenu = function(toggle, menu) {
+            var positionMenu = function (toggle, menu) {
                 var viewportPadding = 12;
                 var spacing = 6;
                 var toggleRect = toggle.getBoundingClientRect();
@@ -1354,9 +1313,9 @@ function initCloudArenaUi() {
                 menu.style.top = top + 'px';
             };
 
-            var closeAllMenus = function() {
+            var closeAllMenus = function () {
                 var openMenus = document.querySelectorAll('.user-actions-menu.show');
-                openMenus.forEach(function(menu) {
+                openMenus.forEach(function (menu) {
                     menu.classList.remove('show');
                     menu.classList.remove('menu-dropup');
                     menu.classList.remove('menu-floating');
@@ -1370,13 +1329,13 @@ function initCloudArenaUi() {
                 });
             };
 
-            toggles.forEach(function(toggle) {
+            toggles.forEach(function (toggle) {
                 if (toggle.getAttribute('data-dropdown-bound') === '1') {
                     return;
                 }
                 toggle.setAttribute('data-dropdown-bound', '1');
 
-                toggle.addEventListener('click', function(event) {
+                toggle.addEventListener('click', function (event) {
                     event.preventDefault();
                     event.stopPropagation();
                     var wrapper = toggle.closest('.dropdown');
@@ -1406,20 +1365,20 @@ function initCloudArenaUi() {
             if (!globalListenersBound) {
                 document.body.setAttribute('data-user-dropdown-global-bound', '1');
 
-                document.addEventListener('click', function(event) {
+                document.addEventListener('click', function (event) {
                     if (!event.target.closest('.dropdown')) {
                         closeAllMenus();
                     }
                 });
 
-                document.addEventListener('keydown', function(event) {
+                document.addEventListener('keydown', function (event) {
                     if (event.key === 'Escape') {
                         closeAllMenus();
                     }
                 });
 
                 window.addEventListener('resize', closeAllMenus);
-                document.addEventListener('scroll', function() {
+                document.addEventListener('scroll', function () {
                     var openMenu = document.querySelector('.user-actions-menu.show');
                     if (openMenu) {
                         closeAllMenus();
@@ -1428,7 +1387,7 @@ function initCloudArenaUi() {
             }
         };
 
-        var initAdminProfileDropdown = function() {
+        var initAdminProfileDropdown = function () {
             var profileToggle = document.querySelector('.admin-profile-btn');
             if (!profileToggle || profileToggle.getAttribute('data-admin-profile-bound') === '1') {
                 return;
@@ -1442,16 +1401,16 @@ function initCloudArenaUi() {
             profileToggle.setAttribute('data-admin-profile-bound', '1');
             profileMenu.setAttribute('data-admin-profile-menu', 'true');
 
-            var closeProfileMenu = function() {
+            var closeProfileMenu = function () {
                 profileMenu.classList.remove('show');
                 profileToggle.setAttribute('aria-expanded', 'false');
             };
-            var openProfileMenu = function() {
+            var openProfileMenu = function () {
                 profileMenu.classList.add('show');
                 profileToggle.setAttribute('aria-expanded', 'true');
             };
 
-            profileToggle.addEventListener('click', function(event) {
+            profileToggle.addEventListener('click', function (event) {
                 event.preventDefault();
                 event.stopPropagation();
                 if (profileMenu.classList.contains('show')) {
@@ -1461,21 +1420,21 @@ function initCloudArenaUi() {
                 }
             });
 
-            document.addEventListener('click', function(event) {
+            document.addEventListener('click', function (event) {
                 if (event.target.closest('.admin-profile-btn') || event.target.closest('[data-admin-profile-menu="true"]')) {
                     return;
                 }
                 closeProfileMenu();
             });
 
-            document.addEventListener('keydown', function(event) {
+            document.addEventListener('keydown', function (event) {
                 if (event.key === 'Escape') {
                     closeProfileMenu();
                 }
             });
         };
 
-        var initAdminNotificationBox = function() {
+        var initAdminNotificationBox = function () {
             var notifyToggle = document.getElementById('adminNotificationToggle');
             var notifyMenu = document.getElementById('adminNotificationMenu');
             var notifyList = document.getElementById('adminNotificationList');
@@ -1488,7 +1447,7 @@ function initCloudArenaUi() {
             }
             notifyToggle.setAttribute('data-admin-notification-bound', '1');
 
-            var setBadge = function(countValue) {
+            var setBadge = function (countValue) {
                 var total = Math.max(0, parseInt(countValue, 10) || 0);
                 if (!notifyCount) {
                     return;
@@ -1502,7 +1461,7 @@ function initCloudArenaUi() {
                 }
             };
 
-            var renderEmpty = function(message) {
+            var renderEmpty = function (message) {
                 notifyList.innerHTML = '';
                 var emptyNode = document.createElement('div');
                 emptyNode.className = 'admin-notification-empty';
@@ -1510,14 +1469,14 @@ function initCloudArenaUi() {
                 notifyList.appendChild(emptyNode);
             };
 
-            var renderItems = function(items) {
+            var renderItems = function (items) {
                 notifyList.innerHTML = '';
                 if (!Array.isArray(items) || items.length === 0) {
                     renderEmpty('Hiện chưa có thông báo mới.');
                     return;
                 }
 
-                items.forEach(function(item) {
+                items.forEach(function (item) {
                     var isLink = item && typeof item.href === 'string' && item.href !== '';
                     var row = document.createElement(isLink ? 'a' : 'div');
                     var isNew = !!(item && item.is_new);
@@ -1554,7 +1513,7 @@ function initCloudArenaUi() {
                 });
             };
 
-            var fetchNotifications = function(showLoading) {
+            var fetchNotifications = function (showLoading) {
                 if (showLoading) {
                     renderEmpty('Đang tải thông báo...');
                 }
@@ -1566,14 +1525,14 @@ function initCloudArenaUi() {
                         'Accept': 'application/json'
                     },
                     cache: 'no-store'
-                }).then(function(response) {
-                    return response.json().then(function(payload) {
+                }).then(function (response) {
+                    return response.json().then(function (payload) {
                         return {
                             ok: response.ok,
                             payload: payload
                         };
                     });
-                }).then(function(result) {
+                }).then(function (result) {
                     if (!result.ok || !result.payload || !result.payload.success) {
                         throw new Error('Không thể tải thông báo.');
                     }
@@ -1582,13 +1541,13 @@ function initCloudArenaUi() {
                     setBadge(unseen);
                     renderItems(result.payload.items || []);
                     return unseen;
-                }).catch(function() {
+                }).catch(function () {
                     renderEmpty('Không thể tải thông báo. Vui lòng thử lại.');
                     return 0;
                 });
             };
 
-            var markSeen = function() {
+            var markSeen = function () {
                 var tok = encodeURIComponent((window.adminCsrfToken || '').trim());
                 return window.fetch((window.URLROOT || '') + '/admin/markNotificationsSeen?ajax=1', {
                     method: 'POST',
@@ -1599,31 +1558,31 @@ function initCloudArenaUi() {
                         'Content-Type': 'application/x-www-form-urlencoded'
                     },
                     body: 'csrf_token=' + tok
-                }).then(function() {
+                }).then(function () {
                     setBadge(0);
-                }).catch(function() {
+                }).catch(function () {
                     return null;
                 });
             };
 
-            var closeMenu = function() {
+            var closeMenu = function () {
                 notifyMenu.classList.remove('show');
                 notifyMenu.setAttribute('aria-hidden', 'true');
                 notifyToggle.setAttribute('aria-expanded', 'false');
             };
 
-            var openMenu = function() {
+            var openMenu = function () {
                 notifyMenu.classList.add('show');
                 notifyMenu.setAttribute('aria-hidden', 'false');
                 notifyToggle.setAttribute('aria-expanded', 'true');
-                fetchNotifications(true).then(function(unseen) {
+                fetchNotifications(true).then(function (unseen) {
                     if (unseen > 0) {
                         markSeen();
                     }
                 });
             };
 
-            notifyToggle.addEventListener('click', function(event) {
+            notifyToggle.addEventListener('click', function (event) {
                 event.preventDefault();
                 event.stopPropagation();
                 if (notifyMenu.classList.contains('show')) {
@@ -1633,27 +1592,27 @@ function initCloudArenaUi() {
                 }
             });
 
-            document.addEventListener('click', function(event) {
+            document.addEventListener('click', function (event) {
                 if (event.target.closest('#adminNotificationToggle') || event.target.closest('#adminNotificationMenu')) {
                     return;
                 }
                 closeMenu();
             });
 
-            document.addEventListener('keydown', function(event) {
+            document.addEventListener('keydown', function (event) {
                 if (event.key === 'Escape') {
                     closeMenu();
                 }
             });
 
             fetchNotifications(false);
-            window.setInterval(function() {
+            window.setInterval(function () {
                 fetchNotifications(false);
             }, 45000);
         };
 
-        var closeFloatingAdminCustomSelectMenus = function() {
-            document.querySelectorAll('.admin-custom-select-menu.show').forEach(function(openMenu) {
+        var closeFloatingAdminCustomSelectMenus = function () {
+            document.querySelectorAll('.admin-custom-select-menu.show').forEach(function (openMenu) {
                 var ownerWrap = openMenu._adminSelectOwner;
                 if (ownerWrap) {
                     var ownerToggle = ownerWrap.querySelector('.admin-custom-select-toggle');
@@ -1680,7 +1639,7 @@ function initCloudArenaUi() {
             });
         };
 
-        var initTicketDetailSelection = function() {
+        var initTicketDetailSelection = function () {
             var detailContainer = document.getElementById('ticketDetailContainer');
             if (!detailContainer || document.body.getAttribute('data-ticket-delegate-bound') === '1') {
                 return;
@@ -1688,7 +1647,7 @@ function initCloudArenaUi() {
             document.body.setAttribute('data-ticket-delegate-bound', '1');
             var activeTicketController = null;
 
-            var syncAdminCsrfFromDetail = function() {
+            var syncAdminCsrfFromDetail = function () {
                 var inp = detailContainer.querySelector('input[name="csrf_token"]');
                 if (inp && inp.value) {
                     window.adminCsrfToken = inp.value;
@@ -1696,7 +1655,7 @@ function initCloudArenaUi() {
             };
             syncAdminCsrfFromDetail();
 
-            document.addEventListener('submit', function(ev) {
+            document.addEventListener('submit', function (ev) {
                 var f = ev.target;
                 if (!f || f.tagName !== 'FORM' || String(f.method || '').toLowerCase() !== 'post') {
                     return;
@@ -1714,7 +1673,7 @@ function initCloudArenaUi() {
                 }
             }, true);
 
-            document.addEventListener('submit', function(ev) {
+            document.addEventListener('submit', function (ev) {
                 var replyForm = ev.target.closest('form[data-ticket-reply-form="true"]');
                 if (!replyForm || !detailContainer.contains(replyForm)) {
                     return;
@@ -1726,9 +1685,9 @@ function initCloudArenaUi() {
                 }
             });
 
-            var setActiveTicketRow = function(activeLink, optUserId, optContactId) {
+            var setActiveTicketRow = function (activeLink, optUserId, optContactId) {
                 var ticketRows = document.querySelectorAll('.ticket-row');
-                ticketRows.forEach(function(row) {
+                ticketRows.forEach(function (row) {
                     row.classList.remove('ticket-row-active');
                 });
                 var selectedRow = null;
@@ -1745,7 +1704,7 @@ function initCloudArenaUi() {
                 }
             };
 
-            var cleanQueryString = function() {
+            var cleanQueryString = function () {
                 var params = new URLSearchParams(window.location.search || '');
                 params.delete('url');
                 params.delete('user_id');
@@ -1755,7 +1714,7 @@ function initCloudArenaUi() {
                 return params.toString();
             };
 
-            var parseTicketDetailResponse = function(rawText) {
+            var parseTicketDetailResponse = function (rawText) {
                 var payload = null;
                 var text = String(rawText || '').trim();
                 if (text !== '') {
@@ -1776,7 +1735,7 @@ function initCloudArenaUi() {
                 return payload;
             };
 
-            var applyTicketDetailPayload = function(payload, activeLink) {
+            var applyTicketDetailPayload = function (payload, activeLink) {
                 closeFloatingAdminCustomSelectMenus();
                 detailContainer.innerHTML = payload.html;
                 syncAdminCsrfFromDetail();
@@ -1817,7 +1776,7 @@ function initCloudArenaUi() {
                 }
             };
 
-            var loadTicketDetail = function(userId, contactId, activeLink, fallbackHref) {
+            var loadTicketDetail = function (userId, contactId, activeLink, fallbackHref) {
                 if (activeTicketController) {
                     activeTicketController.abort();
                 }
@@ -1845,15 +1804,15 @@ function initCloudArenaUi() {
                     },
                     cache: 'no-store',
                     signal: activeTicketController ? activeTicketController.signal : undefined
-                }).then(function(response) {
-                    return response.text().then(function(text) {
+                }).then(function (response) {
+                    return response.text().then(function (text) {
                         return {
                             ok: response.ok,
                             text: text,
                             redirected: response.redirected
                         };
                     });
-                }).then(function(result) {
+                }).then(function (result) {
                     var payload = parseTicketDetailResponse(result.text);
 
                     if (!payload && result.redirected && fallbackHref) {
@@ -1866,18 +1825,18 @@ function initCloudArenaUi() {
                     }
 
                     applyTicketDetailPayload(payload, activeLink);
-                }).catch(function(error) {
+                }).catch(function (error) {
                     if (error && error.name === 'AbortError') {
                         return;
                     }
-                    
-                }).finally(function() {
+
+                }).finally(function () {
                     detailContainer.classList.remove('ticket-loading');
                     detailContainer.removeAttribute('aria-busy');
                 });
             };
 
-            document.addEventListener('click', function(event) {
+            document.addEventListener('click', function (event) {
                 var link = event.target.closest('[data-ticket-select="true"]');
                 if (!link) {
                     return;
@@ -1902,7 +1861,7 @@ function initCloudArenaUi() {
             var bootUid = (pageParams.get('user_id') || '').trim();
             var bootCid = (pageParams.get('contact_id') || '').trim();
             if (bootUid && bootCid && /^\d+$/.test(bootUid) && /^\d+$/.test(bootCid)) {
-                window.setTimeout(function() {
+                window.setTimeout(function () {
                     loadTicketDetail(bootUid, bootCid, null, null);
                 }, 0);
             }
@@ -1910,7 +1869,7 @@ function initCloudArenaUi() {
 
         if (filterSelect) {
             renderRevenueChart(filterSelect.value);
-            filterSelect.addEventListener('change', function() {
+            filterSelect.addEventListener('change', function () {
                 renderRevenueChart(filterSelect.value);
             });
         } else {
@@ -1950,7 +1909,7 @@ function initCloudArenaUi() {
 
         // Shared rule functions
         var RULES = {
-            username: function(val, input, span) {
+            username: function (val, input, span) {
                 if (!val) {
                     setError(input, span, 'Vui lòng nhập tên đăng nhập.'); return false;
                 }
@@ -1962,7 +1921,7 @@ function initCloudArenaUi() {
                 }
                 return true;
             },
-            fullName: function(val, input, span) {
+            fullName: function (val, input, span) {
                 if (!val) { return true; } // optional
                 if (val.length > 100) {
                     setError(input, span, 'Tên hiển thị tối đa 100 ký tự.'); return false;
@@ -1972,7 +1931,7 @@ function initCloudArenaUi() {
                 }
                 return true;
             },
-            email: function(val, input, span) {
+            email: function (val, input, span) {
                 if (!val) {
                     setError(input, span, 'Vui lòng nhập email.'); return false;
                 }
@@ -1984,7 +1943,7 @@ function initCloudArenaUi() {
                 }
                 return true;
             },
-            password: function(val, input, span, label) {
+            password: function (val, input, span, label) {
                 label = label || 'Mật khẩu';
                 if (!val) {
                     setError(input, span, 'Vui lòng nhập ' + label.toLowerCase() + '.'); return false;
@@ -1994,7 +1953,7 @@ function initCloudArenaUi() {
                 }
                 return true;
             },
-            confirmPassword: function(pw, cpw, input, span) {
+            confirmPassword: function (pw, cpw, input, span) {
                 if (!cpw) {
                     setError(input, span, 'Vui lòng xác nhận mật khẩu.'); return false;
                 }
@@ -2008,15 +1967,15 @@ function initCloudArenaUi() {
         // ── Login ────────────────────────────────────────
         var loginForm = document.getElementById('loginForm');
         if (loginForm) {
-            loginForm.addEventListener('submit', function(e) {
+            loginForm.addEventListener('submit', function (e) {
                 var uInput = document.getElementById('username');
                 var pInput = document.getElementById('password');
-                var uErr   = document.getElementById('login-username-err');
-                var pErr   = document.getElementById('login-password-err');
+                var uErr = document.getElementById('login-username-err');
+                var pErr = document.getElementById('login-password-err');
                 clearError(uInput, uErr); clearError(pInput, pErr);
                 var valid = true;
                 if (!uInput || !uInput.value.trim()) { setError(uInput, uErr, 'Vui lòng nhập tên đăng nhập.'); valid = false; }
-                if (!pInput || !pInput.value)         { setError(pInput, pErr, 'Vui lòng nhập mật khẩu.');      valid = false; }
+                if (!pInput || !pInput.value) { setError(pInput, pErr, 'Vui lòng nhập mật khẩu.'); valid = false; }
                 if (!valid) { e.preventDefault(); }
             });
         }
@@ -2024,28 +1983,28 @@ function initCloudArenaUi() {
         // ── Register ─────────────────────────────────────
         var registerForm = document.getElementById('registerForm');
         if (registerForm) {
-            registerForm.addEventListener('submit', function(e) {
+            registerForm.addEventListener('submit', function (e) {
                 var f = {
-                    username:        document.getElementById('reg-username'),
-                    fullName:        document.getElementById('reg-full-name'),
-                    email:           document.getElementById('reg-email'),
-                    password:        document.getElementById('reg-password'),
+                    username: document.getElementById('reg-username'),
+                    fullName: document.getElementById('reg-full-name'),
+                    email: document.getElementById('reg-email'),
+                    password: document.getElementById('reg-password'),
                     confirmPassword: document.getElementById('reg-confirm-password')
                 };
                 var s = {
-                    username:        document.getElementById('reg-username-err'),
-                    fullName:        document.getElementById('reg-full-name-err'),
-                    email:           document.getElementById('reg-email-err'),
-                    password:        document.getElementById('reg-password-err'),
+                    username: document.getElementById('reg-username-err'),
+                    fullName: document.getElementById('reg-full-name-err'),
+                    email: document.getElementById('reg-email-err'),
+                    password: document.getElementById('reg-password-err'),
                     confirmPassword: document.getElementById('reg-confirm-password-err')
                 };
-                Object.keys(f).forEach(function(k) { clearError(f[k], s[k]); });
+                Object.keys(f).forEach(function (k) { clearError(f[k], s[k]); });
                 var valid = true;
                 var pw = f.password ? f.password.value : '';
-                if (!RULES.username(f.username ? f.username.value.trim() : '', f.username, s.username))               { valid = false; }
-                if (!RULES.fullName(f.fullName ? f.fullName.value.trim() : '', f.fullName, s.fullName))               { valid = false; }
-                if (!RULES.email(f.email ? f.email.value.trim() : '', f.email, s.email))                             { valid = false; }
-                if (!RULES.password(pw, f.password, s.password, 'Mật khẩu'))                                         { valid = false; }
+                if (!RULES.username(f.username ? f.username.value.trim() : '', f.username, s.username)) { valid = false; }
+                if (!RULES.fullName(f.fullName ? f.fullName.value.trim() : '', f.fullName, s.fullName)) { valid = false; }
+                if (!RULES.email(f.email ? f.email.value.trim() : '', f.email, s.email)) { valid = false; }
+                if (!RULES.password(pw, f.password, s.password, 'Mật khẩu')) { valid = false; }
                 if (!RULES.confirmPassword(pw, f.confirmPassword ? f.confirmPassword.value : '', f.confirmPassword, s.confirmPassword)) { valid = false; }
                 if (!valid) { e.preventDefault(); }
             });
@@ -2054,11 +2013,11 @@ function initCloudArenaUi() {
         // ── Profile: Personal Information ─────────────────
         var profileInfoForm = document.getElementById('profileInfoForm');
         if (profileInfoForm) {
-            profileInfoForm.addEventListener('submit', function(e) {
+            profileInfoForm.addEventListener('submit', function (e) {
                 var fnInput = document.getElementById('prof-full-name');
                 var emInput = document.getElementById('prof-email');
-                var fnErr   = document.getElementById('prof-full-name-err');
-                var emErr   = document.getElementById('prof-email-err');
+                var fnErr = document.getElementById('prof-full-name-err');
+                var emErr = document.getElementById('prof-email-err');
                 clearError(fnInput, fnErr); clearError(emInput, emErr);
                 var valid = true;
                 var fnVal = fnInput ? fnInput.value.trim() : '';
@@ -2068,7 +2027,7 @@ function initCloudArenaUi() {
                 } else if (!RULES.fullName(fnVal, fnInput, fnErr)) {
                     valid = false;
                 }
-                if (!RULES.email(emInput ? emInput.value.trim() : '', emInput, emErr))    { valid = false; }
+                if (!RULES.email(emInput ? emInput.value.trim() : '', emInput, emErr)) { valid = false; }
                 if (!valid) { e.preventDefault(); }
             });
         }
@@ -2076,19 +2035,19 @@ function initCloudArenaUi() {
         // ── Profile: Change Password ──────────────────────
         var changePasswordForm = document.getElementById('changePasswordForm');
         if (changePasswordForm) {
-            changePasswordForm.addEventListener('submit', function(e) {
+            changePasswordForm.addEventListener('submit', function (e) {
                 var curInput = document.getElementById('prof-current-password');
                 var newInput = document.getElementById('prof-new-password');
                 var cfmInput = document.getElementById('prof-confirm-password');
-                var curErr   = document.getElementById('prof-current-password-err');
-                var newErr   = document.getElementById('prof-new-password-err');
-                var cfmErr   = document.getElementById('prof-confirm-password-err');
+                var curErr = document.getElementById('prof-current-password-err');
+                var newErr = document.getElementById('prof-new-password-err');
+                var cfmErr = document.getElementById('prof-confirm-password-err');
                 clearError(curInput, curErr); clearError(newInput, newErr); clearError(cfmInput, cfmErr);
                 var valid = true;
                 var npw = newInput ? newInput.value : '';
                 if (!curInput || !curInput.value) { setError(curInput, curErr, 'Vui lòng nhập mật khẩu hiện tại.'); valid = false; }
-                if (!RULES.password(npw, newInput, newErr, 'Mật khẩu mới'))                                      { valid = false; }
-                if (!RULES.confirmPassword(npw, cfmInput ? cfmInput.value : '', cfmInput, cfmErr))                { valid = false; }
+                if (!RULES.password(npw, newInput, newErr, 'Mật khẩu mới')) { valid = false; }
+                if (!RULES.confirmPassword(npw, cfmInput ? cfmInput.value : '', cfmInput, cfmErr)) { valid = false; }
                 if (!valid) { e.preventDefault(); }
             });
         }
@@ -2105,13 +2064,13 @@ function initCloudArenaUi() {
 
         var targetUserId = null;
 
-        var closeModal = function() {
+        var closeModal = function () {
             overlay.classList.remove('is-active');
             overlay.setAttribute('aria-hidden', 'true');
             targetUserId = null;
         };
 
-        var openModal = function(userId, userName) {
+        var openModal = function (userId, userName) {
             targetUserId = userId;
             if (userNameEl) {
                 userNameEl.textContent = userName ? 'Người dùng: ' + userName : '';
@@ -2120,8 +2079,8 @@ function initCloudArenaUi() {
             overlay.setAttribute('aria-hidden', 'false');
         };
 
-        document.querySelectorAll('[data-reset-user-id]').forEach(function(btn) {
-            btn.addEventListener('click', function() {
+        document.querySelectorAll('[data-reset-user-id]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
                 openModal(
                     btn.getAttribute('data-reset-user-id'),
                     btn.getAttribute('data-reset-user-name')
@@ -2131,19 +2090,19 @@ function initCloudArenaUi() {
 
         cancelBtn.addEventListener('click', closeModal);
 
-        overlay.addEventListener('click', function(e) {
+        overlay.addEventListener('click', function (e) {
             if (e.target === overlay) {
                 closeModal();
             }
         });
 
-        document.addEventListener('keydown', function(e) {
+        document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') {
                 closeModal();
             }
         });
 
-        confirmBtn.addEventListener('click', function() {
+        confirmBtn.addEventListener('click', function () {
             if (!targetUserId) {
                 return;
             }
@@ -2155,18 +2114,18 @@ function initCloudArenaUi() {
                     'X-CSRF-Token': window.adminCsrfToken || ''
                 }
             })
-            .then(function(r) { return r.json(); })
-            .then(function(result) {
-                closeModal();
-                showAdminToast(result.message || 'Reset mật khẩu thành công!', result.success ? 'success' : 'error');
-            })
-            .catch(function() {
-                closeModal();
-                showAdminToast('Có lỗi xảy ra. Vui lòng thử lại.', 'error');
-            })
-            .finally(function() {
-                confirmBtn.disabled = false;
-            });
+                .then(function (r) { return r.json(); })
+                .then(function (result) {
+                    closeModal();
+                    showAdminToast(result.message || 'Reset mật khẩu thành công!', result.success ? 'success' : 'error');
+                })
+                .catch(function () {
+                    closeModal();
+                    showAdminToast('Có lỗi xảy ra. Vui lòng thử lại.', 'error');
+                })
+                .finally(function () {
+                    confirmBtn.disabled = false;
+                });
         });
     }
 
@@ -2176,8 +2135,8 @@ function initCloudArenaUi() {
         var reducedMotionHp = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         var pingEls = homeProductDeck.querySelectorAll('[data-home-product-ping]');
 
-        var tickHomePing = function() {
-            pingEls.forEach(function(el) {
+        var tickHomePing = function () {
+            pingEls.forEach(function (el) {
                 var base = parseInt(el.getAttribute('data-ping-base') || '12', 10);
                 var jitter = Math.round((Math.random() - 0.5) * 5);
                 el.textContent = Math.max(8, base + jitter) + ' ms';
@@ -2192,19 +2151,19 @@ function initCloudArenaUi() {
 
         var bwFineHover = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
         var bwPop = null;
-        var hideHomeBandwidthPop = function() {
+        var hideHomeBandwidthPop = function () {
             if (bwPop) {
                 bwPop.classList.remove('is-visible');
             }
         };
-        var escapeHomeBwHtml = function(value) {
+        var escapeHomeBwHtml = function (value) {
             return String(value || '')
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;');
         };
-        var showHomeBandwidthPop = function(clientX, clientY, bwText, accent) {
+        var showHomeBandwidthPop = function (clientX, clientY, bwText, accent) {
             if (!bwPop) {
                 return;
             }
@@ -2238,16 +2197,16 @@ function initCloudArenaUi() {
                 bwPop.setAttribute('role', 'tooltip');
                 document.body.appendChild(bwPop);
             }
-            var readCardAccent = function(card) {
+            var readCardAccent = function (card) {
                 try {
                     return window.getComputedStyle(card).getPropertyValue('--rarity-accent').trim() || '#22d3ee';
                 } catch (err) {
                     return '#22d3ee';
                 }
             };
-            homeCards.forEach(function(card) {
+            homeCards.forEach(function (card) {
                 var bwText = card.getAttribute('data-home-bandwidth') || '';
-                var onBwPointer = function(evt) {
+                var onBwPointer = function (evt) {
                     if (!evt.isPrimary) {
                         return;
                     }
@@ -2260,7 +2219,7 @@ function initCloudArenaUi() {
             });
             document.addEventListener(
                 'scroll',
-                function() {
+                function () {
                     if (bwPop && bwPop.classList.contains('is-visible')) {
                         hideHomeBandwidthPop();
                     }
@@ -2270,12 +2229,12 @@ function initCloudArenaUi() {
         }
 
         if (!reducedMotionHp && homeCards.length) {
-            homeCards.forEach(function(card) {
+            homeCards.forEach(function (card) {
                 var surface = card.querySelector('.home-product-card__surface');
                 if (!surface) {
                     return;
                 }
-                var onMove = function(e) {
+                var onMove = function (e) {
                     if (!e.isPrimary) {
                         return;
                     }
@@ -2291,7 +2250,7 @@ function initCloudArenaUi() {
                     surface.style.transform =
                         'perspective(820px) rotateX(' + tiltX + 'deg) rotateY(' + tiltY + 'deg) translateZ(0)';
                 };
-                var onLeave = function() {
+                var onLeave = function () {
                     surface.style.transform = '';
                     card.style.setProperty('--pointer-x', '50%');
                     card.style.setProperty('--pointer-y', '42%');

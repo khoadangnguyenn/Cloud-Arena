@@ -1,0 +1,9 @@
+Fonts used in this design:
+
+Font: Montserrat
+Author: Julieta Ulanovsky
+Url: http://www.fontsquirrel.com/fonts/montserrat
+
+Font: Yellowtail
+Author: Astigmatic
+Url: http://www.fontsquirrel.com/fonts/yellowtail

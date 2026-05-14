@@ -60,7 +60,7 @@ $mainTermTitle = $cStr('contact_main_term_title', 'Support Terminal');
 $mainNameLbl = $cStr('contact_main_name_label', 'Tên');
 $mainEmailLbl = $cStr('contact_main_email_label', 'Email');
 $mainIssueLbl = $cStr('contact_main_issue_label', 'Loại vấn đề');
-$mainIssueHint = $cStr('contact_main_issue_hint', 'Chọn nhanh bằng các thẻ danh mục phía dưới trang (đồng bộ với ô ẩn).');
+$mainIssueHint = $cStr('contact_main_issue_hint', 'Chọn nhanh bằng các thẻ danh mục phía dưới trang.');
 $mainMsgLbl = $cStr('contact_main_msg_label', 'Nội dung');
 $mainMsgPh = $cStr('contact_main_msg_placeholder', '> Mô tả chi tiết lỗi, bước tái hiện, mã đơn (nếu có)…');
 $mainBtnSend = $cStr('contact_main_btn_send', 'Gửi Ticket');
@@ -79,7 +79,7 @@ $formPurchaseGuest = $cStr('contact_form_purchase_guest', 'Đăng nhập để c
 $formPurchaseEmpty = $cStr('contact_form_purchase_empty', 'Không có đơn pending.');
 $formPurchaseOpt = $cStr('contact_form_purchase_opt', '— Chọn đơn —');
 $formForgotPwLbl = $cStr('contact_form_forgot_pw_lbl', 'Mật khẩu trước đó (tuỳ chọn)');
-$formForgotPwPh = $cStr('contact_form_forgot_pw_ph', 'Được băm bcrypt trước khi lưu — admin chỉ thấy hash');
+$formForgotPwPh = $cStr('contact_form_forgot_pw_ph', 'Nhập mật khẩu gần nhất của bạn.');
 $formBannedUserLbl = $cStr('contact_form_banned_user_lbl', 'Username');
 $formBannedUserPh = $cStr('contact_form_banned_user_ph', 'Tên đăng nhập cần hỗ trợ');
 $cssVer = @filemtime(dirname(APPROOT) . '/public/css/contact-support.css') ?: '1';
@@ -209,7 +209,7 @@ foreach ($categories as $ck => $_cl) {
                         <h2 class="ml-2 text-lg font-bold text-white tracking-tight"><?php echo $h($mainTermTitle); ?></h2>
                     </div>
 
-                    <form id="support-ticket-form" action="<?php echo URLROOT; ?>/pages/contact" method="POST" class="space-y-5 relative" novalidate>
+                    <form id="support-ticket-form" action="<?php echo URLROOT; ?>/contact" method="POST" class="space-y-5 relative" novalidate>
                         <input type="hidden" name="csrf_token" value="<?php echo $h($data['csrf_token'] ?? ''); ?>">
                         <input type="hidden" name="ticket_category" id="ticket_category" value="<?php echo $h($formCat); ?>">
                         <div class="absolute -left-[9999px] opacity-0 pointer-events-none" aria-hidden="true">

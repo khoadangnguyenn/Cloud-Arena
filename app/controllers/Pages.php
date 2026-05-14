@@ -1,5 +1,6 @@
 <?php
-class Pages extends Controller {
+class Pages extends Controller
+{
     private $contactModel;
     private $adminNotificationModel;
     private $productModel;
@@ -7,7 +8,8 @@ class Pages extends Controller {
     private $userModel;
     private $orderModel;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->contactModel = $this->model('Contact');
         $this->adminNotificationModel = $this->model('AdminNotification');
         $this->productModel = $this->model('Product');
@@ -16,7 +18,8 @@ class Pages extends Controller {
         $this->orderModel = $this->model('Order');
     }
 
-    public function index() {
+    public function index()
+    {
         $settings = $this->getPublicSettings();
         $featuredProducts = [];
         $featuredReview = null;
@@ -72,14 +75,22 @@ class Pages extends Controller {
         $this->view('client/pages/index', $data);
     }
 
-    public function about() {
+    public function about()
+    {
         $aboutModel = $this->model('About');
         $about = $aboutModel->get();
         $data = ['title' => 'Giới thiệu', 'about' => $about];
         $this->view('client/about', $data);
     }
 
-    public function contact() {
+    public function contact()
+    {
+        $rawUrl = isset($_GET['url']) ? trim((string) $_GET['url'], '/') : '';
+        if (($_SERVER['REQUEST_METHOD'] ?? '') === 'GET' && strcasecmp($rawUrl, 'pages/contact') === 0) {
+            header('Location: ' . URLROOT . '/contact', true, 301);
+            exit();
+        }
+
         $isLoggedIn = isset($_SESSION['user_id']);
         $currentUser = null;
 
@@ -155,7 +166,7 @@ class Pages extends Controller {
             // Honeypot – silently succeed if a bot filled the hidden field
             if (trim((string) ($_POST['website'] ?? '')) !== '') {
                 $_SESSION['contact_success'] = 'Gửi ticket thành công. Kỹ sư hỗ trợ sẽ phản hồi sớm nhất.';
-                header('Location: ' . URLROOT . '/pages/contact');
+                header('Location: ' . URLROOT . '/contact');
                 exit();
             }
 
@@ -306,7 +317,7 @@ class Pages extends Controller {
                         $_SESSION['contact_success'] = 'Gửi ticket thành công. Kỹ sư hỗ trợ sẽ phản hồi sớm nhất.';
                         $_SESSION['contact_last_submit'] = time();
                         $_SESSION['csrf_contact'] = bin2hex(random_bytes(32));
-                        header('Location: ' . URLROOT . '/pages/contact');
+                        header('Location: ' . URLROOT . '/contact');
                         exit();
                     }
                 }
@@ -321,7 +332,8 @@ class Pages extends Controller {
         $this->view('client/contact', $data);
     }
 
-    public function faq() {
+    public function faq()
+    {
         $faqModel = $this->model('Faq');
         $perPage = 8;
         $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
@@ -330,16 +342,16 @@ class Pages extends Controller {
         $cats = $faqModel->getCategories();
         $faqs = [];
         $paginationHtml = '';
-        
-        if($q){
+
+        if ($q) {
             $total = $faqModel->countSearchActive($q, $category);
             require_once APPROOT . '/helpers/Pagination.php';
             $base = URLROOT . '/pages/faq?q=' . urlencode($q);
-            if($category) $base .= '&category=' . urlencode($category);
+            if ($category) $base .= '&category=' . urlencode($category);
             $pagination = new Pagination($total, $perPage, $page, $base);
             $faqs = $faqModel->searchActive($pagination->getLimit(), $pagination->getOffset(), $q, $category);
             $paginationHtml = $pagination->createLinks();
-        } elseif($category){
+        } elseif ($category) {
             $total = $faqModel->countActive($category);
             require_once APPROOT . '/helpers/Pagination.php';
             $base = URLROOT . '/pages/faq?category=' . urlencode($category);
@@ -354,7 +366,7 @@ class Pages extends Controller {
             $faqs = $faqModel->getPageActive($pagination->getLimit(), $pagination->getOffset());
             $paginationHtml = $pagination->createLinks();
         }
-        
+
         $data = [
             'title' => 'Hỏi đáp',
             'faqs' => $faqs,
@@ -366,8 +378,9 @@ class Pages extends Controller {
     }
 
     // AJAX: receive a FAQ/chat message from client
-    public function faqMessage(){
-        if($_SERVER['REQUEST_METHOD'] !== 'POST'){
+    public function faqMessage()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode(['success' => false, 'error' => 'Invalid method']);
             return;
@@ -379,7 +392,7 @@ class Pages extends Controller {
         $message = isset($_POST['message']) ? trim((string)$_POST['message']) : '';
         $page_url = isset($_POST['page_url']) ? trim((string)$_POST['page_url']) : null;
 
-        if($message === ''){
+        if ($message === '') {
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode(['success' => false, 'error' => 'Nội dung trống']);
             return;
@@ -388,12 +401,14 @@ class Pages extends Controller {
         $payload = ['name' => $name, 'email' => $email, 'category' => $category, 'message' => $message, 'page_url' => $page_url, 'status' => 'new'];
         $ok = $faqModel->createMessage($payload);
         header('Content-Type: application/json; charset=utf-8');
-        if($ok) echo json_encode(['success' => true]); else echo json_encode(['success' => false, 'error' => 'Không thể lưu tin nhắn']);
+        if ($ok) echo json_encode(['success' => true]);
+        else echo json_encode(['success' => false, 'error' => 'Không thể lưu tin nhắn']);
     }
 
     // AJAX: fetch message history by email or page_url
-    public function faqMessages(){
-        if($_SERVER['REQUEST_METHOD'] !== 'GET'){
+    public function faqMessages()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode(['success' => false, 'error' => 'Invalid method']);
             return;
@@ -401,7 +416,7 @@ class Pages extends Controller {
         $faqModel = $this->model('Faq');
         $email = isset($_GET['email']) ? trim((string)$_GET['email']) : null;
         $page_url = isset($_GET['page_url']) ? trim((string)$_GET['page_url']) : null;
-        if(!$email && !$page_url){
+        if (!$email && !$page_url) {
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode(['success' => false, 'error' => 'Missing parameters']);
             return;

@@ -41,24 +41,17 @@
 
             $data['seo_score'] = $this->calculateSEOScore($data);
 
-            // Image Upload Logic
-            if(!empty($_FILES['thumbnail']['name'])){
-                $target_dir = APPROOT . '/../public/uploads/';
-                if(!is_dir($target_dir)) mkdir($target_dir, 0777, true);
-                
-                $imageFileType = strtolower(pathinfo($_FILES["thumbnail"]["name"], PATHINFO_EXTENSION));
-                $new_filename = uniqid() . '_news.' . $imageFileType;
-                $target_file = $target_dir . $new_filename;
-
-                if(move_uploaded_file($_FILES["thumbnail"]["tmp_name"], $target_file)) {
-                    $data['thumbnail'] = $new_filename;
-                }
+            // Image Upload Logic (from Dropzone hidden field)
+            if(!empty($_POST['thumbnail'])){
+                $data['thumbnail'] = $_POST['thumbnail'];
             }
 
             if($this->postModel->addNews($data)){
+                flash('post_message', 'Đã thêm bài viết thành công');
                 header('Location: ' . URLROOT . '/admin/posts');
             } else {
-                die('Lỗi thêm tin tức');
+                flash('post_message', 'Có lỗi xảy ra khi thêm bài viết', 'alert alert-danger');
+                $this->view('admin/posts/add', $data);
             }
         } else {
             $categories = $this->postModel->getCategories();
@@ -90,8 +83,13 @@
     }
 
     public function edit($id){
+        $article = $this->postModel->getNewsById($id);
+        if (!$article) {
+            flash('post_message', 'Không tìm thấy bài viết', 'alert alert-danger');
+            header('Location: ' . URLROOT . '/admin/posts');
+            exit();
+        }
         if($_SERVER['REQUEST_METHOD'] == 'POST'){
-            $article = $this->postModel->getNewsById($id);
             $data = [
                 'id' => $id,
                 'title' => trim($_POST['title']),
@@ -109,22 +107,17 @@
 
             $data['seo_score'] = $this->calculateSEOScore($data);
 
-            // Image Upload Logic
-            if(!empty($_FILES['thumbnail']['name'])){
-                $target_dir = APPROOT . '/../public/uploads/';
-                $imageFileType = strtolower(pathinfo($_FILES["thumbnail"]["name"], PATHINFO_EXTENSION));
-                $new_filename = uniqid() . '_news.' . $imageFileType;
-                $target_file = $target_dir . $new_filename;
-
-                if(move_uploaded_file($_FILES["thumbnail"]["tmp_name"], $target_file)) {
-                    $data['thumbnail'] = $new_filename;
-                }
+            // Image Upload Logic (from Dropzone hidden field)
+            if(!empty($_POST['thumbnail'])){
+                $data['thumbnail'] = $_POST['thumbnail'];
             }
 
             if($this->postModel->updateNews($data)){
+                flash('post_message', 'Đã cập nhật bài viết thành công');
                 header('Location: ' . URLROOT . '/admin/posts');
             } else {
-                die('Lỗi cập nhật tin tức');
+                flash('post_message', 'Có lỗi xảy ra khi cập nhật bài viết', 'alert alert-danger');
+                $this->view('admin/posts/edit', $data);
             }
         } else {
             $article = $this->postModel->getNewsById($id);
@@ -141,9 +134,11 @@
     public function delete($id){
         if($_SERVER['REQUEST_METHOD'] == 'POST'){
             if($this->postModel->deleteNews($id)){
+                flash('post_message', 'Đã xóa bài viết thành công');
                 header('Location: ' . URLROOT . '/admin/posts');
             } else {
-                die('Lỗi xóa tin tức');
+                flash('post_message', 'Có lỗi xảy ra khi xóa bài viết', 'alert alert-danger');
+                header('Location: ' . URLROOT . '/admin/posts');
             }
         }
     }

@@ -1,78 +1,79 @@
-<?php require_once APPROOT . '/views/layouts/admin/header.php'; ?>
+<?php require APPROOT . '/views/layouts/admin/header.php'; ?>
 
-<div class="row">
-    <div class="col-12 mt-4">
-        <div class="card">
+<div class="row g-3">
+    <div class="col-12">
+        <section class="card panel-card">
             <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h4 class="header-title mb-0">Chi tiết Đơn hàng: <span class="text-primary">#<?php echo $data['order']->id; ?></span></h4>
-                    <a href="<?php echo URLROOT; ?>/admin/orders" class="btn btn-secondary btn-sm"><i class="ti-arrow-left"></i> Quay lại</a>
+                <div class="panel-header flex-wrap gap-2 mb-3">
+                    <h2 class="panel-title mb-0">Chi tiết đơn hàng <span class="text-primary">#<?php echo (int) $data['order']->id; ?></span></h2>
+                    <a href="<?php echo URLROOT; ?>/admin/orders" class="btn btn-outline-light btn-sm"><i class="ti-arrow-left"></i> Quay lại</a>
                 </div>
 
-                <div class="row mb-4">
+                <div class="row g-3 mb-4">
                     <div class="col-md-6">
-                        <div class="bg-light p-3 rounded border">
-                            <h5 class="mb-3 border-bottom pb-2"><i class="ti-user"></i> Thông tin Khách hàng</h5>
-                            <p><strong>Tài khoản:</strong> <?php echo $data['order']->username; ?></p>
-                            <p><strong>Email:</strong> <?php echo $data['order']->email; ?></p>
-                            <p><strong>Điện thoại:</strong> <?php echo isset($data['order']->phone) ? $data['order']->phone : 'Không có'; ?></p>
+                        <div class="admin-detail-box">
+                            <h5 class="admin-detail-box-title"><i class="ti-user"></i> Thông tin khách hàng</h5>
+                            <p><strong>Tài khoản:</strong> <?php echo htmlspecialchars((string) $data['order']->username, ENT_QUOTES, 'UTF-8'); ?></p>
+                            <p><strong>Email:</strong> <?php echo htmlspecialchars((string) $data['order']->email, ENT_QUOTES, 'UTF-8'); ?></p>
+                            <p><strong>Điện thoại:</strong> <?php echo htmlspecialchars((string) ($data['order']->phone ?? 'Không có'), ENT_QUOTES, 'UTF-8'); ?></p>
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="bg-light p-3 rounded border">
-                            <h5 class="mb-3 border-bottom pb-2"><i class="ti-info-alt"></i> Thông tin Đơn hàng</h5>
-                            <p><strong>Ngày đặt:</strong> <?php echo date('d/m/Y H:i:s', strtotime($data['order']->created_at)); ?></p>
-                            <p><strong>Trạng thái:</strong> <span class="badge badge-primary p-1 text-uppercase"><?php echo $data['order']->status; ?></span></p>
-                            <p><strong>Ghi chú / Địa chỉ:</strong> <?php echo isset($data['order']->address) ? $data['order']->address : 'Không có'; ?></p>
+                        <div class="admin-detail-box">
+                            <h5 class="admin-detail-box-title"><i class="ti-info-alt"></i> Thông tin đơn hàng</h5>
+                            <p><strong>Ngày đặt:</strong> <?php echo htmlspecialchars(date('d/m/Y H:i:s', strtotime($data['order']->created_at)), ENT_QUOTES, 'UTF-8'); ?></p>
+                            <p><strong>Trạng thái:</strong> <span class="badge bg-primary"><?php echo htmlspecialchars((string) $data['order']->status, ENT_QUOTES, 'UTF-8'); ?></span></p>
+                            <p><strong>Ghi chú / địa chỉ:</strong> <?php echo htmlspecialchars((string) ($data['order']->address ?? 'Không có'), ENT_QUOTES, 'UTF-8'); ?></p>
                         </div>
                     </div>
                 </div>
 
-                <h5 class="mb-3"><i class="ti-shopping-cart"></i> Danh sách Sản phẩm</h5>
+                <h3 class="h6 text-uppercase panel-muted mb-2"><i class="ti-shopping-cart"></i> Sản phẩm trong đơn</h3>
                 <div class="table-responsive">
-                    <table class="table table-bordered text-center">
-                        <thead class="bg-light">
+                    <table class="table admin-table text-center">
+                        <thead>
                             <tr>
                                 <th>Hình ảnh</th>
-                                <th>Sản phẩm</th>
+                                <th class="text-start">Sản phẩm</th>
                                 <th>Đơn giá</th>
                                 <th>Số lượng</th>
                                 <th>Thời hạn</th>
-                                <th>Thành tiền</th>
+                                <th class="text-end">Thành tiền</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php if(!empty($data['items'])): ?>
-                                <?php foreach($data['items'] as $item): ?>
-                                <tr>
-                                    <td>
-                                        <?php if(isset($item->image_url)): ?>
-                                            <img src="<?php echo URLROOT . '/' . $item->image_url; ?>" width="50" class="img-thumbnail">
-                                        <?php else: ?>
-                                            <i class="ti-server text-muted" style="font-size: 24px;"></i>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td class="text-left font-weight-bold"><?php echo isset($item->name) ? $item->name : 'Sản phẩm ID: '.$item->product_id; ?></td>
-                                    <td><?php echo number_format($item->price, 0, ',', '.'); ?>đ</td>
-                                    <td>x<?php echo $item->quantity; ?></td>
-                                    <td><?php echo isset($item->duration_months) ? $item->duration_months : 1; ?> Tháng</td>
-                                    <td class="text-danger font-weight-bold"><?php echo number_format($item->price * $item->quantity * (isset($item->duration_months) ? $item->duration_months : 1), 0, ',', '.'); ?>đ</td>
-                                </tr>
+                            <?php if (!empty($data['items'])): ?>
+                                <?php foreach ($data['items'] as $item): ?>
+                                    <tr>
+                                        <td>
+                                            <?php if (!empty($item->image_url)): ?>
+                                                <img src="<?php echo htmlspecialchars(URLROOT . '/' . $item->image_url, ENT_QUOTES, 'UTF-8'); ?>" width="50" class="img-thumbnail" alt="">
+                                            <?php else: ?>
+                                                <i class="ti-server text-muted" style="font-size: 1.5rem;" aria-hidden="true"></i>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="text-start fw-bold"><?php echo htmlspecialchars((string) ($item->name ?? ('Sản phẩm ID: ' . $item->product_id)), ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <td><?php echo number_format((float) $item->price, 0, ',', '.'); ?>đ</td>
+                                        <td>x<?php echo (int) $item->quantity; ?></td>
+                                        <td><?php echo (int) ($item->duration_months ?? 1); ?> tháng</td>
+                                        <td class="text-end fw-bold text-danger"><?php echo number_format((float) $item->price * (int) $item->quantity * (int) ($item->duration_months ?? 1), 0, ',', '.'); ?>đ</td>
+                                    </tr>
                                 <?php endforeach; ?>
                             <?php else: ?>
-                                <tr><td colspan="6">Không tải được chi tiết sản phẩm.</td></tr>
+                                <tr>
+                                    <td colspan="6" class="text-muted">Không tải được chi tiết sản phẩm.</td>
+                                </tr>
                             <?php endif; ?>
-                            <tr class="bg-light">
-                                <td colspan="5" class="text-right font-weight-bold text-uppercase">Tổng thanh toán:</td>
-                                <td class="text-danger font-weight-bold" style="font-size: 1.2rem;"><?php echo number_format($data['order']->total_amount, 0, ',', '.'); ?>đ</td>
+                            <tr class="admin-table-total-row">
+                                <td colspan="5" class="text-end fw-bold text-uppercase">Tổng thanh toán</td>
+                                <td class="text-end fw-bold text-danger" style="font-size: 1.1rem;"><?php echo number_format((float) $data['order']->total_amount, 0, ',', '.'); ?>đ</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
-
             </div>
-        </div>
+        </section>
     </div>
 </div>
 
-<?php require_once APPROOT . '/views/layouts/admin/footer.php'; ?>
+<?php require APPROOT . '/views/layouts/admin/footer.php'; ?>

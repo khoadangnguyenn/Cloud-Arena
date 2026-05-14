@@ -46,9 +46,11 @@ class AdminAds extends Controller {
             }
 
             if ($this->adModel->addAd($data)) {
+                flash('ad_message', 'Đã thêm quảng cáo thành công');
                 header('Location: ' . URLROOT . '/admin/ads');
             } else {
-                die('Lỗi thêm quảng cáo');
+                flash('ad_message', 'Có lỗi xảy ra khi thêm quảng cáo', 'alert alert-danger');
+                $this->view('admin/ads/add', $data);
             }
         } else {
             $data = ['title' => 'Thêm Quảng cáo mới'];
@@ -58,6 +60,11 @@ class AdminAds extends Controller {
 
     public function edit($id) {
         $ad = $this->adModel->getAdById($id);
+        if (!$ad) {
+            flash('ad_message', 'Không tìm thấy quảng cáo', 'alert alert-danger');
+            header('Location: ' . URLROOT . '/admin/ads');
+            exit();
+        }
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $data = [
                 'id' => $id,
@@ -84,9 +91,11 @@ class AdminAds extends Controller {
             }
 
             if ($this->adModel->updateAd($data)) {
+                flash('ad_message', 'Đã cập nhật quảng cáo thành công');
                 header('Location: ' . URLROOT . '/admin/ads');
             } else {
-                die('Lỗi cập nhật quảng cáo');
+                flash('ad_message', 'Có lỗi xảy ra khi cập nhật quảng cáo', 'alert alert-danger');
+                $this->view('admin/ads/edit', $data);
             }
         } else {
             $data = [
@@ -100,9 +109,11 @@ class AdminAds extends Controller {
     public function delete($id) {
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             if ($this->adModel->deleteAd($id)) {
+                flash('ad_message', 'Đã xóa quảng cáo thành công');
                 header('Location: ' . URLROOT . '/admin/ads');
             } else {
-                die('Lỗi xóa quảng cáo');
+                flash('ad_message', 'Có lỗi xảy ra khi xóa quảng cáo', 'alert alert-danger');
+                header('Location: ' . URLROOT . '/admin/ads');
             }
         }
     }
