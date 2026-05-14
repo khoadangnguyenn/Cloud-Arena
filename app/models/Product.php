@@ -6,18 +6,26 @@ class Product {
         $this->db = new Database;
     }
 
-    public function getProducts($limit, $offset, $keyword = '', $isAdmin = false) {
+    public function getProducts($limit, $offset, $keyword = '', $isAdmin = false, $categoryId = null, $minPrice = null, $maxPrice = null) {
         $sql = "SELECT p.*, c.name as category_name 
                 FROM products p 
                 LEFT JOIN categories c ON p.category_id = c.id";
         
         $where = [];
-        // Nếu KHÔNG phải admin (client), thì chỉ lấy sản phẩm active
         if (!$isAdmin) {
             $where[] = "p.status = 'active'";
         }
         if (!empty($keyword)) {
             $where[] = "p.name LIKE :keyword";
+        }
+        if (!empty($categoryId)) {
+            $where[] = "p.category_id = :category_id";
+        }
+        if ($minPrice !== null && $minPrice !== '') {
+            $where[] = "p.price >= :min_price";
+        }
+        if ($maxPrice !== null && $maxPrice !== '') {
+            $where[] = "p.price <= :max_price";
         }
         
         if (count($where) > 0) {
@@ -28,9 +36,10 @@ class Product {
 
         $this->db->query($sql);
         
-        if (!empty($keyword)) {
-            $this->db->bind(':keyword', '%' . $keyword . '%');
-        }
+        if (!empty($keyword)) { $this->db->bind(':keyword', '%' . $keyword . '%'); }
+        if (!empty($categoryId)) { $this->db->bind(':category_id', $categoryId); }
+        if ($minPrice !== null && $minPrice !== '') { $this->db->bind(':min_price', $minPrice); }
+        if ($maxPrice !== null && $maxPrice !== '') { $this->db->bind(':max_price', $maxPrice); }
         
         $this->db->bind(':limit', $limit, PDO::PARAM_INT);
         $this->db->bind(':offset', $offset, PDO::PARAM_INT);
@@ -38,7 +47,7 @@ class Product {
         return $this->db->resultSet();
     }
 
-    public function getTotalProducts($keyword = '', $isAdmin = false) {
+    public function getTotalProducts($keyword = '', $isAdmin = false, $categoryId = null, $minPrice = null, $maxPrice = null) {
         $sql = "SELECT COUNT(*) as total FROM products";
         
         $where = [];
@@ -48,6 +57,15 @@ class Product {
         if (!empty($keyword)) {
             $where[] = "name LIKE :keyword";
         }
+        if (!empty($categoryId)) {
+            $where[] = "category_id = :category_id";
+        }
+        if ($minPrice !== null && $minPrice !== '') {
+            $where[] = "price >= :min_price";
+        }
+        if ($maxPrice !== null && $maxPrice !== '') {
+            $where[] = "price <= :max_price";
+        }
 
         if (count($where) > 0) {
             $sql .= " WHERE " . implode(" AND ", $where);
@@ -55,9 +73,10 @@ class Product {
 
         $this->db->query($sql);
         
-        if (!empty($keyword)) {
-            $this->db->bind(':keyword', '%' . $keyword . '%');
-        }
+        if (!empty($keyword)) { $this->db->bind(':keyword', '%' . $keyword . '%'); }
+        if (!empty($categoryId)) { $this->db->bind(':category_id', $categoryId); }
+        if ($minPrice !== null && $minPrice !== '') { $this->db->bind(':min_price', $minPrice); }
+        if ($maxPrice !== null && $maxPrice !== '') { $this->db->bind(':max_price', $maxPrice); }
 
         $row = $this->db->single();
         return $row->total;
@@ -144,5 +163,26 @@ class Product {
         ");
         $row = $this->db->single();
         return $row ? (int)$row->total : 0;
+    }
+    /**
+     * Lấy danh sách sản phẩm liên quan (cùng danh mục)
+     */
+    public function getRelatedProducts($category_id, $current_product_id, $limit = 4) {
+        $this->db->query("
+            SELECT p.*, c.name as category_name 
+            FROM products p 
+            LEFT JOIN categories c ON p.category_id = c.id 
+            WHERE p.category_id = :category_id 
+              AND p.id != :current_id 
+              AND p.status = 'active' 
+            ORDER BY RAND() 
+            LIMIT :limit
+        ");
+        
+        $this->db->bind(':category_id', $category_id);
+        $this->db->bind(':current_id', $current_product_id);
+        $this->db->bind(':limit', $limit, PDO::PARAM_INT);
+        
+        return $this->db->resultSet();
     }
 }

@@ -8,16 +8,28 @@
             <h2 class="text-4xl font-black text-white tracking-tighter mb-2">SERVER CỦA BẠN.</h2>
             <p class="text-gray-400">Chọn cấu hình phù hợp nhất cho dự án của bạn.</p>
         </div>
-        <form action="<?= URLROOT ?>/products" method="GET" class="relative w-full md:w-96 group" id="searchForm">
-            <input type="text" name="search" id="searchInput" value="<?= $data['keyword'] ?>" placeholder="Tìm kiếm server..." 
-                   class="w-full bg-gray-900 border border-gray-800 text-white px-6 py-4 rounded-2xl focus:outline-none focus:border-cyan-500 transition-all duration-500">
-            <button type="submit" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 group-hover:text-cyan-400 transition-colors">
-                <i class="fa-solid fa-magnifying-glass"></i>
-            </button>
-            <div id="liveSearchResults" class="absolute z-50 w-full mt-2 bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl overflow-hidden hidden transform origin-top transition-all duration-300">
-                <div class="p-2 max-h-[350px] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-700 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-600 transition-colors" id="liveSearchContent">
-                    </div>
+        <form action="<?= URLROOT ?>/products" method="GET" class="w-full flex flex-col md:flex-row gap-4" id="searchForm">
+            <div class="relative flex-1 group">
+                <input type="text" name="search" id="searchInput" value="<?= $data['keyword'] ?>" placeholder="Tìm kiếm server..." 
+                       class="w-full bg-gray-900 border border-gray-800 text-white px-6 py-4 rounded-2xl focus:outline-none focus:border-cyan-500 transition-all duration-500">
             </div>
+            
+            <select name="category" id="categoryFilter" class="bg-gray-900 border border-gray-800 text-gray-300 px-6 py-4 rounded-2xl focus:outline-none focus:border-cyan-500 cursor-pointer">
+                <option value="">Tất cả danh mục</option>
+                <?php foreach($data['categories'] as $cat): ?>
+                    <option value="<?= $cat->id ?>" <?= ($data['categoryId'] == $cat->id) ? 'selected' : '' ?>><?= $cat->name ?></option>
+                <?php endforeach; ?>
+            </select>
+
+            <div class="flex gap-2">
+                <input type="number" name="min_price" id="minPrice" value="<?= $data['minPrice'] ?>" placeholder="Giá từ..." class="w-28 bg-gray-900 border border-gray-800 text-white px-4 py-4 rounded-2xl focus:outline-none focus:border-cyan-500">
+                <span class="text-gray-500 self-center">-</span>
+                <input type="number" name="max_price" id="maxPrice" value="<?= $data['maxPrice'] ?>" placeholder="Đến..." class="w-28 bg-gray-900 border border-gray-800 text-white px-4 py-4 rounded-2xl focus:outline-none focus:border-cyan-500">
+            </div>
+
+            <button type="submit" class="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-8 py-4 rounded-2xl font-bold transition-all shadow-lg shadow-cyan-500/25">
+                <i class="fa-solid fa-filter mr-2"></i> Lọc
+            </button>
         </form>
     </div>
 

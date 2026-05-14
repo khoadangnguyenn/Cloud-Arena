@@ -65,4 +65,28 @@
   </div>
 </div>
 
+<?php if (!empty($data['relatedProducts'])): ?>
+    <div class="mt-24 border-t border-gray-800 pt-16">
+        <h3 class="text-2xl font-bold text-white mb-8">
+            <i class="fa-solid fa-server text-cyan-500 mr-3"></i>Khách hàng cũng xem
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+            <?php foreach ($data['relatedProducts'] as $p): ?>
+            <a href="<?php echo URLROOT; ?>/products/show/<?php echo $p->slug; ?>" class="bg-gray-900/50 border border-gray-800 rounded-2xl p-4 hover:border-cyan-500/50 hover:bg-gray-800/80 transition-all duration-300 group block">
+                <div class="h-40 rounded-xl bg-gray-800 mb-4 overflow-hidden flex items-center justify-center border border-gray-700">
+                    <?php if (!empty($p->image_url)): ?>
+                        <?php $imgPath = URLROOT . '/uploads/' . ltrim($p->image_url, '/'); ?>
+                        <img src="<?php echo $imgPath; ?>" alt="<?php echo $p->name; ?>" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                    <?php else: ?>
+                        <i class="fa-solid fa-server text-4xl text-gray-600"></i>
+                    <?php endif; ?>
+                </div>
+                <h4 class="text-white font-bold text-base mb-1 truncate group-hover:text-cyan-400 transition-colors"><?php echo $p->name; ?></h4>
+                <p class="text-cyan-400 font-bold text-sm"><?php echo number_format($p->price, 0, ',', '.'); ?>đ/tháng</p>
+            </a>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <?php endif; ?>
+
 <?php require APPROOT . '/views/layouts/client/footer.php'; ?>

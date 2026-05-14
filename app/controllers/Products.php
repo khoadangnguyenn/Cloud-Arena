@@ -12,32 +12,37 @@ class Products extends Controller {
         $offset = ($page - 1) * $limit;
 
         $keyword = isset($_GET['search']) ? trim($_GET['search']) : '';
+        $categoryId = isset($_GET['category']) && $_GET['category'] !== '' ? (int)$_GET['category'] : null;
+        $minPrice = isset($_GET['min_price']) && $_GET['min_price'] !== '' ? (float)$_GET['min_price'] : null;
+        $maxPrice = isset($_GET['max_price']) && $_GET['max_price'] !== '' ? (float)$_GET['max_price'] : null;
+
         $isAjaxSearch = isset($_GET['ajax_search']) && $_GET['ajax_search'] == '1';
         $isAjaxPage = isset($_GET['ajax_page']) && $_GET['ajax_page'] == '1';
 
-        $products = $this->productModel->getProducts($limit, $offset, $keyword);
+        $products = $this->productModel->getProducts($limit, $offset, $keyword, false, $categoryId, $minPrice, $maxPrice);
         
-        // Nếu là yêu cầu Live Search (trả về JSON)
         if ($isAjaxSearch) {
             header('Content-Type: application/json');
             echo json_encode(['products' => $products]);
             exit;
         }
 
-        $totalProducts = $this->productModel->getTotalProducts($keyword);
+        $totalProducts = $this->productModel->getTotalProducts($keyword, false, $categoryId, $minPrice, $maxPrice);
         $totalPages = ceil($totalProducts / $limit);
+        $categories = $this->productModel->getCategories();
 
         $data = [
             'title' => 'Sản phẩm Game Server - Cloud Arena',
-            'description' => 'Danh sách các gói Game Server hiệu năng cao, tối ưu cho dự án của bạn tại Cloud Arena. Hỗ trợ nhiều cấu hình đa dạng.',
+            'description' => 'Danh sách các gói Game Server hiệu năng cao.',
             'products' => $products,
+            'categories' => $categories, 
             'keyword' => $keyword,
+            'categoryId' => $categoryId,
+            'minPrice' => $minPrice,
+            'maxPrice' => $maxPrice,
             'currentPage' => $page,
             'totalPages' => $totalPages
         ];
-
-        // Nếu là yêu cầu Pagination AJAX (Chỉ trả về view mà không kèm header/footer toàn trang nếu làm router cẩn thận, 
-        // ở đây để đơn giản ta load lại view nhưng JS bên frontend chỉ lấy đúng block cần thiết)
         if ($isAjaxPage) {
             $this->view('client/products/index', $data);
             exit;
@@ -53,10 +58,13 @@ class Products extends Controller {
             die('Sản phẩm không tồn tại!'); 
         }
 
+        $relatedProducts = $this->productModel->getRelatedProducts($product->category_id, $product->id, 4);
+
         $data = [
             'title' => $product->name . ' - Cloud Arena',
-            'description' => 'Thuê server ' . $product->name . ' cấu hình cao tại Cloud Arena.',
-            'product' => $product
+            'description' => 'Thuê server ' . $product->name . ' hiệu suất cao.',
+            'product' => $product,
+            'relatedProducts' => $relatedProducts 
         ];
         $this->view('client/products/show', $data);
     }
