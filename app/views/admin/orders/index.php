@@ -27,8 +27,8 @@
                                         <tr>
                                             <td class="font-weight-bold text-primary align-middle">#<?php echo $order->id; ?></td>
                                             <td class="align-middle text-left pl-4">
-                                                <strong><?php echo $order->username; ?></strong><br>
-                                                <small class="text-muted"><?php echo $order->email; ?></small>
+                                                <strong><?php echo htmlspecialchars($order->username); ?></strong><br>
+                                                <small class="text-muted"><?php echo htmlspecialchars($order->email); ?></small>
                                             </td>
                                             <td class="text-danger font-weight-bold align-middle"><?php echo number_format($order->total_amount, 0, ',', '.'); ?>đ</td>
                                             <td class="align-middle"><?php echo date('d/m/Y H:i', strtotime($order->created_at)); ?></td>
@@ -56,11 +56,12 @@
                                                 <ul class="d-flex justify-content-center align-items-center list-unstyled mb-0">
                                                     <li class="mr-3">
                                                         <form action="<?php echo URLROOT; ?>/admin/orders/updateStatus/<?php echo $order->id; ?>" method="POST" class="mb-0">
+                                                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($data['csrf_admin'] ?? '', ENT_QUOTES); ?>">
                                                             <select name="status" class="form-control form-control-sm shadow-none border-secondary" onchange="this.form.submit()" style="height: 30px; padding: 2px 10px; cursor: pointer; border-radius: 4px;">
-                                                                <option value="pending" <?php echo ($order->status == 'pending') ? 'selected' : ''; ?>>Pending</option>
-                                                                <option value="processing" <?php echo ($order->status == 'processing') ? 'selected' : ''; ?>>Processing</option>
-                                                                <option value="completed" <?php echo ($order->status == 'completed') ? 'selected' : ''; ?>>Completed</option>
-                                                                <option value="cancelled" <?php echo ($order->status == 'cancelled') ? 'selected' : ''; ?>>Cancelled</option>
+                                                                <option value="pending" <?php echo ($order->status == 'pending') ? 'selected' : ''; ?>>Chờ xử lý</option>
+                                                                <option value="processing" <?php echo ($order->status == 'processing') ? 'selected' : ''; ?>>Đang thiết lập</option>
+                                                                <option value="completed" <?php echo ($order->status == 'completed') ? 'selected' : ''; ?>>Hoàn tất</option>
+                                                                <option value="cancelled" <?php echo ($order->status == 'cancelled') ? 'selected' : ''; ?>>Đã hủy</option>
                                                             </select>
                                                         </form>
                                                     </li>

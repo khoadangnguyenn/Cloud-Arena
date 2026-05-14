@@ -241,8 +241,28 @@ class Users extends Controller {
 
     // GET /users/logout
     public function logout() {
+        // Clear session variables
+        $_SESSION = [];
+
+        // Destroy session cookie if present
+        if (ini_get("session.use_cookies")) {
+            $params = session_get_cookie_params();
+            setcookie(
+                session_name(),
+                '',
+                time() - 42000,
+                $params["path"],
+                $params["domain"],
+                $params["secure"],
+                $params["httponly"]
+            );
+        }
+
+        // Finally destroy the session
         session_destroy();
-        header('Location: ' . URLROOT . '/users/login');
+
+        // Redirect to homepage
+        header('Location: ' . URLROOT . '/');
         exit();
     }
 
@@ -407,5 +427,62 @@ class Users extends Controller {
             'success_message' => $successMessage
         ];
         $this->view('client/users/profile', $data);
+    }
+
+    // Default index to avoid missing method errors
+    public function index() {
+        header('Location: ' . URLROOT . '/users/login');
+        exit;
+    }
+
+    public function dashboard()
+    {
+        $this->requireAuth();
+        $orderModel = $this->model('Order');
+        $services = $orderModel->getUserServices((int) $_SESSION['user_id']);
+        $data = ['title' => 'Dashboard cá nhân', 'services' => $services];
+        $this->view('client/users/dashboard', $data);
+    }
+
+    /**
+     * Hiển thị danh sách đơn hàng của tôi
+     */
+    public function orders() {
+        $this->requireAuth();
+
+        $orderModel = $this->model('Order');
+        $orders = $orderModel->getOrdersByUserId((int) $_SESSION['user_id']);
+
+        $data = [
+            'title' => 'Đơn hàng của tôi',
+            'orders' => $orders
+        ];
+
+        $this->view('client/users/orders', $data);
+    }
+
+    /**
+     * Chi tiết và theo dõi trạng thái một đơn hàng cụ thể
+     */
+    public function order_detail($id) {
+        $this->requireAuth();
+
+        $orderModel = $this->model('Order');
+        $order = $orderModel->getOrderById($id);
+
+        // Bảo mật: Chỉ cho phép xem đơn hàng của chính mình
+        if (!$order || $order->user_id != $_SESSION['user_id']) {
+            die('Bạn không có quyền xem đơn hàng này!');
+        }
+
+        $items = $orderModel->getOrderItems($id);
+
+        $data = [
+            'title' => 'Theo dõi đơn hàng #' . $id,
+            'order' => $order,
+            'items' => $items
+        ];
+
+        $this->view('client/users/order_detail', $data);
     }
 }

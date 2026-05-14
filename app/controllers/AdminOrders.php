@@ -61,28 +61,85 @@ class AdminOrders extends Controller {
     //     }
     // }
     public function updateStatus($orderId) {
-        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            $status = filter_input(INPUT_POST, 'status', FILTER_SANITIZE_STRING);
-            
-            $valid_statuses = ['pending', 'processing', 'completed', 'cancelled'];
-            if (!in_array($status, $valid_statuses)) {
-                die('Trạng thái không hợp lệ.');
-            }
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            return;
+        }
 
-            // Nếu Admin duyệt đơn thành Completed -> Cấp phát Server
-            if ($status == 'completed') {
-                $currentOrder = $this->orderModel->getOrderById($orderId);
-                
-                if ($currentOrder && $currentOrder->status != 'completed') {
-                    $this->orderModel->provisionServices($orderId);
+        $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+
+        // Read input (support form-data POST or raw JSON body)
+        $raw = file_get_contents('php://input');
+        $inputData = [];
+        $contentType = '';
+        if (!empty($_SERVER['CONTENT_TYPE'])) {
+            $contentType = strtolower($_SERVER['CONTENT_TYPE']);
+        } elseif (!empty($_SERVER['HTTP_CONTENT_TYPE'])) {
+            $contentType = strtolower($_SERVER['HTTP_CONTENT_TYPE']);
+        }
+
+        if (stripos($contentType, 'application/json') !== false) {
+            $inputData = json_decode($raw, true) ?: [];
+        } else {
+            $inputData = $_POST;
+            if (empty($inputData) && $raw) {
+                $maybeJson = json_decode($raw, true);
+                if (is_array($maybeJson)) {
+                    $inputData = $maybeJson;
                 }
             }
+        }
 
-            if ($this->orderModel->updateOrderStatus($orderId, $status)) {
-                header('Location: ' . URLROOT . '/admin/orders');
-            } else {
-                die('Có lỗi xảy ra khi cập nhật trạng thái.');
+        // If CSRF token provided in JSON body, populate $_POST/$_SERVER so verifyCsrf can find it
+        if (!empty($inputData['csrf_token']) && empty($_POST['csrf_token'])) {
+            $_POST['csrf_token'] = $inputData['csrf_token'];
+        }
+        if (!empty($inputData['csrf_token']) && empty($_SERVER['HTTP_X_CSRF_TOKEN'])) {
+            $_SERVER['HTTP_X_CSRF_TOKEN'] = $inputData['csrf_token'];
+        }
+
+        // 1. Check CSRF
+        if (!$this->verifyCsrf('csrf_admin')) {
+            if ($isAjax) {
+                echo json_encode(['success' => false, 'message' => 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.']);
+                exit;
             }
+            die('Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+        }
+
+        $status = isset($inputData['status']) ? filter_var($inputData['status'], FILTER_SANITIZE_STRING) : filter_input(INPUT_POST, 'status', FILTER_SANITIZE_STRING);
+
+        $valid_statuses = ['pending', 'processing', 'completed', 'cancelled'];
+        if (!in_array($status, $valid_statuses, true)) {
+            if ($isAjax) {
+                echo json_encode(['success' => false, 'message' => 'Trạng thái không hợp lệ.']);
+                exit;
+            }
+            die('Trạng thái không hợp lệ.');
+        }
+
+        // 2. If admin marks completed -> provision services
+        if ($status === 'completed') {
+            $currentOrder = $this->orderModel->getOrderById($orderId);
+            if ($currentOrder && $currentOrder->status !== 'completed') {
+                $this->orderModel->provisionServices($orderId);
+            }
+        }
+
+        // 3. Update DB and respond
+        if ($this->orderModel->updateOrderStatus($orderId, $status)) {
+            if ($isAjax) {
+                echo json_encode(['success' => true, 'message' => 'Cập nhật trạng thái thành công!', 'new_status' => $status]);
+                exit;
+            }
+
+            header('Location: ' . URLROOT . '/admin/orders');
+            exit();
+        } else {
+            if ($isAjax) {
+                echo json_encode(['success' => false, 'message' => 'Lỗi cập nhật CSDL.']);
+                exit;
+            }
+            die('Có lỗi xảy ra khi cập nhật trạng thái.');
         }
     }
     public function show($id) {

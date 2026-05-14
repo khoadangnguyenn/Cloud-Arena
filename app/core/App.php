@@ -34,24 +34,77 @@ class App {
         require_once '../app/controllers/' . $this->currentController . '.php';
         $this->currentController = new $this->currentController;
 
-        // After re-indexing, the method is now at $url[0]
-        if (isset($url[0])) {
-            if (method_exists($this->currentController, $url[0])) {
-                $this->currentMethod = $url[0];
+        // After re-indexing, decide which method to call with safe fallbacks
+        if (isset($url[0]) && $url[0] !== '') {
+            $candidate = $url[0];
+
+            if (method_exists($this->currentController, $candidate)) {
+                // URL explicitly names an existing method
+                $this->currentMethod = $candidate;
                 unset($url[0]);
+                $url = array_values($url);
+            } elseif (is_numeric($candidate) && method_exists($this->currentController, 'show')) {
+                // URL like /users/123 -> map to show(123)
+                $this->currentMethod = 'show';
+                // keep params as-is so show receives the id
+            } else {
+                // No such method; try sensible fallbacks
+                if (isset($_SERVER['REQUEST_METHOD']) && strtoupper($_SERVER['REQUEST_METHOD']) === 'POST' && method_exists($this->currentController, 'update')) {
+                    $this->currentMethod = 'update';
+                } elseif (method_exists($this->currentController, 'index')) {
+                    $this->currentMethod = 'index';
+                } else {
+                    // Try other common names
+                    $fallbacks = ['show', 'view', 'list', 'all'];
+                    $found = false;
+                    foreach ($fallbacks as $fb) {
+                        if (method_exists($this->currentController, $fb)) {
+                            $this->currentMethod = $fb;
+                            $found = true;
+                            break;
+                        }
+                    }
+                    if (!$found) {
+                        header($_SERVER['SERVER_PROTOCOL'] . ' 404 Not Found', true, 404);
+                        echo '404 Not Found - Method not available on controller: ' . htmlspecialchars($candidate);
+                        exit;
+                    }
+                }
             }
         } else {
-            // If no method segment provided and this is a POST request,
-            // prefer calling `update` when available so POSTs to
-            // controller base routes (e.g., /admin/about) reach update().
-            if (isset($_SERVER['REQUEST_METHOD']) && strtoupper($_SERVER['REQUEST_METHOD']) === 'POST') {
-                if (method_exists($this->currentController, 'update')) {
-                    $this->currentMethod = 'update';
+            // No method segment provided
+            if (isset($_SERVER['REQUEST_METHOD']) && strtoupper($_SERVER['REQUEST_METHOD']) === 'POST' && method_exists($this->currentController, 'update')) {
+                $this->currentMethod = 'update';
+            } elseif (!method_exists($this->currentController, $this->currentMethod)) {
+                if (method_exists($this->currentController, 'index')) {
+                    $this->currentMethod = 'index';
+                } else {
+                    $fallbacks = ['show', 'view', 'list', 'all'];
+                    $found = false;
+                    foreach ($fallbacks as $fb) {
+                        if (method_exists($this->currentController, $fb)) {
+                            $this->currentMethod = $fb;
+                            $found = true;
+                            break;
+                        }
+                    }
+                    if (!$found) {
+                        header($_SERVER['SERVER_PROTOCOL'] . ' 404 Not Found', true, 404);
+                        echo '404 Not Found - No default method available on controller: ' . htmlspecialchars($this->currentController);
+                        exit;
+                    }
                 }
             }
         }
 
         $this->params = $url ? array_values($url) : [];
+
+        if (!method_exists($this->currentController, $this->currentMethod)) {
+            header($_SERVER['SERVER_PROTOCOL'] . ' 404 Not Found', true, 404);
+            echo '404 Not Found - Controller method missing: ' . htmlspecialchars($this->currentMethod);
+            exit;
+        }
+
         call_user_func_array([$this->currentController, $this->currentMethod], $this->params);
     }
 
