@@ -1,10 +1,27 @@
+<?php
+$publicSettings = $data['public_settings'] ?? [];
+$siteLogoImageFile = basename((string) ($publicSettings['site_logo_image'] ?? ''));
+$adminBrandLogoUrl = $siteLogoImageFile !== ''
+    ? URLROOT . '/uploads/branding/' . rawurlencode($siteLogoImageFile)
+    : URLROOT . '/admin_assets/images/icon/logo-v2.png';
+$adminBrandLogoAlt = trim((string) ($publicSettings['site_logo_text'] ?? ''));
+if ($adminBrandLogoAlt === '') {
+    $adminBrandLogoAlt = SITENAME;
+}
+$defaultFavicon = URLROOT . '/admin_assets/images/icon/logo-v2.png';
+$faviconExt = strtolower((string) pathinfo($siteLogoImageFile, PATHINFO_EXTENSION));
+$useBrandingFavicon = $siteLogoImageFile !== '' && in_array($faviconExt, ['png', 'ico', 'gif', 'webp', 'jpg', 'jpeg'], true);
+$adminFaviconHref = $useBrandingFavicon ? URLROOT . '/uploads/branding/' . rawurlencode($siteLogoImageFile) : $defaultFavicon;
+$faviconMimeTypes = ['png' => 'image/png', 'ico' => 'image/x-icon', 'gif' => 'image/gif', 'webp' => 'image/webp', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg'];
+$adminFaviconMime = $useBrandingFavicon ? ($faviconMimeTypes[$faviconExt] ?? 'image/png') : 'image/png';
+?>
 <!doctype html>
 <html lang="vi">
 <head>
     <meta charset="utf-8">
     <title><?php echo isset($data['title']) ? htmlspecialchars($data['title']) . ' - ' . SITENAME : 'Quản trị - ' . SITENAME; ?></title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="icon" type="image/png" href="<?php echo URLROOT; ?>/admin_assets/images/icon/logo-v2.png">
+    <link rel="icon" type="<?php echo htmlspecialchars($adminFaviconMime, ENT_QUOTES, 'UTF-8'); ?>" href="<?php echo htmlspecialchars($adminFaviconHref, ENT_QUOTES, 'UTF-8'); ?>">
     <link rel="stylesheet" href="<?php echo URLROOT; ?>/admin_assets/css/bootstrap.min.css">
     <link rel="stylesheet" href="<?php echo URLROOT; ?>/admin_assets/css/fontawesome.min.css">
     <link rel="stylesheet" href="<?php echo URLROOT; ?>/admin_assets/css/themify-icons.css">
@@ -22,13 +39,19 @@
     $settingsNav = '';
     if ($currentUrl === 'admin' || strpos($currentUrl, 'admin/index') === 0) {
         $activeSection = 'dashboard';
-    } elseif (strpos($currentUrl, 'adminproducts') === 0 || strpos($currentUrl, 'admin/services') === 0) {
+    } elseif (strpos($currentUrl, 'admin/products') === 0 || strpos($currentUrl, 'admin/services') === 0) {
         $activeSection = 'services';
-    } elseif (strpos($currentUrl, 'admincontacts') === 0 || strpos($currentUrl, 'admin/tickets') === 0) {
+    } elseif (strpos($currentUrl, 'admin/contacts') === 0 || strpos($currentUrl, 'admin/tickets') === 0) {
         $activeSection = 'tickets';
-    } elseif (strpos($currentUrl, 'adminnews') === 0 || strpos($currentUrl, 'admin/news') === 0) {
+    } elseif (strpos($currentUrl, 'admin/ads') === 0) {
+        $activeSection = 'ads';
+    } elseif (strpos($currentUrl, 'admin/posts') === 0) {
         $activeSection = 'news';
-    } elseif (strpos($currentUrl, 'admin/users') === 0 || strpos($currentUrl, 'admin/editUser') === 0) {
+    } elseif (strpos($currentUrl, 'admin/about') === 0) {
+        $activeSection = 'about';
+    } elseif (strpos($currentUrl, 'admin/faqs') === 0) {
+        $activeSection = 'faqs';
+    } elseif (strpos($currentUrl, 'admin/users') === 0) {
         $activeSection = 'users';
     } elseif (strpos($currentUrl, 'admin/settings') === 0) {
         $activeSection = 'settings';
@@ -62,7 +85,7 @@
         <aside class="admin-sidebar" id="adminSidebar" aria-label="Thanh điều hướng quản trị">
             <div class="admin-brand">
                 <a href="<?php echo URLROOT; ?>/admin" class="d-flex align-items-center gap-2 text-decoration-none">
-                    <img src="<?php echo URLROOT; ?>/admin_assets/images/icon/logo-v2.png" alt="Cloud Arena logo" style="max-width:40px;">
+                    <img src="<?php echo htmlspecialchars($adminBrandLogoUrl, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($adminBrandLogoAlt, ENT_QUOTES, 'UTF-8'); ?>" class="admin-brand-logo" style="max-width:40px;max-height:40px;object-fit:contain;">
                         <div>
                             <div class="admin-brand-title">Admin Zone</div>
                             
@@ -77,16 +100,28 @@
                 </a>
 
                 <div class="admin-nav-heading">Quản lý</div>
-                <a class="admin-nav-link <?php echo $activeSection === 'services' ? 'active' : ''; ?>" href="<?php echo URLROOT; ?>/adminproducts">
+                <a class="admin-nav-link <?php echo $activeSection === 'services' ? 'active' : ''; ?>" href="<?php echo URLROOT; ?>/admin/products">
                     <i class="ti-package"></i>
                     <span class="admin-link-text">Dịch vụ</span>
                 </a>
-                <a class="admin-nav-link <?php echo $activeSection === 'tickets' ? 'active' : ''; ?>" href="<?php echo URLROOT; ?>/admincontacts">
+                <a class="admin-nav-link <?php echo $activeSection === 'tickets' ? 'active' : ''; ?>" href="<?php echo URLROOT; ?>/admin/contacts">
                     <i class="ti-email"></i>
                     <span class="admin-link-text">Liên hệ</span>
                     <span class="admin-nav-badge"><?php echo $ticketBadge; ?></span>
                 </a>
-                <a class="admin-nav-link <?php echo $activeSection === 'news' ? 'active' : ''; ?>" href="<?php echo URLROOT; ?>/adminnews">
+                <a class="admin-nav-link <?php echo $activeSection === 'ads' ? 'active' : ''; ?>" href="<?php echo URLROOT; ?>/admin/ads">
+                    <i class="ti-announcement"></i>
+                    <span class="admin-link-text">Quảng cáo</span>
+                </a>
+                <a class="admin-nav-link <?php echo $activeSection === 'about' ? 'active' : ''; ?>" href="<?php echo URLROOT; ?>/admin/about">
+                    <i class="ti-info-alt"></i>
+                    <span class="admin-link-text">Giới thiệu</span>
+                </a>
+                <a class="admin-nav-link <?php echo $activeSection === 'faqs' ? 'active' : ''; ?>" href="<?php echo URLROOT; ?>/admin/faqs">
+                    <i class="ti-help"></i>
+                    <span class="admin-link-text">FAQ</span>
+                </a>
+                <a class="admin-nav-link <?php echo $activeSection === 'news' ? 'active' : ''; ?>" href="<?php echo URLROOT; ?>/admin/posts">
                     <i class="ti-file"></i>
                     <span class="admin-link-text">Tin tức</span>
                     <span class="admin-nav-badge admin-nav-badge-soft"><?php echo $newsBadge; ?></span>

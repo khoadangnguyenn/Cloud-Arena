@@ -18,6 +18,9 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// Load Helpers
+require_once 'helpers/session_helper.php';
+
 // Autoload Core Libraries
 spl_autoload_register(function($className){
     require_once 'core/' . $className . '.php';

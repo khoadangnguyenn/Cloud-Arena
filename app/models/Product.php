@@ -1,6 +1,7 @@
 <?php
 class Product {
     private $db;
+
     public function __construct() {
         $this->db = new Database;
     }
@@ -34,7 +35,7 @@ class Product {
 
     public function countActiveServices() {
         try {
-            $this->db->query("SELECT COUNT(*) AS total FROM user_services WHERE status = 'active'");
+            $this->db->query("SELECT COUNT(*) as total FROM user_services WHERE status = 'active'");
             $row = $this->db->single();
             return $row ? (int) $row->total : 0;
         } catch (Throwable $error) {
@@ -42,6 +43,123 @@ class Product {
         }
     }
 
+    public function getProducts($limit, $offset, $keyword = '') {
+        $sql = "SELECT p.*, c.name as category_name 
+                FROM products p 
+                LEFT JOIN categories c ON p.category_id = c.id 
+                WHERE p.status = 'active'";
+        
+        if (!empty($keyword)) {
+            $sql .= " AND p.name LIKE :keyword";
+        }
+        
+        $sql .= " ORDER BY p.created_at DESC LIMIT :limit OFFSET :offset";
+
+        $this->db->query($sql);
+        
+        if (!empty($keyword)) {
+            $this->db->bind(':keyword', '%' . $keyword . '%');
+        }
+        
+        $this->db->bind(':limit', $limit, PDO::PARAM_INT);
+        $this->db->bind(':offset', $offset, PDO::PARAM_INT);
+
+        return $this->db->resultSet();
+    }
+
+    public function getTotalProducts($keyword = '') {
+        $sql = "SELECT COUNT(*) as total FROM products WHERE status = 'active'";
+        
+        if (!empty($keyword)) {
+            $sql .= " AND name LIKE :keyword";
+        }
+
+        $this->db->query($sql);
+        
+        if (!empty($keyword)) {
+            $this->db->bind(':keyword', '%' . $keyword . '%');
+        }
+
+        $row = $this->db->single();
+        return $row->total;
+    }
+
+    public function getProductById($id) {
+        $this->db->query("SELECT p.*, c.name as category_name 
+                          FROM products p 
+                          LEFT JOIN categories c ON p.category_id = c.id 
+                          WHERE p.id = :id");
+        $this->db->bind(':id', $id);
+        return $this->db->single();
+    }
+    
+    public function getCategories() {
+        $this->db->query("SELECT * FROM categories");
+        return $this->db->resultSet();
+    }
+
+    public function addProduct($data) {
+        $this->db->query("INSERT INTO products (category_id, name, slug, description, price, ram_mb, cpu_cores, disk_gb, image_url, status) 
+                          VALUES (:category_id, :name, :slug, :description, :price, :ram_mb, :cpu_cores, :disk_gb, :image_url, :status)");
+        
+        $this->db->bind(':category_id', $data['category_id']);
+        $this->db->bind(':name', $data['name']);
+        $this->db->bind(':slug', $data['slug']);
+        $this->db->bind(':description', $data['description']);
+        $this->db->bind(':price', $data['price']);
+        $this->db->bind(':ram_mb', $data['ram_mb']);
+        $this->db->bind(':cpu_cores', $data['cpu_cores']);
+        $this->db->bind(':disk_gb', $data['disk_gb']);
+        $this->db->bind(':image_url', $data['image_url']);
+        $this->db->bind(':status', $data['status']);
+
+        return $this->db->execute();
+    }
+
+    public function updateProduct($data) {
+        $this->db->query("UPDATE products 
+                          SET category_id = :category_id, name = :name, slug = :slug, description = :description, 
+                              price = :price, ram_mb = :ram_mb, cpu_cores = :cpu_cores, disk_gb = :disk_gb, 
+                              image_url = :image_url, status = :status 
+                          WHERE id = :id");
+        
+        $this->db->bind(':id', $data['id']);
+        $this->db->bind(':category_id', $data['category_id']);
+        $this->db->bind(':name', $data['name']);
+        $this->db->bind(':slug', $data['slug']);
+        $this->db->bind(':description', $data['description']);
+        $this->db->bind(':price', $data['price']);
+        $this->db->bind(':ram_mb', $data['ram_mb']);
+        $this->db->bind(':cpu_cores', $data['cpu_cores']);
+        $this->db->bind(':disk_gb', $data['disk_gb']);
+        $this->db->bind(':image_url', $data['image_url']);
+        $this->db->bind(':status', $data['status']);
+
+        return $this->db->execute();
+    }
+
+    public function deleteProduct($id) {
+        $this->db->query("DELETE FROM products WHERE id = :id");
+        $this->db->bind(':id', $id);
+        return $this->db->execute();
+    }
+
+    public function deletePackage($id) {
+        return $this->deleteProduct($id);
+    }
+
+    public function getProductBySlug($slug) {
+        $this->db->query("SELECT p.*, c.name as category_name 
+                          FROM products p 
+                          LEFT JOIN categories c ON p.category_id = c.id 
+                          WHERE p.slug = :slug AND p.status = 'active'");
+        $this->db->bind(':slug', $slug);
+        return $this->db->single();
+    }
+
+    /**
+     * Danh sách gọn cho admin (mọi trạng thái), phân trang — tương thích bản Product “gói”.
+     */
     public function getAdminPackages($page = 1, $perPage = 6) {
         $offset = max(0, ((int) $page - 1) * (int) $perPage);
         $this->db->query(
@@ -61,6 +179,9 @@ class Product {
         return $row ? (int) $row->total : 0;
     }
 
+    /**
+     * Tạo gói nhanh với slug tự sinh (không trùng addProduct — form admin đầy đủ vẫn dùng addProduct).
+     */
     public function createPackage($data) {
         $name = trim($data['name'] ?? '');
         if ($name === '') {
@@ -93,67 +214,58 @@ class Product {
         return $this->db->execute();
     }
 
-    public function getHomepagePackages($limit = 4) {
-        $safeLimit = max(1, min(4, (int) $limit));
-
-        $this->db->query(
-            'SELECT id, name, slug, description, price, ram_mb, cpu_cores, disk_gb
-             FROM products
-             WHERE status = :status
-             ORDER BY created_at DESC, id DESC
-             LIMIT :limit'
-        );
-        $this->db->bind(':status', 'active');
-        $this->db->bind(':limit', $safeLimit);
-
+    /**
+     * @param int $limit
+     * @param string $sort 'recent' (mặc định) hoặc 'name' — Admin gọi không tham số vẫn giữ hành vi cũ.
+     */
+    public function getProductPickerList($limit = 200, $sort = 'recent') {
+        $limit = max(1, min(500, (int) $limit));
+        $orderBy = ($sort === 'name') ? 'name ASC' : 'created_at DESC';
+        $sql = "SELECT id, name, slug FROM products WHERE status = 'active' ORDER BY $orderBy LIMIT :limit";
+        $this->db->query($sql);
+        $this->db->bind(':limit', $limit, PDO::PARAM_INT);
         return $this->db->resultSet();
     }
 
-    /**
-     * @param int[] $ids
-     * @return object[]
-     */
     public function getActiveProductsByIdsOrdered(array $ids) {
-        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), function ($id) {
-            return $id > 0;
+        $safeIds = array_values(array_unique(array_filter(array_map('intval', $ids), function ($id) {
+            return (int) $id > 0;
         })));
-        if (empty($ids)) {
+        if (empty($safeIds)) {
             return [];
         }
-        $ids = array_slice($ids, 0, 4);
 
         $placeholders = [];
-        foreach ($ids as $i => $id) {
-            $placeholders[] = ':id' . $i;
+        foreach ($safeIds as $i => $id) {
+            $placeholders[] = ':hpid' . $i;
         }
-        $inSql = implode(',', $placeholders);
-        $orderSql = 'FIELD(id,' . implode(',', array_map('intval', $ids)) . ')';
+        $inList = implode(',', $placeholders);
+        $fieldOrder = implode(',', $safeIds);
 
-        $this->db->query(
-            "SELECT id, name, slug, description, price, ram_mb, cpu_cores, disk_gb
-             FROM products
-             WHERE status = :status AND id IN ($inSql)
-             ORDER BY $orderSql"
-        );
-        $this->db->bind(':status', 'active');
-        foreach ($ids as $i => $id) {
-            $this->db->bind(':id' . $i, $id);
+        $sql = "SELECT p.*, c.name AS category_name
+                FROM products p
+                LEFT JOIN categories c ON p.category_id = c.id
+                WHERE p.status = 'active' AND p.id IN ($inList)
+                ORDER BY FIELD(p.id, $fieldOrder)";
+
+        $this->db->query($sql);
+        foreach ($safeIds as $i => $id) {
+            $this->db->bind(':hpid' . $i, $id, PDO::PARAM_INT);
         }
 
         return $this->db->resultSet();
     }
 
-    public function getProductPickerList() {
-        $this->db->query(
-            'SELECT id, name FROM products WHERE status = :status ORDER BY name ASC'
-        );
-        $this->db->bind(':status', 'active');
+    public function getHomepagePackages($limit = 4) {
+        $limit = max(1, min(50, (int) $limit));
+        $sql = "SELECT p.*, c.name AS category_name
+                FROM products p
+                LEFT JOIN categories c ON p.category_id = c.id
+                WHERE p.status = 'active'
+                ORDER BY p.created_at DESC
+                LIMIT :limit";
+        $this->db->query($sql);
+        $this->db->bind(':limit', $limit, PDO::PARAM_INT);
         return $this->db->resultSet();
-    }
-
-    public function deletePackage($id) {
-        $this->db->query('DELETE FROM products WHERE id = :id');
-        $this->db->bind(':id', (int) $id);
-        return $this->db->execute();
     }
 }

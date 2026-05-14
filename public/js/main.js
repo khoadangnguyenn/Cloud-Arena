@@ -204,7 +204,8 @@ function initCloudArenaUi() {
             var targetUrl = type === 'news' ? '/news' : '/products';
 
             if (keyword !== '') {
-                targetUrl += '?keyword=' + encodeURIComponent(keyword);
+                // Use 'search' param to match server controllers (Products/Posts expect 'search')
+                targetUrl += '?search=' + encodeURIComponent(keyword);
             }
 
             window.location.href = window.URLROOT ? (window.URLROOT + targetUrl) : targetUrl;
@@ -284,6 +285,7 @@ function initCloudArenaUi() {
                 openMenu.style.maxWidth = '';
                 openMenu.style.margin = '';
                 openMenu.style.zIndex = '';
+                openMenu.style.visibility = '';
                 if (ownerWrap && openMenu.parentNode === document.body) {
                     ownerWrap.appendChild(openMenu);
                 }
@@ -368,12 +370,15 @@ function initCloudArenaUi() {
                 closeCustomSelectMenus();
                 if (!isOpen) {
                     document.body.appendChild(menu);
-                    menu.classList.add('show');
                     menu.classList.add('menu-floating');
+                    menu.style.visibility = 'hidden';
+                    menu.classList.add('show');
                     window.requestAnimationFrame(function() {
-                        window.requestAnimationFrame(function() {
+                        try {
                             positionCustomSelectMenu(toggle, menu);
-                        });
+                        } finally {
+                            menu.style.visibility = '';
+                        }
                     });
                     toggle.setAttribute('aria-expanded', 'true');
                 } else {
@@ -1357,6 +1362,7 @@ function initCloudArenaUi() {
                     menu.classList.remove('menu-floating');
                     menu.style.left = '';
                     menu.style.top = '';
+                    menu.style.visibility = '';
                     var toggle = menu.parentElement ? menu.parentElement.querySelector('.user-actions-toggle') : null;
                     if (toggle) {
                         toggle.setAttribute('aria-expanded', 'false');
@@ -1384,8 +1390,13 @@ function initCloudArenaUi() {
                     if (!isOpen) {
                         menu.classList.add('show');
                         menu.classList.add('menu-floating');
+                        menu.style.visibility = 'hidden';
                         toggle.setAttribute('aria-expanded', 'true');
-                        positionMenu(toggle, menu);
+                        try {
+                            positionMenu(toggle, menu);
+                        } finally {
+                            menu.style.visibility = '';
+                        }
                     } else {
                         toggle.setAttribute('aria-expanded', 'false');
                     }
@@ -1662,6 +1673,7 @@ function initCloudArenaUi() {
                 openMenu.style.maxWidth = '';
                 openMenu.style.margin = '';
                 openMenu.style.zIndex = '';
+                openMenu.style.visibility = '';
                 if (ownerWrap && openMenu.parentNode === document.body) {
                     ownerWrap.appendChild(openMenu);
                 }

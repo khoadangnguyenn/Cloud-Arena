@@ -141,7 +141,7 @@ class Controller {
     }
 
     public function view($view, $data = []) {
-        if (!isset($data['public_settings']) && strpos($view, 'client/') === 0) {
+        if (!isset($data['public_settings']) && (strpos($view, 'client/') === 0 || strpos($view, 'admin/') === 0)) {
             $data['public_settings'] = $this->getPublicSettings();
         }
         if (!isset($data['csrf_admin']) && strpos($view, 'admin/') === 0) {

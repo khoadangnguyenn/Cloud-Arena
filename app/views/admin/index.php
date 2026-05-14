@@ -111,7 +111,7 @@ if ($previousRevenue > 0) {
                     <?php echo $revenueBadgeText; ?>
                 </span>
             </div>
-            <p class="stat-note">Doanh thu đơn hàng hoàn tất trong tháng hiện tại.</p>
+            <p class="stat-note">Doanh thu trong tháng hiện tại.</p>
         </article>
     </div>
     <div class="col-sm-6 col-xl-3">
