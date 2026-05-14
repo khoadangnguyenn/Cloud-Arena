@@ -96,16 +96,23 @@
         <?php endif; ?>
     </div>
 
-    <?php if(isset($data['totalPages']) && $data['totalPages'] > 1): ?>
-    <div class="mt-20 flex justify-center items-center gap-4">
-        <?php for($i=1; $i<=$data['totalPages']; $i++): ?>
-            <a href="?page=<?= $i ?>&search=<?= $data['keyword'] ?>" 
-               class="w-12 h-12 flex items-center justify-center rounded-xl border <?= $data['currentPage'] == $i ? 'bg-cyan-500 border-cyan-500 text-black font-bold focus:ring-2 focus:ring-cyan-500/50' : 'bg-gray-900 border-gray-800 text-gray-400 hover:border-cyan-500 transition-colors' ?> pagination-link" data-page="<?= $i ?>">
-                <?= $i ?>
+    <?php if (isset($data['totalPages']) && $data['totalPages'] > 1): ?>
+    <div class="flex justify-center items-center gap-2 mt-12">
+        <?php for ($i = 1; $i <= $data['totalPages']; $i++): ?>
+            <?php 
+                $queryParams = $_GET;
+                $queryParams['page'] = $i;
+                $queryString = http_build_query($queryParams);
+                
+                $isActive = ($data['currentPage'] == $i);
+            ?>
+            <a href="<?php echo URLROOT; ?>/products?<?php echo $queryString; ?>" 
+               class="w-10 h-10 flex items-center justify-center rounded-xl font-bold transition-all duration-300 <?php echo $isActive ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/30' : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700 hover:text-white'; ?>">
+                <?php echo $i; ?>
             </a>
         <?php endfor; ?>
     </div>
-    <?php endif; ?>
+<?php endif; ?>
 </div>
 
 <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
