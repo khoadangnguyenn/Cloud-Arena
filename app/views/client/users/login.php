@@ -34,11 +34,13 @@
             </div>
 
             <div class="flex items-center justify-between">
-                <div class="flex items-center">
-                    <input id="remember-me" name="remember-me" type="checkbox" class="h-4 w-4 text-cyan-500 focus:ring-cyan-500 border-gray-700 rounded bg-gray-800">
-                    <label for="remember-me" class="ml-2 block text-sm text-gray-400">
-                        Ghi nhớ đăng nhập
+                <div class="flex items-center justify-between mt-4 mb-6">
+                    <label class="flex items-center gap-2 cursor-pointer group">
+                        <input type="checkbox" name="remember_me" class="w-4 h-4 rounded border-gray-700 bg-gray-900 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-gray-950 transition-colors">
+                        <span class="text-sm text-gray-400 font-medium group-hover:text-white transition-colors">Ghi nhớ đăng nhập</span>
                     </label>
+                    
+                    <a href="<?php echo URLROOT; ?>/users/forgot" class="text-sm text-cyan-500 hover:text-cyan-400 font-bold transition-colors">Quên mật khẩu?</a>
                 </div>
                 <div class="text-sm">
                     <a href="#" class="font-medium text-cyan-400 hover:text-cyan-300">Quên mật khẩu?</a>

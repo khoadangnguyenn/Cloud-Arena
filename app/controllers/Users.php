@@ -38,8 +38,13 @@ class Users extends Controller
                 if (!empty($user->avatar)) {
                     $_SESSION['user_avatar'] = $user->avatar;
                 }
-                // Store credit in session for quick display in navbar
                 $_SESSION['user_credit'] = isset($user->credit) ? (int)$user->credit : 0;
+
+                if (isset($_POST['remember_me'])) {
+                    $token = $user->id . '|' . md5($user->username . $user->password . 'CloudArenaSecret');
+                    
+                    setcookie('cloud_arena_remember', $token, time() + (86400 * 30), '/');
+                }
                 header('Location: ' . URLROOT . '/pages/index');
                 exit;
             } else {
@@ -77,6 +82,9 @@ class Users extends Controller
             );
         }
         session_destroy();
+        if (isset($_COOKIE['cloud_arena_remember'])) {
+            setcookie('cloud_arena_remember', '', time() - 3600, '/');
+        }
         header('Location: ' . URLROOT . '/');
         exit;
     }
