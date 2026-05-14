@@ -185,4 +185,57 @@ class Product {
         
         return $this->db->resultSet();
     }
+    // Lấy tất cả đánh giá của 1 sản phẩm (Chỉ lấy những đánh giá có trạng thái active/đã duyệt)
+    public function getReviews($product_id) {
+        $this->db->query("
+            SELECT r.*, u.full_name, u.username, u.avatar 
+            FROM reviews r 
+            JOIN users u ON r.user_id = u.id 
+            WHERE r.product_id = :product_id 
+              AND r.status = 'approved' -- Đổi từ 'active' thành 'approved' ở đây
+            ORDER BY r.created_at DESC
+        ");
+        $this->db->bind(':product_id', $product_id);
+        return $this->db->resultSet();
+    }
+
+    // Kiểm tra xem user này đã mua sản phẩm và đơn hàng đã hoàn tất chưa
+    public function canReview($user_id, $product_id) {
+        $this->db->query("
+            SELECT COUNT(*) as count 
+            FROM order_items oi 
+            JOIN orders o ON oi.order_id = o.id 
+            WHERE o.user_id = :user_id 
+              AND oi.product_id = :product_id 
+              AND o.status = 'completed'
+        ");
+        $this->db->bind(':user_id', $user_id);
+        $this->db->bind(':product_id', $product_id);
+        $row = $this->db->single();
+        return $row->count > 0;
+    }
+
+    // Kiểm tra xem user này đã từng đánh giá sản phẩm này chưa (Tránh spam)
+    public function hasReviewed($user_id, $product_id) {
+        $this->db->query("SELECT COUNT(*) as count FROM reviews WHERE user_id = :user_id AND product_id = :product_id");
+        $this->db->bind(':user_id', $user_id);
+        $this->db->bind(':product_id', $product_id);
+        $row = $this->db->single();
+        return $row->count > 0;
+    }
+
+    // Lưu đánh giá mới vào DB (Khớp với các cột của bạn)
+    public function addReview($user_id, $product_id, $rating, $comment) {
+        // Tạm thời set mặc định status là 'active' để review hiện lên luôn. 
+        // Nếu bạn muốn Admin duyệt trước khi hiện, hãy đổi chữ 'active' thành 'pending'.
+        $this->db->query("
+            INSERT INTO reviews (user_id, product_id, rating, comment, status) 
+            VALUES (:user_id, :product_id, :rating, :comment, 'active')
+        ");
+        $this->db->bind(':user_id', $user_id);
+        $this->db->bind(':product_id', $product_id);
+        $this->db->bind(':rating', $rating);
+        $this->db->bind(':comment', $comment);
+        return $this->db->execute();
+    }
 }

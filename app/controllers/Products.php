@@ -60,13 +60,58 @@ class Products extends Controller {
 
         $relatedProducts = $this->productModel->getRelatedProducts($product->category_id, $product->id, 4);
 
+        // --- LOGIC REVIEW ---
+        $reviews = $this->productModel->getReviews($product->id);
+        $canReview = false;
+        $hasReviewed = false;
+
+        // Nếu đã đăng nhập, kiểm tra xem có quyền đánh giá không
+        if (isset($_SESSION['user_id'])) {
+            $canReview = $this->productModel->canReview($_SESSION['user_id'], $product->id);
+            $hasReviewed = $this->productModel->hasReviewed($_SESSION['user_id'], $product->id);
+        }
+
+        // Tính trung bình sao
+        $avgRating = 0;
+        if (count($reviews) > 0) {
+            $totalStars = 0;
+            foreach ($reviews as $r) { $totalStars += $r->rating; }
+            $avgRating = round($totalStars / count($reviews), 1);
+        }
+
         $data = [
             'title' => $product->name . ' - Cloud Arena',
             'description' => 'Thuê server ' . $product->name . ' hiệu suất cao.',
             'product' => $product,
-            'relatedProducts' => $relatedProducts 
+            'relatedProducts' => $relatedProducts,
+            'reviews' => $reviews,
+            'canReview' => $canReview,
+            'hasReviewed' => $hasReviewed,
+            'avgRating' => $avgRating
         ];
         $this->view('client/products/show', $data);
     }
+
+    // Hàm nhận dữ liệu từ Form đánh giá
+    public function submitReview() {
+        if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SESSION['user_id'])) {
+            $product_id = $_POST['product_id'];
+            $slug = $_POST['slug'];
+            $rating = (int)$_POST['rating'];
+            $comment = trim($_POST['comment']);
+
+            // Validate và lưu DB
+            if ($rating >= 1 && $rating <= 5 && !empty($comment)) {
+                if ($this->productModel->canReview($_SESSION['user_id'], $product_id) && !$this->productModel->hasReviewed($_SESSION['user_id'], $product_id)) {
+                    $this->productModel->addReview($_SESSION['user_id'], $product_id, $rating, $comment);
+                }
+            }
+            
+            // Trở lại trang chi tiết sản phẩm
+            header('Location: ' . URLROOT . '/products/show/' . $slug);
+            exit();
+        }
+    }
+
         
 }

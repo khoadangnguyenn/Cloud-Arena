@@ -64,6 +64,111 @@
     </div>
   </div>
 </div>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 mb-12">
+    <div class="border-t border-gray-800 pt-16">
+        <div class="flex items-center justify-between mb-8">
+            <h3 class="text-2xl font-bold text-white flex items-center gap-3">
+                <i class="fa-solid fa-star text-yellow-500"></i> Đánh giá khách hàng
+            </h3>
+            <?php if(count($data['reviews']) > 0): ?>
+                <div class="bg-gray-900 border border-gray-800 px-4 py-2 rounded-xl flex items-center gap-2">
+                    <span class="text-2xl font-black text-white"><?php echo $data['avgRating']; ?></span>
+                    <i class="fa-solid fa-star text-yellow-500"></i>
+                    <span class="text-gray-500 text-sm">(<?php echo count($data['reviews']); ?> đánh giá)</span>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2 space-y-4">
+                <?php if (empty($data['reviews'])): ?>
+                    <div class="bg-gray-900/50 border border-gray-800 rounded-2xl p-8 text-center">
+                        <i class="fa-regular fa-comments text-4xl text-gray-600 mb-3"></i>
+                        <p class="text-gray-400">Chưa có đánh giá nào cho Server này.</p>
+                    </div>
+                <?php else: ?>
+                    <?php foreach($data['reviews'] as $rev): ?>
+                        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 flex gap-4">
+                            <div class="flex-shrink-0">
+                                <?php if(!empty($rev->avatar)): ?>
+                                    <img src="<?php echo URLROOT . '/uploads/' . ltrim($rev->avatar, '/'); ?>" class="w-12 h-12 rounded-full object-cover border border-gray-700">
+                                <?php else: ?>
+                                    <div class="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center text-gray-400">
+                                        <i class="fa-solid fa-user"></i>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex items-center justify-between mb-1">
+                                    <h4 class="text-white font-bold"><?php echo $rev->full_name ?: $rev->username; ?></h4>
+                                    <span class="text-xs text-gray-500"><?php echo date('d/m/Y', strtotime($rev->created_at)); ?></span>
+                                </div>
+                                <div class="text-yellow-500 text-xs mb-3">
+                                    <?php for($i=1; $i<=5; $i++): ?>
+                                        <i class="fa-<?php echo $i <= $rev->rating ? 'solid' : 'regular'; ?> fa-star"></i>
+                                    <?php endfor; ?>
+                                </div>
+                                <p class="text-gray-300 text-sm leading-relaxed"><?php echo nl2br(htmlspecialchars($rev->comment)); ?></p>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+
+            <div class="lg:col-span-1">
+                <div class="bg-gradient-to-b from-gray-900 to-gray-950 border border-gray-800 rounded-2xl p-6 sticky top-24">
+                    <?php if (!isset($_SESSION['user_id'])): ?>
+                        <div class="text-center py-6">
+                            <i class="fa-solid fa-lock text-3xl text-gray-600 mb-3"></i>
+                            <p class="text-gray-400 text-sm mb-4">Vui lòng đăng nhập để đánh giá.</p>
+                            <a href="<?php echo URLROOT; ?>/users/login" class="inline-block bg-gray-800 text-white px-6 py-2 rounded-xl text-sm font-bold hover:bg-gray-700">Đăng nhập</a>
+                        </div>
+                    <?php elseif ($data['hasReviewed']): ?>
+                        <div class="text-center py-6">
+                            <div class="w-12 h-12 bg-emerald-500/10 rounded-full flex items-center justify-center text-emerald-500 mx-auto mb-3">
+                                <i class="fa-solid fa-check"></i>
+                            </div>
+                            <p class="text-emerald-400 font-bold">Cảm ơn bạn!</p>
+                            <p class="text-gray-500 text-sm mt-1">Bạn đã gửi đánh giá cho sản phẩm này.</p>
+                        </div>
+                    <?php elseif (!$data['canReview']): ?>
+                        <div class="text-center py-6">
+                            <i class="fa-solid fa-cart-shopping text-3xl text-gray-600 mb-3"></i>
+                            <p class="text-gray-400 text-sm">Bạn cần mua và sử dụng Server này trước khi để lại đánh giá.</p>
+                        </div>
+                    <?php else: ?>
+                        <form action="<?php echo URLROOT; ?>/products/submitReview" method="POST">
+                            <input type="hidden" name="product_id" value="<?php echo $data['product']->id; ?>">
+                            <input type="hidden" name="slug" value="<?php echo $data['product']->slug; ?>">
+                            
+                            <h4 class="text-white font-bold mb-4">Viết đánh giá của bạn</h4>
+                            
+                            <div class="mb-4">
+                                <label class="text-gray-400 text-sm block mb-2">Chất lượng Server</label>
+                                <select name="rating" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-yellow-500 font-bold focus:outline-none focus:border-cyan-500">
+                                    <option value="5">⭐⭐⭐⭐⭐ Tuyệt vời</option>
+                                    <option value="4">⭐⭐⭐⭐ Tốt</option>
+                                    <option value="3">⭐⭐⭐ Bình thường</option>
+                                    <option value="2">⭐⭐ Tệ</option>
+                                    <option value="1">⭐ Rất tệ</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="text-gray-400 text-sm block mb-2">Nhận xét chi tiết</label>
+                                <textarea name="comment" rows="4" required placeholder="Ping thấp, chạy mượt..." class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cyan-500 resize-none"></textarea>
+                            </div>
+
+                            <button type="submit" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 rounded-xl transition-colors">
+                                Gửi đánh giá
+                            </button>
+                        </form>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <?php if (!empty($data['relatedProducts'])): ?>
     <div class="mt-24 border-t border-gray-800 pt-16">

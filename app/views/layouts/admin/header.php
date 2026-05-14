@@ -89,6 +89,10 @@
                     <i class="ti-shopping-cart"></i>
                     <span class="admin-link-text">Đơn hàng</span>
                 </a>
+                <a class="admin-nav-link <?php echo $activeSection === 'reviews' ? 'active' : ''; ?>" href="<?php echo URLROOT; ?>/adminreviews">
+                    <i class="ti-star"></i>
+                    <span class="admin-link-text">Đánh giá</span>
+                </a>
                 <a class="admin-nav-link <?php echo $activeSection === 'tickets' ? 'active' : ''; ?>" href="<?php echo URLROOT; ?>/admin/contacts">
                     <i class="ti-email"></i>
                     <span class="admin-link-text">Liên hệ</span>
