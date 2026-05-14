@@ -24,8 +24,10 @@
         $activeSection = 'dashboard';
     } elseif (strpos($currentUrl, 'admin/products') === 0 || strpos($currentUrl, 'admin/services') === 0) {
         $activeSection = 'services';
-    } elseif (strpos($currentUrl, 'admin/orders') === 0) {
+    } elseif (strpos($currentUrl, 'adminorders') === 0 || strpos($currentUrl, 'admin/orders') === 0) {
         $activeSection = 'orders';
+    } elseif (strpos($currentUrl, 'adminreviews') === 0) {
+        $activeSection = 'reviews';
     } elseif (strpos($currentUrl, 'admin/contacts') === 0 || strpos($currentUrl, 'admin/tickets') === 0) {
         $activeSection = 'tickets';
     } elseif (strpos($currentUrl, 'admin/ads') === 0) {
