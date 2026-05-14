@@ -12,13 +12,19 @@
             Vui lòng điền đầy đủ thông tin địa chỉ và số điện thoại!
         </div>
     <?php endif; ?>
+    <?php if(isset($_GET['error']) && $_GET['error'] == 'invalid_phone'): ?>
+        <div class="bg-rose-500/10 border border-rose-500/50 text-rose-500 px-6 py-4 rounded-xl mb-8 flex items-center gap-3">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            Số điện thoại không hợp lệ! Vui lòng nhập số điện thoại hợp lệ..
+        </div>
+    <?php endif; ?>
 
     <div class="bg-gray-900/50 backdrop-blur-xl border border-white/5 p-8 rounded-3xl shadow-2xl">
         <form action="<?php echo URLROOT; ?>/cart/checkout" method="POST">
             
             <div class="mb-6">
                 <label for="phone" class="block text-sm font-bold text-gray-400 mb-2">Số điện thoại liên hệ <span class="text-rose-500">*</span></label>
-                <input type="text" id="phone" name="phone" required 
+                <input type="tel" id="phone" name="phone" required pattern="[0-9]{10}" title="Vui lòng nhập số điện thoại hợp lệ"
                        class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 outline-none transition-all"
                        placeholder="Nhập số điện thoại của bạn...">
             </div>

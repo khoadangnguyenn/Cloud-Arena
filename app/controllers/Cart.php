@@ -233,7 +233,13 @@ class Cart extends Controller {
             $phone = isset($_POST['phone']) ? filter_input(INPUT_POST, 'phone', FILTER_SANITIZE_STRING) : '';
 
             if (empty($address) || empty($phone)) {
-                header('Location: ' . URLROOT . '/cart?error=missing_info');
+                header('Location: ' . URLROOT . '/cart/checkout?error=missing_info');
+                exit;
+            }
+
+            // Kiểm tra số điện thoại: Phải bắt đầu bằng số 0 và có đúng 10 chữ số
+            if (!preg_match('/^(0)[0-9]{9}$/', $phone)) {
+                header('Location: ' . URLROOT . '/cart/checkout?error=invalid_phone');
                 exit;
             }
 
