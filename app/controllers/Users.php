@@ -77,6 +77,34 @@ class Users extends Controller {
                     $_SESSION['user_role'] = $loggedInUser->role;
                     $_SESSION['user_avatar'] = $loggedInUser->avatar ?? '';
                     session_regenerate_id(true);
+                    // If "remember me" checked, extend the session cookie lifetime so browser keeps the session
+                    if (!empty($_POST['remember-me'])) {
+                        $cookieParams = session_get_cookie_params();
+                        $expire = time() + 60 * 60 * 24 * 30; // 30 days
+                        if (PHP_VERSION_ID >= 70300) {
+                            setcookie(session_name(), session_id(), [
+                                'expires' => $expire,
+                                'path' => $cookieParams['path'] ?? '/',
+                                'domain' => $cookieParams['domain'] ?? '',
+                                'secure' => $cookieParams['secure'] ?? false,
+                                'httponly' => true,
+                                'samesite' => $cookieParams['samesite'] ?? 'Lax'
+                            ]);
+                            // small non-sensitive flag for client-side UI if needed
+                            setcookie('remember_me', '1', [
+                                'expires' => $expire,
+                                'path' => $cookieParams['path'] ?? '/',
+                                'domain' => $cookieParams['domain'] ?? '',
+                                'secure' => $cookieParams['secure'] ?? false,
+                                'httponly' => false,
+                                'samesite' => $cookieParams['samesite'] ?? 'Lax'
+                            ]);
+                        } else {
+                            // PHP < 7.3 fallback (keeps SameSite=Lax via path hack as init.php does)
+                            setcookie(session_name(), session_id(), $expire, $cookieParams['path'] . '; SameSite=Lax', $cookieParams['domain'] ?? '', $cookieParams['secure'] ?? false, true);
+                            setcookie('remember_me', '1', $expire, $cookieParams['path'] . '; SameSite=Lax', $cookieParams['domain'] ?? '', $cookieParams['secure'] ?? false, false);
+                        }
+                    }
                     unset($_SESSION['login_last_submit']);
 
                     if ($loggedInUser->role === 'admin') {
@@ -256,6 +284,23 @@ class Users extends Controller {
                 $params["secure"],
                 $params["httponly"]
             );
+        }
+
+        // Also clear our remember_me flag cookie if present
+        $params = session_get_cookie_params();
+        if (isset($_COOKIE['remember_me'])) {
+            if (PHP_VERSION_ID >= 70300) {
+                setcookie('remember_me', '', [
+                    'expires' => time() - 42000,
+                    'path' => $params['path'] ?? '/',
+                    'domain' => $params['domain'] ?? '',
+                    'secure' => $params['secure'] ?? false,
+                    'httponly' => false,
+                    'samesite' => $params['samesite'] ?? 'Lax'
+                ]);
+            } else {
+                setcookie('remember_me', '', time() - 42000, $params['path'] . '; SameSite=Lax', $params['domain'] ?? '', $params['secure'] ?? false, false);
+            }
         }
 
         // Finally destroy the session
