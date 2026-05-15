@@ -23,7 +23,7 @@
                 <button type="submit" class="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-cyan-500 transition-colors">
                     <i class="fas fa-search"></i>
                 </button>
-                <?php if(!empty($data['category'])): ?>
+                <?php if (!empty($data['category'])): ?>
                     <input type="hidden" name="category" value="<?php echo htmlspecialchars($data['category']); ?>">
                 <?php endif; ?>
             </form>
@@ -31,52 +31,52 @@
     </div>
 
     <?php if (!empty($data['news'])): ?>
-        <?php if(empty($data['search'])): ?>
-        <!-- Editorial Hero Grid (Bento Box) - Only shown when NOT searching -->
-        <div class="editorial-grid mb-12">
-            <?php
-            $main = $data['news'][0] ?? null;
-            $side1 = $data['news'][1] ?? null;
-            $side2 = $data['news'][2] ?? null;
-            ?>
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <!-- Main Story -->
-                <?php if ($main): ?>
-                    <div class="lg:col-span-8 group relative overflow-hidden rounded-3xl bg-gray-900 border border-white/5 h-[500px] lg:h-[650px]" data-aos="fade-right">
-                        <img src="<?php echo $main->thumbnail ? URLROOT . '/uploads/' . $main->thumbnail : 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&q=80'; ?>" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-60" alt="<?php echo htmlspecialchars($main->title); ?>">
-                        <div class="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-900/40 to-transparent"></div>
-                        <div class="absolute bottom-0 left-0 p-8 lg:p-12 w-full">
-                            <span class="inline-block px-3 py-1 bg-cyan-500 text-white text-[10px] font-bold uppercase tracking-widest rounded mb-4">Tiêu điểm</span>
-                            <h2 class="text-4xl lg:text-6xl font-black font-serif-premium leading-[1.1] mb-6">
-                                <a href="<?php echo URLROOT; ?>/posts/show/<?php echo $main->slug; ?>" class="hover:text-cyan-400 transition-colors"><?php echo $main->title; ?></a>
-                            </h2>
-                            <div class="flex items-center gap-6 text-sm text-gray-400">
-                                <span class="flex items-center gap-2"><i class="fa-solid fa-user text-cyan-500"></i> <?php echo $main->author_name; ?></span>
-                                <span class="flex items-center gap-2"><i class="fa-solid fa-calendar"></i> <?php echo date('d M, Y', strtotime($main->created_at)); ?></span>
-                                <span class="flex items-center gap-2"><i class="fa-solid fa-eye"></i> <?php echo number_format($main->views_count); ?></span>
-                            </div>
-                        </div>
-                    </div>
-                <?php endif; ?>
-
-                <!-- Side Stories -->
-                <div class="lg:col-span-4 flex flex-col gap-6">
-                    <?php foreach ([$side1, $side2] as $index => $side): if ($side): ?>
-                            <div class="flex-1 group relative overflow-hidden rounded-3xl bg-gray-900 border border-white/5 min-h-[240px]" data-aos="fade-left" data-aos-delay="<?php echo ($index + 1) * 100; ?>">
-                                <img src="<?php echo $side->thumbnail ? URLROOT . '/uploads/' . $side->thumbnail : 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80'; ?>" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-40" alt="<?php echo htmlspecialchars($side->title); ?>">
-                                <div class="absolute inset-0 bg-gradient-to-t from-gray-950 to-transparent"></div>
-                                <div class="absolute bottom-0 left-0 p-8">
-                                    <h3 class="text-2xl font-bold font-serif-premium leading-tight mb-3">
-                                        <a href="<?php echo URLROOT; ?>/posts/show/<?php echo $side->slug; ?>" class="hover:text-cyan-400 transition-colors"><?php echo $side->title; ?></a>
-                                    </h3>
-                                    <div class="text-xs text-gray-400 uppercase tracking-wider"><?php echo date('d M, Y', strtotime($side->created_at)); ?></div>
+        <?php if (empty($data['search'])): ?>
+            <!-- Editorial Hero Grid (Bento Box) - Only shown when NOT searching -->
+            <div class="editorial-grid mb-12">
+                <?php
+                $main = $data['news'][0] ?? null;
+                $side1 = $data['news'][1] ?? null;
+                $side2 = $data['news'][2] ?? null;
+                ?>
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- Main Story -->
+                    <?php if ($main): ?>
+                        <div class="lg:col-span-8 group relative overflow-hidden rounded-3xl bg-gray-900 border border-white/5 h-[500px] lg:h-[650px]" data-aos="fade-right">
+                            <img src="<?php echo $main->thumbnail ? URLROOT . '/uploads/' . $main->thumbnail : 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&q=80'; ?>" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-60" alt="<?php echo htmlspecialchars($main->title); ?>">
+                            <div class="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-900/40 to-transparent"></div>
+                            <div class="absolute bottom-0 left-0 p-8 lg:p-12 w-full">
+                                <span class="inline-block px-3 py-1 bg-cyan-500 text-white text-[10px] font-bold uppercase tracking-widest rounded mb-4">Tiêu điểm</span>
+                                <h2 class="text-4xl lg:text-6xl font-black font-serif-premium leading-[1.1] mb-6">
+                                    <a href="<?php echo URLROOT; ?>/posts/show/<?php echo $main->slug; ?>" class="hover:text-cyan-400 transition-colors"><?php echo $main->title; ?></a>
+                                </h2>
+                                <div class="flex items-center gap-6 text-sm text-gray-400">
+                                    <span class="flex items-center gap-2"><i class="fa-solid fa-user text-cyan-500"></i> <?php echo $main->author_name; ?></span>
+                                    <span class="flex items-center gap-2"><i class="fa-solid fa-calendar"></i> <?php echo date('d M, Y', strtotime($main->created_at)); ?></span>
+                                    <span class="flex items-center gap-2"><i class="fa-solid fa-eye"></i> <?php echo number_format($main->views_count); ?></span>
                                 </div>
                             </div>
-                    <?php endif;
-                    endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <!-- Side Stories -->
+                    <div class="lg:col-span-4 flex flex-col gap-6">
+                        <?php foreach ([$side1, $side2] as $index => $side): if ($side): ?>
+                                <div class="flex-1 group relative overflow-hidden rounded-3xl bg-gray-900 border border-white/5 min-h-[240px]" data-aos="fade-left" data-aos-delay="<?php echo ($index + 1) * 100; ?>">
+                                    <img src="<?php echo $side->thumbnail ? URLROOT . '/uploads/' . $side->thumbnail : 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80'; ?>" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-40" alt="<?php echo htmlspecialchars($side->title); ?>">
+                                    <div class="absolute inset-0 bg-gradient-to-t from-gray-950 to-transparent"></div>
+                                    <div class="absolute bottom-0 left-0 p-8">
+                                        <h3 class="text-2xl font-bold font-serif-premium leading-tight mb-3">
+                                            <a href="<?php echo URLROOT; ?>/posts/show/<?php echo $side->slug; ?>" class="hover:text-cyan-400 transition-colors"><?php echo $side->title; ?></a>
+                                        </h3>
+                                        <div class="text-xs text-gray-400 uppercase tracking-wider"><?php echo date('d M, Y', strtotime($side->created_at)); ?></div>
+                                    </div>
+                                </div>
+                        <?php endif;
+                        endforeach; ?>
+                    </div>
                 </div>
             </div>
-        </div>
         <?php endif; ?>
 
         <!-- The River of News & Trending Sidebar -->
@@ -264,18 +264,18 @@
     document.addEventListener('DOMContentLoaded', function() {
         const searchInput = document.getElementById('news-search');
         const newsContainer = document.querySelector('.news-container');
-        
+
         if (searchInput && newsContainer) {
             // Lấy tất cả các thẻ tin tức (bao gồm cả Bento Box và River)
             const allCards = document.querySelectorAll('.news-card-v2, .editorial-grid [data-aos]');
-            
+
             searchInput.addEventListener('input', function() {
                 const query = this.value.toLowerCase().trim();
-                
+
                 allCards.forEach(function(card) {
                     const text = card.innerText.toLowerCase();
                     const match = query === '' || text.includes(query);
-                    
+
                     if (match) {
                         card.style.display = '';
                         card.style.opacity = '1';

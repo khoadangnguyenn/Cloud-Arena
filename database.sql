@@ -3,16 +3,21 @@ CREATE DATABASE IF NOT EXISTS cloud_arena;
 USE cloud_arena;
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS news_likes;
+DROP TABLE IF EXISTS news_views;
+DROP TABLE IF EXISTS review_likes;
 DROP TABLE IF EXISTS reviews;
 DROP TABLE IF EXISTS contacts;
 DROP TABLE IF EXISTS media;
 DROP TABLE IF EXISTS news;
+DROP TABLE IF EXISTS ads;
 DROP TABLE IF EXISTS pages;
 DROP TABLE IF EXISTS order_items;
 DROP TABLE IF EXISTS orders;
 DROP TABLE IF EXISTS cart_items;
 DROP TABLE IF EXISTS carts;
 DROP TABLE IF EXISTS user_services;
+DROP TABLE IF EXISTS user_service_options;
 DROP TABLE IF EXISTS products;
 DROP TABLE IF EXISTS categories;
 DROP TABLE IF EXISTS faqs;
@@ -23,7 +28,6 @@ DROP TABLE IF EXISTS about;
 DROP TABLE IF EXISTS faq_messages;
 DROP TABLE IF EXISTS faq_categories;
 DROP TABLE IF EXISTS news_categories;
-DROP TABLE IF EXISTS user_service_options;
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
@@ -51,9 +55,6 @@ CREATE TABLE IF NOT EXISTS admin_notifications (
     KEY `idx_admin_notifications_created_at` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ==========================================
--- 2. NHÓM SẢN PHẨM & VẬN HÀNH DỊCH VỤ
--- ==========================================
 
 CREATE TABLE categories (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -100,9 +101,6 @@ CREATE TABLE user_service_options (
     FOREIGN KEY (user_service_id) REFERENCES user_services(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ==========================================
--- 3. NHÓM GIAO DỊCH (GIỎ HÀNG & ĐƠN HÀNG)
--- ==========================================
 
 CREATE TABLE carts (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -218,23 +216,12 @@ CREATE TABLE `about` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
--- Ensure a canonical about row exists (id = 1).
-INSERT INTO about (id, title, content) 
-VALUES (1, 'Tiêu đề mặc định', 'Nội dung mặc định')
-ON DUPLICATE KEY UPDATE id=id;
-
--- (About table already contains extended fields; no ALTERs required)
+-- Detailed 'about' data is inserted later in the seed data section.
 
 CREATE TABLE settings (
     key_name VARCHAR(100) PRIMARY KEY,
     value TEXT NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- ==========================================
--- 5. News Categories (Danh mục tin tức)
--- ==========================================
--- Lưu ý kỹ thuật cho Thực thể yếu: Khóa chính là cụm (parent_id, partial_id).
--- Khi thêm dữ liệu bằng PHP, partial_id sẽ được tính bằng MAX(partial_id) + 1 của parent đó.
 
 CREATE TABLE news_categories (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -291,6 +278,23 @@ CREATE TABLE IF NOT EXISTS ads (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE reviews (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL COMMENT 'Thành viên viết bình luận',
+    product_id INT NULL COMMENT 'XOR: Nếu bình luận sản phẩm',
+    news_id INT NULL COMMENT 'XOR: Nếu bình luận bài viết',
+    
+    rating INT NULL COMMENT 'Cho phép NULL vì bài viết (news) thường chỉ cần comment, không cần rate 1-5 sao',
+    comment TEXT NOT NULL,
+    likes_count INT DEFAULT 0 COMMENT 'Số lượt thích bình luận',
+    status ENUM('pending', 'approved', 'hidden') DEFAULT 'approved' COMMENT 'Admin duyệt bình luận ở đây',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    FOREIGN KEY (news_id) REFERENCES news(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Review likes table for comment likes
 CREATE TABLE IF NOT EXISTS review_likes (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -345,22 +349,7 @@ CREATE TABLE contacts (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE reviews (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL COMMENT 'Thành viên viết bình luận',
-    product_id INT NULL COMMENT 'XOR: Nếu bình luận sản phẩm',
-    news_id INT NULL COMMENT 'XOR: Nếu bình luận bài viết',
-    
-    rating INT NULL COMMENT 'Cho phép NULL vì bài viết (news) thường chỉ cần comment, không cần rate 1-5 sao',
-    comment TEXT NOT NULL,
-    likes_count INT DEFAULT 0 COMMENT 'Số lượt thích bình luận',
-    status ENUM('pending', 'approved', 'hidden') DEFAULT 'pending' COMMENT 'Admin duyệt bình luận ở đây',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
-    FOREIGN KEY (news_id) REFERENCES news(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+-- Placeholder for reviews was moved up to before review_likes
 
 -- Bật lại kiểm tra khóa ngoại sau khi import xong
 SET FOREIGN_KEY_CHECKS = 1;
@@ -370,13 +359,19 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- INITIAL SEED DATA
 -- ==========================================
 
+-- 0. Reviews (Moved to after users, products, news)
+
 -- 1. Users (Admin & Test User)
 -- Username: admin | Password: admin123
 INSERT INTO users (id, username, password, email, full_name, avatar, status, credit, reset_token, role, created_at) VALUES
-(1, 'admin', '$2a$10$iYI.B2yyF7i75alKEO6XHeUMfcZJgz52DTg67oggoVxUVqyBHZmvS', 'admin@cloudarena.local', 'Administrator 1', '/uploads/avatars/admin.png', 'active', 1000, NULL, 'admin', '2026-05-06 08:22:16'),
-(2, 'testuser', '$2y$10$PfYcDZ13nUgxtOdBsX/FPuWwnxxvJXBPZ2sqMviPZFk.H34fobDLi', 'test@cloudarena.local', 'Test User 1', '/uploads/avatars/av_ba55501f0ec6a5a3769658f31dbf9834.png', 'active', 200, NULL, 'member', '2026-05-06 08:22:16'),
-(4, 'testuser2', '$2y$10$/gT5cjOikjQ1BBF/GvhtcubPIEc0xLbpvSr8WMkVDQskfi4sjcTYe', 'test2@cloudarena.local', 'Test User 2', '/uploads/avatars/testuser2.jpg', 'active', 0, NULL, 'member', '2026-05-07 12:41:56'),
-(8, 'guest_contact', '$2y$10$jmxg/heRebqUTZev3BYM/.zRGGIvN2k9MR2Fl1l6hT2fQXasUgCGW', 'guest@cloud-arena.local', 'Guest Contact', NULL, 'active', 0, NULL, 'member', '2026-05-08 14:42:38');
+(1, 'admin', '$2y$10$dJ2DZ./LMB9IxBzAivA56.H3Z.zpgIPF9kKtiBXZLKXjOeTrRSz8.', 'admin@cloudarena.local', 'Admin', '/uploads/avatars/av_4e1e59fda148d8cfa83180d0f475eb09.jpg', 'active', 1000, NULL, 'admin', '2026-05-06 01:22:16'),
+(2, 'testuser', '$2y$10$PfYcDZ13nUgxtOdBsX/FPuWwnxxvJXBPZ2sqMviPZFk.H34fobDLi', 'test@cloudarena.local', 'Test User 1', 'https://ui-avatars.com/api/?name=Minh+Tuan&background=20c997&color=fff', 'active', 200, NULL, 'member', '2026-05-06 01:22:16'),
+(3, 'minhtuan_pro', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'minhtuan@example.com', 'Minh Tuấn', 'https://ui-avatars.com/api/?name=Minh+Tuan&background=20c997&color=fff', 'active', 0, NULL, 'member', '2026-05-14 20:28:46'),
+(4, 'testuser2', '$2y$10$/gT5cjOikjQ1BBF/GvhtcubPIEc0xLbpvSr8WMkVDQskfi4sjcTYe', 'test2@cloudarena.local', 'Test User 2', '/uploads/avatars/testuser2.jpg', 'active', 0, NULL, 'member', '2026-05-07 05:41:56'),
+(5, 'duclong_gaming', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'duclong@example.com', 'Đức Long', 'https://ui-avatars.com/api/?name=Duc+Long&background=6f42c1&color=fff', 'active', 0, NULL, 'member', '2026-05-14 20:28:46'),
+(8, 'guest_contact', '$2y$10$jmxg/heRebqUTZev3BYM/.zRGGIvN2k9MR2Fl1l6hT2fQXasUgCGW', 'guest@cloud-arena.local', 'Guest Contact', NULL, 'active', 0, NULL, 'member', '2026-05-08 07:42:38'),
+(9, 'testuser3', '$2y$10$HQkasFyBhTzLUo5c7bGOD.xnLoDqTP2w6y5MEOCFxtrPRSR/s0lim', 'testuser@example.com', 'testuser3', NULL, 'active', 0, NULL, 'member', '2026-05-14 20:45:39'),
+(10, 'ngogiang', '$2y$10$7vMM.PEiQc9jggF4A95k6.DmgUXxSDe9xMU7n9JvkkjVTkD00a13.', 'giang@gmail.com', 'ngogiang', '/uploads/avatars/av_4bd30cbf499666e52710799545b7d1fe.jpg', 'active', 0, NULL, 'member', '2026-05-15 05:41:28');
 
 -- 2. Categories 
 INSERT INTO categories (name, slug, description) VALUES
@@ -385,64 +380,107 @@ INSERT INTO categories (name, slug, description) VALUES
 ('Shared Hosting', 'shared-hosting', 'Hosting chia sẻ với giá cạnh tranh');
 
 -- 3. Products (Thien Branch)
-INSERT INTO products (category_id, name, slug, description, price, ram_mb, cpu_cores, disk_gb, status) VALUES
-(1, 'Gaming Pro 4GB', 'gaming-pro-4gb', 'Server gaming với 4GB RAM, lý tưởng cho game nhỏ', 500000, 4096, 4, 50, 'active'),
-(1, 'Gaming Pro 8GB', 'gaming-pro-8gb', 'Server gaming với 8GB RAM, hỗ trợ game lớn', 1000000, 8192, 8, 100, 'active'),
-(1, 'Gaming Pro 16GB', 'gaming-pro-16gb', 'Server gaming cao cấp với 16GB RAM', 2000000, 16384, 16, 200, 'active'),
-(2, 'Web Basic', 'web-basic', 'Hosting web cơ bản', 250000, 2048, 2, 20, 'active'),
-(2, 'Web Plus', 'web-plus', 'Hosting web nâng cao', 750000, 4096, 4, 50, 'active'),
-(1, 'Minecraft FREE (1GB - Intel 1355U)', 'minecraft-free-1gb', 'Gói thử nghiệm Minecraft miễn phí (1GB RAM). Chọn PaperMC hoặc Vanilla và phiên bản khi thuê.', 0.00, 1024, 1, 10, 'active');
+INSERT INTO products (id, category_id, name, slug, description, price, ram_mb, cpu_cores, disk_gb, image_url, status, created_at) VALUES
+(1, 1, 'Gaming Pro 4GB', 'gaming-pro-4gb', 'Server gaming với 4GB RAM, lý tưởng cho game nhỏ', 500000.00, 4096, 4, 50, 'media/1778792044_growtika-9WnjxT1NCoY-unsplash.jpg', 'hidden', '2026-05-14 18:51:39'),
+(2, 1, 'Gaming Pro 8GB', 'gaming-pro-8gb', 'Server gaming với 8GB RAM, hỗ trợ game lớn', 1000000.00, 8192, 8, 100, 'media/1778792064_growtika-9WnjxT1NCoY-unsplash.jpg', 'active', '2026-05-14 18:51:39'),
+(3, 1, 'Gaming Pro 16GB', 'gaming-pro-16gb', 'Server gaming cao cấp với 16GB RAM', 2000000.00, 16384, 16, 200, 'media/1778792071_growtika-9WnjxT1NCoY-unsplash.jpg', 'active', '2026-05-14 18:51:39'),
+(4, 2, 'Web Basic', 'web-basic', 'Hosting web cơ bản', 250000.00, 2048, 2, 20, 'media/1778792078_growtika-9WnjxT1NCoY-unsplash.jpg', 'active', '2026-05-14 18:51:39'),
+(5, 2, 'Web Plus', 'web-plus', 'Hosting web nâng cao', 750000.00, 4096, 4, 50, 'media/1778792085_growtika-9WnjxT1NCoY-unsplash.jpg', 'active', '2026-05-14 18:51:39');
 
 -- About --
+INSERT INTO about (id, title, subtitle, services_heading, partners_heading, modpacks_heading, gallery_heading, content, image, admin_id, uptime, support, performance, years_active, founded_year, partners, modpacks, gallery, services, sections, cta_heading, cta_text, cta_button_text, cta_button_url, updated_at, background, intro_gif, intro_duration) VALUES
+(1, 'G-Server', 'Cung cấp giải pháp máy chủ tốc độ cao, cấu hình mạnh mẽ chuyên biệt cho Game Server và Doanh nghiệp.', NULL, 'Đối Tác Hạ Tầng & Công Nghệ', 'Hỗ Trợ Đa Dạng Modpack & Nền Tảng', 'Hình Ảnh Trải Nghiệm & Datacenter', '', 'img_6a06d1b5bac8c.jpg', 1, '99.99%', '24/7/365', 'Ultra NVMe', '5 Năm', 2021, '[{\"name\":\"Viettel IDC\",\"url\":\"https:\\/\\/viettelidc.com.vn\",\"logo\":\"img_6a061c63436a9.png\"},{\"name\":\"Cisco Systems\",\"url\":\"https:\\/\\/www.cisco.com\",\"logo\":\"img_6a061c63436f8.png\"},{\"name\":\"Vinafone\",\"url\":\"https:\\/\\/www.mobifone.vn\",\"logo\":\"img_6a06b741526f0.jpeg\"},{\"name\":\"TMA Solutions\",\"url\":\"https:\\/\\/www.tmasolutions.vn\",\"logo\":\"img_6a06b7415280e.png\"},{\"name\":\"Eyecode Tech\",\"url\":\"https:\\/\\/www.eyecodetech.vn\",\"logo\":\"img_6a06b741528da.jpeg\"}]', '[{\"name\":\"Minecraft\",\"url\":\"http:\\/\\/localhost\\/Cloud-Arena-main\\/products\",\"logo\":\"img_6a061c63438b4.jpg\"},{\"name\":\"GTA V\",\"url\":\"http:\\/\\/localhost\\/Cloud-Arena-main\\/products\",\"logo\":\"img_6a061c6343902.jpg\"},{\"name\":\"Web Hosting\",\"url\":\"http:\\/\\/localhost\\/Cloud-Arena-main\\/products\",\"logo\":\"img_6a061c6343947.jpg\"}]', '[{\"image\":\"img_6a061c634398e.jpg\",\"title\":\"Minecraft\",\"caption\":\"Xây dựng thế giới riêng của bạn hoạt động 24\\/7 với hiệu năng ổn định, hỗ trợ plugin, modpack và hàng trăm người chơi cùng lúc trên hạ tầng tối ưu dành riêng cho Minecraft Server.\"},{\"image\":\"img_6a061c63439d2.jpg\",\"title\":\"GTA V\",\"caption\":\"Khởi chạy máy chủ FiveM chuyên nghiệp chỉ trong vài phút, đồng bộ tài nguyên siêu nhanh, ping thấp và toàn quyền quản lý cộng đồng GTA V Roleplay của bạn.\"},{\"image\":\"img_6a061c6343a1e.jpg\",\"title\":\"Web Hosting\",\"caption\":\"Triển khai Website, Panel quản trị hoặc Landing Page gaming trên nền tảng hosting tốc độ cao, bảo mật mạnh mẽ và tối ưu cho hệ sinh thái Game Server hiện đại.\"}]', NULL, '[{\"title\":\"Hạ tầng mạng Tiêu chuẩn Công nghiệp\",\"content\":\"<p>G-Server vận hành trên nền tảng phần cứng mạnh mẽ với các thiết bị định tuyến từ <strong>Cisco<\\/strong>, đảm bảo khả năng xử lý hàng triệu gói tin mỗi giây. Hệ thống của chúng tôi được tối ưu hóa cho các giao thức VPN (Site-to-Site, Teleworker) và định tuyến thông minh để giảm thiểu tối đa độ trễ (latency).<\\/p><ul><li><strong>Chống DDoS đa tầng:<\\/strong> Lọc traffic độc hại ngay tại cửa ngõ hạ tầng.<\\/li><li><strong>Băng thông không giới hạn:<\\/strong><\\/li><\\/ul>\"},{\"title\":\"Tối ưu hóa cho Trải nghiệm Game Thuần túy\",\"content\":\"<p>Chúng tôi hiểu rằng những thay đổi về cơ chế server có thể làm hỏng các cỗ máy redstone phức tạp hay các hệ thống farm trong Minecraft. Tại G-Server, chúng tôi cam kết:<\\/p><ul><li><strong>Giữ nguyên cơ chế Vanilla:<\\/strong> Không can thiệp vào hành vi của Piston, Villager hay tốc độ Tick-rate của server.<\\/li><li><strong>Hỗ trợ đa nền tảng:<\\/strong> Dễ dàng triển khai các bản Modpack nặng như RLCraft, SkyFactory hay các Script Roleplay chuyên sâu cho GTA V mà không gặp rào cản kỹ thuật.<\\/li><\\/ul>\"},{\"title\":\"Kích hoạt Tức thì - Hỗ trợ Tận tâm\",\"content\":\"<p>Thời gian của bạn là vàng. Hệ thống quản trị của G-Server cho phép khách hàng khởi tạo dịch vụ chỉ trong vài giây sau khi thanh toán thành công.<\\/p><p>Đội ngũ hỗ trợ của chúng tôi bao gồm những kỹ thuật viên am hiểu sâu về quản trị hệ thống và phát triển game, sẵn sàng giúp bạn giải quyết các vấn đề từ cấu hình IP Route đến cài đặt Plugin\\/Modpack phức tạp 24\\/7.<\\/p>\"}]', 'Sẵn sàng bắt đầu dự án của bạn cùng G-Server?', 'Khởi tạo Game Server hoặc Website của bạn ngay hôm nay với các gói dịch vụ lưu trữ linh hoạt, mạnh mẽ và tiết kiệm nhất.', 'Đăng Ký Ngay', '/users/register', '2026-05-15 07:56:37', 'img_6a061c63435f2.gif', 'img_6a06b2d6c8c6a.gif', 1.10);
 
-INSERT INTO about (id, title, subtitle, services_heading, partners_heading, modpacks_heading, gallery_heading, content, uptime, support, performance, years_active, founded_year, partners, modpacks, sections, cta_heading, cta_text, cta_button_text, cta_button_url) VALUES (
-    1, 'G-Server - Khởi Tạo Đam Mê, Nền Tảng Lưu Trữ Không Giới Hạn', 'Cung cấp giải pháp máy chủ tốc độ cao, cấu hình mạnh mẽ chuyên biệt cho Game Server và Doanh nghiệp.', 'Dịch Vụ Của Chúng Tôi', 'Đối Tác Hạ Tầng & Công Nghệ', 'Hỗ Trợ Đa Dạng Modpack & Nền Tảng', 'Hình Ảnh Trải Nghiệm & Datacenter', '', '99.99%', '24/7/365', 'Ultra NVMe', '5 Năm', 2021, '[
-        {"name": "Viettel IDC", "url": "https://viettelidc.com.vn", "logo": "/uploads/viettelidc_logo.png"},
-        {"name": "Cisco Systems", "url": "https://www.cisco.com", "logo": "/uploads/cisco_logo.png"},
-        {"name": "Cloudflare", "url": "https://www.cloudflare.com", "logo": "/uploads/cloudflare_logo.png"}
-    ]',
-    '[
-        {"name": "Vanilla (Tối ưu cơ chế)", "url": "#", "logo": "/uploads/vanilla_icon.png"},
-        {"name": "RLCraft", "url": "#", "logo": "/uploads/rlcraft_icon.png"},
-        {"name": "SkyFactory 4", "url": "#", "logo": "/uploads/skyfactory_icon.png"}
-    ]',
-    '[
-        {
-            "title": "Hạ tầng mạng Tiêu chuẩn Công nghiệp",
-            "content": "<p>G-Server vận hành trên nền tảng phần cứng mạnh mẽ với các thiết bị định tuyến từ <strong>Cisco</strong>, đảm bảo khả năng xử lý hàng triệu gói tin mỗi giây. Hệ thống của chúng tôi được tối ưu hóa cho các giao thức VPN (Site-to-Site, Teleworker) và định tuyến thông minh để giảm thiểu tối đa độ trễ (latency).</p><ul><li><strong>Chống DDoS đa tầng:</strong> Lọc traffic độc hại ngay tại cửa ngõ hạ tầng.</li><li><strong>Băng thông không giới hạn:</strong> Đảm bảo đường truyền luôn thông suốt kể cả trong giờ cao điểm.</li></ul>"
-        },
-        {
-            "title": "Tối ưu hóa cho Trải nghiệm Game Thuần túy",
-            "content": "<p>Chúng tôi hiểu rằng những thay đổi về cơ chế server có thể làm hỏng các cỗ máy redstone phức tạp hay các hệ thống farm trong Minecraft. Tại G-Server, chúng tôi cam kết:</p><ul><li><strong>Giữ nguyên cơ chế Vanilla:</strong> Không can thiệp vào hành vi của Piston, Villager hay tốc độ Tick-rate của server.</li><li><strong>Hỗ trợ đa nền tảng:</strong> Dễ dàng triển khai các bản Modpack nặng như RLCraft, SkyFactory hay các Script Roleplay chuyên sâu cho GTA V mà không gặp rào cản kỹ thuật.</li></ul>"
-        },
-        {
-            "title": "Kích hoạt Tức thì - Hỗ trợ Tận tâm",
-            "content": "<p>Thời gian của bạn là vàng. Hệ thống quản trị của G-Server cho phép khách hàng khởi tạo dịch vụ chỉ trong vài giây sau khi thanh toán thành công.</p><p>Đội ngũ hỗ trợ của chúng tôi bao gồm những kỹ thuật viên am hiểu sâu về quản trị hệ thống và phát triển game, sẵn sàng giúp bạn giải quyết các vấn đề từ cấu hình IP Route đến cài đặt Plugin/Modpack phức tạp 24/7.</p>"
-        }
-    ]',
-    'Sẵn sàng bắt đầu dự án của bạn cùng G-Server?',
-    'Khởi tạo Game Server hoặc Website của bạn ngay hôm nay với các gói dịch vụ lưu trữ linh hoạt, mạnh mẽ và tiết kiệm nhất.',
-    'Đăng Ký Ngay',
-    '/san-pham'
-) ON DUPLICATE KEY UPDATE title = VALUES(title), subtitle = VALUES(subtitle), services_heading = VALUES(services_heading), partners_heading = VALUES(partners_heading), modpacks_heading = VALUES(modpacks_heading), gallery_heading = VALUES(gallery_heading), content = VALUES(content), uptime = VALUES(uptime), support = VALUES(support), performance = VALUES(performance), years_active = VALUES(years_active), founded_year = VALUES(founded_year), partners = VALUES(partners), modpacks = VALUES(modpacks), sections = VALUES(sections), cta_heading = VALUES(cta_heading), cta_text = VALUES(cta_text), cta_button_text = VALUES(cta_button_text), cta_button_url = VALUES(cta_button_url);
 -- 4. FAQs (Bao Branch)
+INSERT INTO faqs (id, question, answer, category, status) VALUES
+(1, 'Cloud Arena là gì?', 'Cloud Arena là nền tảng cung cấp dịch vụ cho thuê Game Server và Cloud Hosting hàng đầu, giúp bạn khởi tạo máy chủ chỉ trong vài giây với hiệu năng cực cao.', 'Chung', 'active'),
+(2, 'Tôi có thể thanh toán qua những phương thức nào?', 'Chúng tôi hỗ trợ nhiều phương thức linh hoạt như Chuyển khoản ngân hàng, Ví MoMo, thẻ cào điện thoại và thanh toán qua số dư Credit trên hệ thống.', 'Thanh toán', 'active'),
+(3, 'Server của tôi sẽ được khởi tạo trong bao lâu?', 'Hệ thống hoàn toàn tự động. Ngay sau khi thanh toán thành công, Server của bạn sẽ được khởi tạo và gửi thông tin đăng nhập vào Email chỉ trong 30 giây.', 'Kỹ thuật', 'active'),
+(4, 'Tôi có thể nâng cấp cấu hình server sau khi mua không?', 'Hoàn toàn được! Bạn có thể nâng cấp RAM, CPU hoặc dung lượng SSD bất cứ lúc nào trong bảng quản trị mà không làm mất dữ liệu hiện có.', 'Dịch vụ', 'active'),
+(5, 'Chính sách hoàn tiền của Cloud Arena như thế nào?', 'Chúng tôi cam kết hoàn tiền 100% trong vòng 24h nếu dịch vụ gặp lỗi kỹ thuật từ phía hệ thống mà không thể khắc phục được.', 'Dịch vụ', 'active'),
+(6, 'Cloud Arena có hỗ trợ cài đặt Mod cho Game Server không?', 'Có, chúng tôi hỗ trợ One-Click Install cho hầu hết các bản Mod phổ biến của Minecraft, Rust, Terraria và nhiều game khác.', 'Kỹ thuật', 'active'),
+(7, 'Dữ liệu của tôi có được sao lưu (Backup) không?', 'Hệ thống tự động sao lưu dữ liệu của bạn mỗi ngày và lưu trữ trong 7 ngày gần nhất để bạn có thể khôi phục bất cứ khi nào cần thiết.', 'Bảo mật', 'active'),
+(8, 'Làm thế nào để liên hệ với đội ngũ kỹ thuật?', 'Bạn có thể gửi Ticket hỗ trợ trong trang Dashboard, nhắn tin qua Fanpage hoặc gọi hotline hỗ trợ 24/7 của chúng tôi.', 'Hỗ trợ', 'active'),
+(9, 'Cloud Arena có chống DDoS không?', 'Có! Tất cả các Server tại Cloud Arena đều được trang bị hệ thống lọc traffic và chống DDoS Layer 7 mạnh mẽ, đảm bảo uptime 99.9%.', 'Bảo mật', 'active'),
+(10, 'Làm sao để nạp Credit vào tài khoản?', 'Bạn vào phần Tài khoản -> Nạp Credit, chọn số tiền cần nạp và quét mã QR chuyển khoản. Credit sẽ được cộng tự động sau 1-3 phút.', 'Thanh toán', 'active'),
+(11, 'Tôi có thể sử dụng Server cho mục đích gì?', 'Bạn có thể sử dụng để chạy Game Server, Website, Bot Discord hoặc các ứng dụng cá nhân miễn là không vi phạm pháp luật Việt Nam.', 'Chung', 'active'),
+(12, 'Cloud Arena là gì?', '-', 'Chung', 'active'),
+(13, 'Thanh toán', '-', '', 'active'),
+(14, 'Hỗ trợ', '-', '', 'active'),
+(15, 'sasdasd', '-', 'chung', 'active'),
+(16, 'fdfdfdvdv', '-', 'chung', 'active'),
+(17, 'đasaxxaz', '-', 'chung', 'active'),
+(18, 'Tôi muốn host', '-', 'chung', 'active'),
+(19, 'nnfcfdnjsxncx', '-', 'chung', 'active'),
+(20, 'dạnasxnas', '-', 'chung', 'active');
 
+INSERT INTO faq_categories (id, title, slug, image, created_at) VALUES
+(1, 'Chung', 'chung', 'http://localhost/Cloud-Arena-main/uploads/faq_categories/img_6a06b083330e5.jpg', '2026-05-15 05:33:19'),
+(2, 'Kỹ thuật', 'category-1778823227', NULL, '2026-05-15 05:33:47'),
+(3, 'Dịch vụ', 'category-1778823234', 'http://localhost/Cloud-Arena-main/uploads/faq_categories/img_6a06b4f468927.jpg', '2026-05-15 05:33:54'),
+(4, 'Bảo mật', 'category-1778823242', 'http://localhost/Cloud-Arena-main/uploads/faq_categories/img_6a06b4c3e9657.gif', '2026-05-15 05:34:02');
+
+INSERT INTO faq_messages (id, name, email, category, message, page_url, status, reply, reply_by, created_at, replied_at) VALUES
+(1, 'Bao', 'náds@gmail.com', 'chung', 'njcsdncjkds', '/Cloud-Arena-main/pages/faq?category=chung&q=host', 'replied', 'dxjasbxsjjsxa', 'Admin', '2026-05-15 06:13:41', '2026-05-15 13:13:53'),
+(2, 'ba', 'bjsabdas@gmail.com', 'chung', 'dsasd', '/Cloud-Arena-main/pages/faq?category=chung', 'replied', 'dsasaxas', 'Admin', '2026-05-15 06:15:52', '2026-05-15 13:16:02');
 
 -- 5. News (Khoa Branch)
-INSERT INTO news (author_id, category_id, title, slug, content, meta_description, meta_keywords, status, is_breaking, views_count) VALUES
-(1, 5, 'Ra mắt Cloud Arena: Nền tảng thuê Game Server tự động 100%', 'ra-mat-cloud-arena-nen-tang-thue-game-server-tu-dong-100', '<p>Khách hàng thường mệt mỏi vì thanh toán xong phải chờ Admin duyệt thủ công (có khi mất cả ngày) mới có thông tin IP/Port để chơi.</p><p>Giới thiệu hệ thống tự động hoàn toàn. Giải thích quy trình: Đăng ký -> Chọn cấu hình (products) -> Thanh toán (orders) -> Server tự động khởi tạo và trả về ip_address, port trong vòng 60 giây.</p><p><strong>Tạo tài khoản và nhận ưu đãi khởi tạo server ngay hôm nay.</strong></p>', 'Nền tảng thuê Game Server tự động 100% tại Cloud Arena.', 'game server, cloud arena, tự động, hosting', 'published', 1, 1250),
-(1, 5, 'Hệ thống Credit là gì? Cách tối ưu chi phí thuê Server', 'he-thong-credit-la-gi-cach-toi-uu-chi-phi-thue-server', '<p>Khách hàng không hiểu Credit để làm gì, tại sao không thanh toán thẳng bằng tiền mặt.</p><p>Giải thích tỷ lệ quy đổi (Ví dụ: 100,000 VNĐ = 100 Credit = 1GB RAM/tháng). Phân tích lợi ích: Nạp một lần, có thể dùng Credit để mua server mới, gia hạn hoặc nâng cấp RAM bất cứ lúc nào mà không cần lắt nhắt chuyển khoản nhiều lần.</p><p><strong>Hướng dẫn vào trang nạp Credit và các cổng thanh toán hỗ trợ.</strong></p>', 'Tìm hiểu về hệ thống Credit và cách tối ưu chi phí thuê server.', 'credit, tối ưu chi phí, nạp tiền', 'published', 0, 850),
-(1, 3, 'Hướng dẫn nâng cấp RAM cho Server chỉ trong 1 click', 'huong-dan-nang-cap-ram-cho-server-chi-trong-1-click', '<p>Server đang chơi bị giật lag do thiếu RAM, nhưng khách sợ nâng cấp sẽ làm mất dữ liệu hoặc phải chờ lâu.</p><p>Giới thiệu tính năng "Cộng dồn RAM" (current_ram_mb). Hướng dẫn các bước vào Dashboard, chọn số RAM cần thêm, hệ thống sẽ tự trừ Credit và apply RAM mới vào server mà không làm mất map hay data.</p><p><strong>Server đang báo đỏ RAM? Nâng cấp ngay chỉ với 100 Credit!</strong></p>', 'Nâng cấp RAM server nhanh chóng không mất dữ liệu.', 'nâng cấp ram, server lag, fix lag', 'published', 0, 1500),
-(1, 4, 'Mua Server càng lâu - Tiết kiệm càng sâu', 'mua-server-cang-lau-tiet-kiem-cang-sau', '<p>Khuyến khích khách hàng cam kết sử dụng dịch vụ lâu dài thay vì mua lẻ từng tháng.</p><p>Lập bảng so sánh chi phí khi chọn duration_months là 1 tháng, 3 tháng, 6 tháng và 12 tháng. Phân tích bài toán kinh tế (ví dụ: mua 6 tháng tặng 1 tháng). Nhấn mạnh việc mua dài hạn giúp tránh rủi ro quên gia hạn (expired).</p><p><strong>Chọn kỳ hạn 6 tháng tại giỏ hàng để nhận chiết khấu 15%.</strong></p>', 'Tiết kiệm chi phí khi thuê server game dài hạn.', 'tiết kiệm, khuyến mãi, thuê server', 'published', 1, 3200),
-(1, 1, 'Mở Server Terraria Journey''s End: Khám phá thế giới cùng bạn bè', 'mo-server-terraria-journeys-end-kham-pha-the-gioi-cung-ban-be', '<p>Chơi Terraria qua Steam (Host & Play) thường xuyên bị gián đoạn khi chủ phòng tắt máy hoặc rớt mạng.</p><p>Tạo một thế giới Terraria 24/7 độc lập hoàn toàn. Nền tảng hỗ trợ sẵn tShock giúp admin quản lý server, phân quyền người chơi và chống hack item hiệu quả chỉ với vài click cấu hình (options) trên web.</p><p><strong>Thuê ngay máy chủ Terraria và bắt đầu hành trình đánh boss không giới hạn.</strong></p>', 'Hướng dẫn thuê và tạo server Terraria 24/7 mượt mà.', 'terraria, server terraria, tshock', 'published', 0, 500),
-(1, 1, 'Vận hành Server Rust: Tự động hóa lịch Wipe và Restart', 'van-hanh-server-rust-tu-dong-hoa-lich-wipe-va-restart', '<p>Chủ server Rust rất vất vả trong việc thức đêm để canh thời gian Wipe map hoặc restart server định kỳ nhằm giảm lag.</p><p>Giới thiệu tính năng Lịch trình (Schedules). Hướng dẫn thiết lập Cronjob ngay trên Panel để tự động gửi thông báo chat rcon, lưu thế giới và khởi động lại vào lúc 4h sáng mà không cần can thiệp thủ công.</p><p><strong>Tự động hóa công việc quản trị Server Rust của bạn ngay hôm nay.</strong></p>', 'Cách thiết lập lịch Wipe và restart tự động cho Server Rust.', 'rust server, wipe map, tự động hóa, schedules', 'published', 0, 750),
-(1, 3, 'Trình Quản lý Tệp tin (File Manager) & Truy cập FTP tốc độ cao', 'trinh-quan-ly-tep-tin-file-manager-truy-cap-ftp-toc-do-cao', '<p>Nhiều khách hàng gặp khó khăn khi muốn upload map cũ dung lượng lớn hoặc chỉnh sửa file config trực tiếp do giao diện web tải chậm.</p><p>Hướng dẫn sử dụng Web FTP tích hợp sẵn hoặc kết nối qua phần mềm FileZilla. Cung cấp thông tin host, port, username để khách có toàn quyền quản lý dữ liệu (full access) một cách siêu tốc và bảo mật.</p><p><strong>Đăng nhập Control Panel để trải nghiệm trình quản lý file trực quan.</strong></p>', 'Hướng dẫn sử dụng File Manager và FTP cho Server Game.', 'ftp, file manager, upload map, quản lý dữ liệu', 'published', 0, 1200),
-(1, 1, 'Thuê Server Valheim: Hỗ trợ Crossplay PC và Xbox mượt mà', 'thue-server-valheim-ho-tro-crossplay-pc-va-xbox-muot-ma', '<p>Hội bạn chơi Valheim chia làm hai phe: người dùng PC, người dùng Xbox và không thể kết nối chung một host cá nhân.</p><p>Cung cấp giải pháp máy chủ Valheim có bật sẵn tính năng Crossplay ngay khi khởi tạo. Tối ưu cấu hình để đảm bảo thế giới rộng lớn không bị giật lag khi nhiều người cùng xây dựng và thám hiểm ở các khu vực khác nhau.</p><p><strong>Bắt đầu hành trình sinh tồn RLcraft cùng bạn bè ngay.</strong></p>', 'Thuê máy chủ Valheim chất lượng cao, hỗ trợ Crossplay.', 'valheim, crossplay, server valheim', 'published', 0, 850);
-
+INSERT INTO news (id, author_id, category_id, title, slug, thumbnail, content, meta_keywords, meta_description, status, views_count, publish_at, is_breaking, breaking_until, seo_score, likes_count, created_at, updated_at) VALUES
+(1, 1, 5, 'Ra mắt Cloud Arena: Nền tảng thuê Game Server tự động 100%', 'ra-mat-cloud-arena-nen-tang-thue-game-server-tu-dong-100', '6a0623ca90a5c_news.jpg', '<p>Khách hàng thường mệt mỏi vì thanh toán xong phải chờ Admin duyệt thủ công (có khi mất cả ngày) mới có thông tin IP/Port để chơi.</p><p>Giới thiệu hệ thống tự động hoàn toàn. Giải thích quy trình: Đăng ký -&gt; Chọn cấu hình (products) -&gt; Thanh toán (orders) -&gt; Server tự động khởi tạo và trả về ip_address, port trong vòng 60 giây.</p><p><strong>Tạo tài khoản và nhận ưu đãi khởi tạo server ngay hôm nay.</strong></p>', 'game server, cloud arena, tự động, hosting', 'Nền tảng thuê Game Server tự động 100% tại Cloud Arena.', 'published', 1262, NULL, 1, NULL, 75, 0, '2026-05-14 18:51:39', '2026-05-14 21:40:11'),
+(2, 1, 5, 'Hệ thống Credit là gì? Cách tối ưu chi phí thuê Server', 'he-thong-credit-la-gi-cach-toi-uu-chi-phi-thue-server', NULL, '<p>Khách hàng không hiểu Credit để làm gì, tại sao không thanh toán thẳng bằng tiền mặt.</p><p>Giải thích tỷ lệ quy đổi (Ví dụ: 100,000 VNĐ = 100 Credit = 1GB RAM/tháng). Phân tích lợi ích: Nạp một lần, có thể dùng Credit để mua server mới, gia hạn hoặc nâng cấp RAM bất cứ lúc nào mà không cần lắt nhắt chuyển khoản nhiều lần.</p><p><strong>Hướng dẫn vào trang nạp Credit và các cổng thanh toán hỗ trợ.</strong></p>', 'credit, tối ưu chi phí, nạp tiền', 'Tìm hiểu về hệ thống Credit và cách tối ưu chi phí thuê server.', 'published', 853, NULL, 0, NULL, 0, 0, '2026-05-14 18:51:39', '2026-05-14 21:43:37'),
+(3, 1, 3, 'Hướng dẫn nâng cấp RAM cho Server chỉ trong 1 click', 'huong-dan-nang-cap-ram-cho-server-chi-trong-1-click', NULL, '<p>Server đang chơi bị giật lag do thiếu RAM, nhưng khách sợ nâng cấp sẽ làm mất dữ liệu hoặc phải chờ lâu.</p><p>Giới thiệu tính năng \"Cộng dồn RAM\" (current_ram_mb). Hướng dẫn các bước vào Dashboard, chọn số RAM cần thêm, hệ thống sẽ tự trừ Credit và apply RAM mới vào server mà không làm mất map hay data.</p><p><strong>Server đang báo đỏ RAM? Nâng cấp ngay chỉ với 100 Credit!</strong></p>', 'nâng cấp ram, server lag, fix lag', 'Nâng cấp RAM server nhanh chóng không mất dữ liệu.', 'published', 1501, NULL, 0, NULL, 0, 0, '2026-05-14 18:51:39', '2026-05-14 19:50:35'),
+(4, 1, 4, 'Mua Server càng lâu - Tiết kiệm càng sâu', 'mua-server-cang-lau-tiet-kiem-cang-sau', NULL, '<p>Khuyến khích khách hàng cam kết sử dụng dịch vụ lâu dài thay vì mua lẻ từng tháng.</p><p>Lập bảng so sánh chi phí khi chọn duration_months là 1 tháng, 3 tháng, 6 tháng và 12 tháng. Phân tích bài toán kinh tế (ví dụ: mua 6 tháng tặng 1 tháng). Nhấn mạnh việc mua dài hạn giúp tránh rủi ro quên gia hạn (expired).</p><p><strong>Chọn kỳ hạn 6 tháng tại giỏ hàng để nhận chiết khấu 15%.</strong></p>', 'tiết kiệm, khuyến mãi, thuê server', 'Tiết kiệm chi phí khi thuê server game dài hạn.', 'published', 3200, NULL, 1, NULL, 0, 0, '2026-05-14 18:51:39', '2026-05-14 18:51:39'),
+(5, 1, 1, 'Mở Server Terraria Journey''s End: Khám phá thế giới cùng bạn bè', 'mo-server-terraria-journeys-end-kham-pha-the-gioi-cung-ban-be', NULL, '<p>Chơi Terraria qua Steam (Host & Play) thường xuyên bị gián đoạn khi chủ phòng tắt máy hoặc rớt mạng.</p><p>Tạo một thế giới Terraria 24/7 độc lập hoàn toàn. Nền tảng hỗ trợ sẵn tShock giúp admin quản lý server, phân quyền người chơi và chống hack item hiệu quả chỉ với vài click cấu hình (options) trên web.</p><p><strong>Thuê ngay máy chủ Terraria và bắt đầu hành trình đánh boss không giới hạn.</strong></p>', 'terraria, server terraria, tshock', 'Hướng dẫn thuê và tạo server Terraria 24/7 mượt mà.', 'published', 500, NULL, 0, NULL, 0, 0, '2026-05-14 18:51:39', '2026-05-14 18:51:39'),
+(6, 1, 1, 'Vận hành Server Rust: Tự động hóa lịch Wipe và Restart', 'van-hanh-server-rust-tu-dong-hoa-lich-wipe-va-restart', NULL, '<p>Chủ server Rust rất vất vả trong việc thức đêm để canh thời gian Wipe map hoặc restart server định kỳ nhằm giảm lag.</p><p>Giới thiệu tính năng Lịch trình (Schedules). Hướng dẫn thiết lập Cronjob ngay trên Panel để tự động gửi thông báo chat rcon, lưu thế giới và khởi động lại vào lúc 4h sáng mà không cần can thiệp thủ công.</p><p><strong>Tự động hóa công việc quản trị Server Rust của bạn ngay hôm nay.</strong></p>', 'rust server, wipe map, tự động hóa, schedules', 'Cách thiết lập lịch Wipe và restart tự động cho Server Rust.', 'published', 751, NULL, 0, NULL, 0, 0, '2026-05-14 18:51:39', '2026-05-14 20:16:56'),
+(7, 1, 3, 'Trình Quản lý Tệp tin (File Manager) & Truy cập FTP tốc độ cao', 'trinh-quan-ly-tep-tin-file-manager-truy-cap-ftp-toc-do-cao', NULL, '<p>Nhiều khách hàng gặp khó khăn khi muốn upload map cũ dung lượng lớn hoặc chỉnh sửa file config trực tiếp do giao diện web tải chậm.</p><p>Hướng dẫn sử dụng Web FTP tích hợp sẵn hoặc kết nối qua phần mềm FileZilla. Cung cấp thông tin host, port, username để khách có toàn quyền quản lý dữ liệu (full access) một cách siêu tốc và bảo mật.</p><p><strong>Đăng nhập Control Panel để trải nghiệm trình quản lý file trực quan.</strong></p>', 'ftp, file manager, upload map, quản lý dữ liệu', 'Hướng dẫn sử dụng File Manager và FTP cho Server Game.', 'published', 1202, NULL, 0, NULL, 0, 1, '2026-05-14 18:51:39', '2026-05-15 06:06:00'),
+(8, 1, 1, 'Thuê Server Valheim: Hỗ trợ Crossplay PC và Xbox mượt mà', 'thue-server-valheim-ho-tro-crossplay-pc-va-xbox-muot-ma', NULL, '<p>Hội bạn chơi Valheim chia làm hai phe: người dùng PC, người dùng Xbox và không thể kết nối chung một host cá nhân.</p><p>Cung cấp giải pháp máy chủ Valheim có bật sẵn tính năng Crossplay ngay khi khởi tạo. Tối ưu cấu hình để đảm bảo thế giới rộng lớn không bị giật lag khi nhiều người cùng xây dựng và thám hiểm ở các khu vực khác nhau.</p><p><strong>Bắt đầu hành trình sinh tồn RLcraft cùng bạn bè ngay.</strong></p>', 'valheim, crossplay, server valheim', 'Thuê máy chủ Valheim chất lượng cao, hỗ trợ Crossplay.', 'published', 850, NULL, 0, NULL, 0, 0, '2026-05-14 18:51:39', '2026-05-14 18:51:39'),
+(9, 1, 3, 'Khi nào nên nâng cấp CPU cho Game Server?', 'khi-nao-nen-nang-cap-cpu-cho-game-server', '', '<p>Server bị delay dù RAM vẫn còn dư khiến nhiều người khó hiểu. Giải thích tình trạng nghẽn CPU khi có quá nhiều AI, plugin hoặc script xử lý thời gian thực. Nâng cấp CPU để cải thiện tốc độ phản hồi server ngay hôm nay.</p>', 'cpu server, nâng cấp cpu, game hosting', 'Dấu hiệu cần nâng cấp CPU cho server game.', 'published', 3, NULL, 0, NULL, 65, 0, '2026-05-14 19:41:23', '2026-05-14 20:07:07'),
+(78, 1, 2, 'Cổng Support 24/7: Cách gửi yêu cầu hỗ trợ nhanh nhất', 'cong-support-24-7-cach-gui-yeu-cau-ho-tro-nhanh-nhat', '6a06bdd0648b1_news.jpg', '<p>Khách hàng gặp lỗi game, lỗi server nhưng không biết tìm ai, nhắn tin Fanpage thì trôi tin.</p><p>Hướng dẫn sử dụng tính năng tạo Ticket (contacts) hoặc gửi form (faq_messages) trực tiếp trên web. Cam kết thời gian phản hồi (SLA) từ đội ngũ Admin (role = admin).</p><p><strong>Lưu lại trang Liên hệ / Support để sử dụng khi cần trợ giúp kỹ thuật.</strong></p>', 'support, hỗ trợ, ticket', 'Hệ thống hỗ trợ khách hàng 24/7 chuyên nghiệp.', 'published', 626, NULL, 0, NULL, 65, 1, '2026-05-14 20:07:55', '2026-05-15 07:55:46'),
+(79, 1, 1, 'Thuê Server Minecraft chuẩn E-Sports: Không lag, Không delay', 'thue-server-minecraft-chuan-e-sports-khong-lag-khong-delay', NULL, '<p>Dân cày Minecraft (đặc biệt là PvP hoặc server đông người) cực kỳ ghét TPS (Ticks Per Second) bị tụt.</p><p>Bóc tách cấu hình phần cứng của nền tảng (CPU xung nhịp cao, RAM chuẩn server). Giải thích vì sao cấu hình products của Cloud Arena đảm bảo TPS luôn ở mức 20 dù server có 50+ người online.</p><p><strong>Xem ngay bảng giá các gói Minecraft Server Premium.</strong></p>', 'minecraft, e-sports, low ping', 'Server Minecraft hiệu năng cao cho thi đấu chuyên nghiệp.', 'published', 1112, NULL, 0, NULL, 0, 1, '2026-05-14 20:07:55', '2026-05-15 06:29:16'),
+(80, 1, 1, 'Cài đặt Modpack Minecraft siêu dễ tại Cloud Arena', 'cai-dat-modpack-minecraft-sieu-de-tai-cloud-arena', NULL, '<p>Tự cài Modpack rất dễ bị crash lỗi phiên bản, sai thư viện.</p><p>Khoe tính năng 1-click install. Liệt kê các Modpack đang hot được hỗ trợ (lấy từ cột JSON modpacks trong table about). Hướng dẫn cách đổi từ server Vanilla sang Modpack qua phần cài đặt.</p><p><strong>Bắt đầu hành trình sinh tồn RLcraft cùng bạn bè ngay.</strong></p>', 'modpack, minecraft mod, 1-click install', 'Hướng dẫn cài đặt Modpack Minecraft chỉ với một cú click.', 'published', 953, NULL, 0, NULL, 0, 0, '2026-05-14 20:07:55', '2026-05-15 06:29:20'),
+(81, 1, 1, 'Mở Server Palworld: Chơi cùng bạn bè cực mượt với cấu hình 16GB RAM', 'mo-server-palworld-choi-cung-ban-be-cuc-muot-voi-cau-hinh-16gb-ram', NULL, '<p>Game Palworld ngốn RAM khủng khiếp, chơi host cá nhân trên PC mạng yếu sẽ bị văng game liên tục.</p><p>Đánh giá độ \"ngốn\" tài nguyên của Palworld. Tư vấn khách hàng nên chọn gói có ram_mb từ 16GB trở lên. Hướng dẫn cách cấu hình file PalWorldSettings.ini cơ bản thông qua web.</p><p><strong>Thuê ngay Server Palworld - Online 24/24, không cần treo máy tính ở nhà.</strong></p>', 'palworld, server palworld, ram 16gb', 'Cấu hình tối ưu để mở server Palworld mượt mà.', 'published', 1401, NULL, 1, NULL, 0, 0, '2026-05-14 20:07:55', '2026-05-14 20:37:04'),
+(82, 1, 1, 'Xây dựng Server GTA V Roleplay (FiveM): Cần chuẩn bị những gì?', 'xay-dung-server-gta-v-roleplay-fivem-can-chuan-bi-nhung-gi', '6a06b796b80b8_news.jpg', '<p>Người mới muốn làm admin GTA V RP nhưng mù mờ về yêu cầu hệ thống.</p><p>Tư vấn từ A-Z: Cần dung lượng ổ cứng (disk_gb) lớn để chứa xe mod, map custom; cần Database riêng; cần cấu hình CPU mạnh để xử lý hàng ngàn script. Giới thiệu gói sản phẩm chuyên dụng cho FiveM của hệ thống.</p><p><strong>Khởi tạo máy chủ FiveM Roleplay của riêng bạn.</strong></p>', 'gta v rp, fivem, roleplay', 'Hướng dẫn mở server GTA V RP với FiveM.', 'published', 1302, NULL, 0, NULL, 75, 0, '2026-05-14 20:07:55', '2026-05-15 06:29:54'),
+(83, 1, 1, 'Tạo Server CS:GO/CS2 bắn giải: Ping thấp, Tickrate 128 (hoặc Sub-tick)', 'tao-server-csgo-cs2-ban-giai-ping-thap-tickrate-128', NULL, '<p>Game thủ FPS cần độ trễ mạng (Ping) cực thấp, đạn ảo là điều tối kỵ.</p><p>Nhấn mạnh vị trí đặt máy chủ (Datacenter) tối ưu cho đường truyền trong nước. Giải thích công nghệ Sub-tick của CS2 và lý do cần CPU đơn nhân mạnh để xử lý mượt mà.</p><p><strong>Đặt máy chủ CS2 để train team ngay tối nay.</strong></p>', 'cs2, csgo, tickrate 128', 'Thuê server CS2 chuyên nghiệp cho tập luyện và thi đấu.', 'published', 800, NULL, 0, NULL, 0, 0, '2026-05-14 20:07:55', '2026-05-14 20:07:55'),
+(84, 1, 3, 'Sự khác biệt giữa CPU Core và RAM trong việc vận hành Server', 'su-khac-biet-giua-cpu-core-va-ram-trong-viec-van-hanh-server', NULL, '<p>Khách hàng không biết nên chi tiền để mua gói nhiều CPU hay nhiều RAM.</p><p>So sánh dễ hiểu: RAM là \"không gian\" (nhiều người chơi, nhiều map rộng = cần nhiều RAM), CPU là \"tốc độ xử lý\" (nhiều quái vật AI, nhiều plugin logic phức tạp = cần CPU). Tư vấn cách chọn cấu hình cân bằng.</p><p><strong>Nếu vẫn phân vân, hãy nhắn tin cho Support để được tư vấn cấu hình chuẩn.</strong></p>', 'cpu vs ram, cấu hình server, kiến thức', 'Phân biệt vai trò của CPU và RAM trong server game.', 'published', 750, NULL, 0, NULL, 0, 0, '2026-05-14 20:07:55', '2026-05-14 20:07:55'),
+(85, 1, 3, 'Bảo mật Server Game: Tầm quan trọng của tính năng chống DDoS', 'bao-mat-server-game-tam-quan-trong-cua-tinh-nang-chong-ddos', NULL, '<p>Chủ server nơm nớp lo sợ bị đối thủ \"bắn\" DDoS sập server, mất uy tín với người chơi.</p><p>Giải thích DDoS là gì. Phân tích hệ thống Firewall Layer 4/7 mà Cloud Arena đang trang bị để bảo vệ địa chỉ IP (ip_address) của khách. Cam kết uptime (uptime trong bảng about).</p><p><strong>An tâm phát triển cộng đồng với hạ tầng Anti-DDoS chuẩn doanh nghiệp.</strong></p>', 'anti-ddos, bảo mật server, firewall', 'Giải pháp bảo mật và chống DDoS cho server game.', 'published', 1050, NULL, 1, NULL, 0, 0, '2026-05-14 20:07:55', '2026-05-14 20:07:55'),
+(86, 1, 3, 'Tại sao ổ cứng NVMe SSD là bắt buộc đối với Game Server?', 'tai-sao-o-cung-nvme-ssd-la-bat-buoc-doi-voi-game-server', NULL, '<p>Một số bên cho thuê giá rẻ dùng ổ HDD cũ khiến server load map siêu chậm.</p><p>Giải thích tốc độ đọc/ghi I/O. Lấy ví dụ thực tế: Khi người chơi bay nhanh trong Minecraft bằng Elytra, server dùng NVMe sẽ load chunk kịp thời, không bị kẹt block ảo. Khẳng định 100% server tại web bạn dùng NVMe.</p><p><strong>Trải nghiệm tốc độ load map x10 với Cloud Arena.</strong></p>', 'nvme, ssd, load map', 'Ưu điểm của ổ cứng NVMe SSD cho server game.', 'published', 890, NULL, 0, NULL, 0, 0, '2026-05-14 20:07:55', '2026-05-14 20:07:55'),
+(87, 1, 3, 'Quản lý phiên bản Server dễ dàng với hệ thống Options', 'quan-ly-phien-ban-server-de-dang-voi-he-thong-options', NULL, '<p>Muốn đổi từ Spigot sang Paper, hoặc đổi version từ 1.16 lên 1.20 mà không biết code.</p><p>Trực quan hóa cách sử dụng giao diện Options (lưu ở user_service_options). Hướng dẫn khách hàng thao tác chọn dropdown version, hệ thống tự động tải file .jar và chạy lại server.</p><p><strong>Khám phá tính năng quản lý server trực quan.</strong></p>', 'options, server version, spigot, paper', 'Thay đổi phiên bản server game dễ dàng qua web dashboard.', 'published', 670, NULL, 0, NULL, 0, 0, '2026-05-14 20:07:55', '2026-05-14 20:07:55'),
+(88, 1, 3, 'Hướng dẫn khôi phục dữ liệu: Đừng để mất công sức cày cuốc', 'huong-dan-khoi-phuc-du-lieu-dung-de-mat-cong-suc-cay-cuoc', NULL, '<p>Sợ bị hacker phá map hoặc admin cài nhầm plugin gây hỏng dữ liệu.</p><p>Hướng dẫn quy trình sao lưu (Backup) tự động hàng ngày của nền tảng. Chỉ cách khôi phục lại bản backup ngày hôm qua chỉ với vài thao tác trong Dashboard.</p><p><strong>Tính năng Backup luôn miễn phí cho mọi gói dịch vụ!</strong></p>', 'backup, restore, dữ liệu', 'Cách sử dụng tính năng backup và restore dữ liệu server.', 'published', 1200, NULL, 0, NULL, 0, 0, '2026-05-14 20:07:55', '2026-05-14 20:07:55'),
+(89, 1, 5, 'Tổng hợp đánh giá từ những Server lớn đang sử dụng Cloud Arena', 'tong-hop-danh-gia-tu-nhung-server-lon-dang-su-dung-cloud-arena', NULL, '<p>User mới chưa tin tưởng vào thương hiệu, cần kiểm chứng.</p><p>Chọn lọc các bài review 5 sao từ bảng reviews. Chụp ảnh màn hình các server đông người chơi đang chạy ổn định trên hạ tầng của bạn. Phỏng vấn ngắn (nếu có) một chủ server.</p><p><strong>Bạn là khách hàng? Hãy để lại Review để nhận ngay 50 Credit thưởng!</strong></p>', 'review, đánh giá, uy tín', 'Khách hàng nói gì về dịch vụ tại Cloud Arena.', 'published', 501, NULL, 0, NULL, 0, 0, '2026-05-14 20:07:55', '2026-05-14 20:29:05'),
+(90, 1, 2, 'Giải đáp thắc mắc: Các câu hỏi thường gặp khi thuê Server lần đầu', 'giai-dap-thac-mac-cac-cau-hoi-thuong-gap-khi-thue-server-lan-dau', NULL, '<p>Khách hàng hỏi đi hỏi lại những câu giống hệt nhau.</p><p>Tập hợp top 10 câu hỏi từ bảng faqs. Cấu trúc bài viết theo dạng Hỏi - Đáp rõ ràng, ngắn gọn. Giúp tăng điểm SEO cho các từ khóa \"cách thuê server...\", \"giá thuê server...\".</p><p><strong>Xem thêm bách khoa toàn thư FAQ của chúng tôi tại đây.</strong></p>', 'faq, thắc mắc, hướng dẫn', 'Tổng hợp các câu hỏi thường gặp khi thuê server.', 'published', 2102, NULL, 0, NULL, 0, 0, '2026-05-14 20:07:55', '2026-05-15 06:27:25'),
+(91, 1, 4, 'Tổ chức sự kiện cho Server Game: Cách thu hút người chơi mới', 'to-chuc-su-kien-cho-server-game-cach-thu-hut-nguoi-choi-moi', NULL, '<p>Chủ server thuê máy chủ xong không biết cách kéo member, dẫn đến chán nản và hủy gia hạn.</p><p>Bài viết chia sẻ giá trị (Value content). Gợi ý các event trong game: Đua top, săn Boss cuối tuần, x2 Exp. Khuyên chủ server nên nâng cấp current_ram_mb tạm thời trong những ngày diễn ra event để tránh sập.</p><p><strong>Nâng cấp cấu hình để chuẩn bị cho Event lớn sắp tới!</strong></p>', 'event, marketing, member', 'Bí quyết thu hút người chơi cho server game của bạn.', 'published', 451, NULL, 0, NULL, 0, 0, '2026-05-14 20:07:55', '2026-05-14 20:12:14'),
+(92, 1, 5, 'Cập nhật hệ thống tháng này: Giao diện quản lý Server mới', 'cap-nhat-he-thong-thang-nay-giao-dien-quan-ly-server-moi', NULL, '<p>Cần cho khách hàng thấy nền tảng liên tục được phát triển và tối ưu.</p><p>Dạng tin tức Changelog. Liệt kê các lỗi (bugs) đã được fix, các tính năng mới vừa update (Giao diện web mới, game mới vào store).</p><p><strong>Đăng nhập để trải nghiệm ngay diện mạo mới.</strong></p>', 'changelog, update, giao diện mới', 'Bản cập nhật hệ thống mới nhất tại Cloud Arena.', 'published', 980, NULL, 1, NULL, 0, 0, '2026-05-14 20:07:55', '2026-05-14 20:07:55'),
+(93, 1, 4, 'Cách tìm kiếm thành viên (Tuyển Staff/Player) cho Server của bạn', 'cach-tim-kiem-thanh-vien-tuyen-staff-player-cho-server-cua-ban', NULL, '<p>Cộng đồng rời rạc.</p><p>Hướng dẫn cách viết bài PR server thu hút. Khuyến khích người dùng tham gia vào Group Facebook hoặc Discord chính thức của Cloud Arena để đăng bài quảng cáo server của họ (cross-promotion).</p><p><strong>Tham gia ngay Discord Cloud Arena để giao lưu và tuyển member.</strong></p>', 'tuyển member, staff, quảng cáo', 'Hướng dẫn tuyển staff và thành viên cho server game.', 'published', 730, NULL, 0, NULL, 0, 0, '2026-05-14 20:07:55', '2026-05-14 20:07:55'),
+(94, 1, 4, 'Chương trình Giới thiệu (Affiliate): Mời bạn bè - Nhận Credit miễn phí', 'chuong-trinh-gioi-thieu-affiliate-moi-ban-be-nhan-credit-mien-phi', NULL, '<p>Học sinh, sinh viên muốn duy trì máy chủ lâu dài để chơi cùng clan nhưng nguồn tài chính có hạn.</p><p>Ra mắt hệ thống Affiliate. Cấp cho mỗi tài khoản một mã giới thiệu (referral_code). Khi người mới đăng ký và nạp tiền qua link này, cả hai đều nhận được phần trăm hoa hồng cộng thẳng vào số dư Credit.</p><p><strong>Lấy link giới thiệu của bạn và bắt đầu kiếm Credit miễn phí ngay!</strong></p>', 'affiliate, giới thiệu, kiếm credit, miễn phí', 'Kiếm Credit miễn phí thông qua chương trình giới thiệu bạn bè.', 'published', 1150, NULL, 1, NULL, 0, 0, '2026-05-14 20:07:55', '2026-05-14 20:07:55'),
+(95, 1, 3, 'Thêm Co-Admin quản lý Server không cần chia sẻ mật khẩu', 'them-co-admin-quan-ly-server-khong-can-chia-se-mat-khau', NULL, '<p>Chủ server muốn nhờ bạn bè cùng quản lý, reset server khi mình đi vắng nhưng lại sợ rủi ro khi gửi chung tài khoản web.</p><p>Giới thiệu tính năng Sub-Users trên hệ thống quản trị. Hướng dẫn cách phân quyền chi tiết: Chỉ cho phép bật/tắt máy chủ, hoặc chỉ cho xem Console trực tiếp mà không được quyền xóa file hay can thiệp thanh toán.</p><p><strong>Thêm bạn đồng hành vào dự án Game Server của bạn một cách an toàn.</strong></p>', 'sub-user, co-admin, quản lý server, bảo mật', 'Hướng dẫn chia sẻ quyền quản lý server game an toàn bằng Sub-user.', 'published', 620, NULL, 0, NULL, 0, 0, '2026-05-14 20:07:55', '2026-05-14 20:07:55'),
+(96, 1, 3, 'Cách tạo IP chữ (Subdomain) cho Server Game chuyên nghiệp', 'cach-tao-ip-chu-subdomain-cho-server-game-chuyen-nghiep', NULL, '<p>Địa chỉ IP số đi kèm Port (ví dụ: 103.19.xxx.xxx:25565) quá dài và khó nhớ khiến người chơi mới dễ nhập sai khi vào game.</p><p>Hướng dẫn sử dụng tính năng tạo Subdomain tùy chỉnh miễn phí (ví dụ: play.ten-server.cloudarena.vn) ngay trên Panel. Phân tích lợi ích giúp server trông uy tín hơn và dễ dàng xây dựng thương hiệu cộng đồng mạng.</p><p><strong>Tạo ngay một tên miền cực ngầu cho Server của bạn tại Dashboard.</strong></p>', 'subdomain, ip chữ, dns, tên miền server', 'Hướng dẫn tạo Subdomain (IP chữ) miễn phí cho game server.', 'published', 940, NULL, 0, NULL, 0, 0, '2026-05-14 20:07:55', '2026-05-14 20:07:55'),
+(97, 1, 1, 'Máy chủ ARK: Survival Ascended - Đỉnh cao đồ họa, Cấu hình khủng', 'may-chu-ark-survival-ascended-dinh-cao-do-hoa-cau-hinh-khung', NULL, '<p>ARK: Survival Ascended (ASA) sử dụng Unreal Engine 5 yêu cầu tài nguyên phần cứng cực kỳ khắt khe, các gói server giá rẻ thông thường không thể chạy nổi.</p><p>Phân tích cấu hình đặc thù dành riêng cho ASA tại Cloud Arena: CPU đa luồng thế hệ mới và tối thiểu 16GB RAM. Tối ưu hóa file config hệ thống để tránh tình trạng crash do tràn bộ nhớ (Out of Memory).</p><p><strong>Khám phá thế giới khủng long đồ họa siêu thực với hiệu năng vô song.</strong></p>', 'ark ascended, asa, server ark, cấu hình khủng', 'Thuê server ARK: Survival Ascended cấu hình cao, không lag.', 'published', 1050, NULL, 0, NULL, 0, 0, '2026-05-14 20:07:55', '2026-05-14 20:07:55'),
+(98, 1, 4, 'Tại sao nên thuê VPS/Game Server thay vì treo máy tại nhà?', 'tai-sao-nen-thue-vps-game-server-thay-vi-treo-may-tai-nha', NULL, '<p>Nhiều người nghĩ tự mở server trên PC cá nhân sẽ tiết kiệm, nhưng lại vật lộn với việc mở Port (Port Forwarding) trong modem, IP động rớt mạng và tiền điện tăng vọt.</p><p>So sánh chi phí tiền điện hàng tháng so với gói cước thuê server. Nêu bật rủi ro hỏng hóc linh kiện PC do chạy 24/24, nguy cơ lộ IP thật dẫn đến bị mạng botnet tấn công. Thuê server là giải pháp an toàn, mở liền tay chơi ngay.</p><p><strong>Chỉ từ một ly trà sữa, sở hữu ngay Server online 24/24.</strong></p>', 'tự host, port forwarding, thuê vps, tiền điện', 'Những lý do nên thuê server game thay vì tự host trên PC cá nhân.', 'published', 1350, NULL, 0, NULL, 0, 0, '2026-05-14 20:07:55', '2026-05-14 20:07:55'),
+(99, 1, 1, 'Cài đặt GeyserMC: Kết nối người chơi Minecraft Java và Bedrock', 'cai-dat-geysermc-ket-noi-nguoi-choi-minecraft-java-va-bedrock', NULL, '<p>Bạn bè chơi Minecraft trên điện thoại (Bedrock Edition) không thể vào server chung với những người chơi trên PC (Java Edition).</p><p>Hướng dẫn tích hợp plugin GeyserMC và Floodgate trên server Spigot/Paper. Chỉ cách cấu hình cấp thêm port phụ (additional_ports) trên hệ thống để cho phép cả hai nền tảng cùng sinh tồn trong một thế giới duy nhất một cách trơn tru.</p><p><strong>Mở rộng cộng đồng Server của bạn không giới hạn nền tảng thiết bị.</strong></p>', 'geysermc, crossplay minecraft, java bedrock', 'Hướng dẫn cài đặt GeyserMC để chơi chung Minecraft PC và Điện thoại.', 'published', 880, NULL, 0, NULL, 0, 0, '2026-05-14 20:07:55', '2026-05-14 20:07:55'),
+(100, 1, 1, 'Top 5 Plugin Minecraft bắt buộc phải có cho Server Survival', 'top-5-plugin-minecraft-bat-buoc-phai-co-cho-server-survival', NULL, '<p>Server Survival mới mở thường thiếu tính năng quản lý và bảo vệ người chơi.</p><p>Giới thiệu các plugin phổ biến như EssentialsX, LuckPerms, WorldEdit, CoreProtect và Vault. Phân tích lợi ích của từng plugin trong việc quản lý kinh tế, chống grief và tối ưu trải nghiệm người chơi.</p><p><strong>Cài đặt plugin chỉ với vài cú click trên Dashboard Cloud Arena.</strong></p>', 'minecraft plugin, survival server, essentialsx', 'Danh sách plugin Minecraft cần thiết cho server survival.', 'published', 1450, NULL, 0, NULL, 0, 0, '2026-05-14 20:07:55', '2026-05-14 20:07:55'),
+(101, 1, 3, 'Server Rust cần bao nhiêu RAM để chạy ổn định?', 'server-rust-can-bao-nhieu-ram-de-chay-on-dinh', NULL, '<p>Nhiều khách hàng thuê server Rust nhưng chọn cấu hình quá yếu khiến wipe map bị lag.</p><p>Phân tích mức sử dụng RAM theo số lượng người chơi và plugin Oxide/uMod. Đề xuất cấu hình tối thiểu 8GB RAM cho server nhỏ và 16GB+ cho cộng đồng đông người.</p><p><strong>Khởi tạo Rust Server tối ưu hiệu năng ngay hôm nay.</strong></p>', 'rust server, ram rust, oxide', 'Tư vấn cấu hình RAM phù hợp cho server Rust.', 'published', 790, NULL, 0, NULL, 0, 0, '2026-05-14 20:07:55', '2026-05-14 20:07:55'),
+(102, 1, 3, 'Hướng dẫn đổi Map Server Minecraft không mất dữ liệu', 'huong-dan-doi-map-server-minecraft-khong-mat-du-lieu', NULL, '<p>Nhiều admin muốn reset map mới nhưng sợ mất world cũ và dữ liệu người chơi.</p><p>Hướng dẫn cách backup world hiện tại, upload map mới và chuyển đổi trực tiếp trong trình quản lý file của Cloud Arena.</p><p><strong>Tạo thế giới mới cho cộng đồng của bạn chỉ trong vài phút.</strong></p>', 'minecraft map, đổi world, backup world', 'Cách đổi map Minecraft server an toàn.', 'published', 640, NULL, 0, NULL, 0, 0, '2026-05-14 20:07:55', '2026-05-14 20:07:55'),
+(103, 1, 3, 'Tại sao Server bị Crash khi có quá nhiều Plugin?', 'tai-sao-server-bi-crash-khi-co-qua-nhieu-plugin', NULL, '<p>Nhiều chủ server cài plugin tràn lan khiến TPS tụt và server crash liên tục.</p><p>Giải thích hiện tượng xung đột plugin, leak RAM và plugin lỗi thời. Hướng dẫn kiểm tra logs để xác định plugin gây lỗi.</p><p><strong>Dọn dẹp plugin không cần thiết để tối ưu hiệu năng server ngay.</strong></p>', 'plugin lỗi, crash server, tối ưu plugin', 'Nguyên nhân server crash do plugin và cách xử lý.', 'published', 1120, NULL, 0, NULL, 0, 0, '2026-05-14 20:07:55', '2026-05-14 20:07:55'),
+(104, 1, 3, 'Cloud Backup hoạt động như thế nào?', 'cloud-backup-hoat-dong-nhu-the-nao', NULL, '<p>Mất dữ liệu là ác mộng lớn nhất với mọi chủ server game.</p><p>Giải thích cơ chế backup định kỳ lên Cloud Storage riêng biệt. Mọi dữ liệu world, plugin và database đều được lưu tự động mỗi ngày.</p><p><strong>Kích hoạt backup tự động để bảo vệ thành quả của cộng đồng bạn.</strong></p>', 'backup cloud, restore server, lưu dữ liệu', 'Tìm hiểu hệ thống cloud backup tại Cloud Arena.', 'published', 560, NULL, 0, NULL, 0, 0, '2026-05-14 20:07:55', '2026-05-14 20:07:55'),
+(105, 1, 4, 'Hướng dẫn gia hạn Server trước khi hết hạn', 'huong-dan-gia-han-server-truoc-khi-het-han', NULL, '<p>Nhiều khách quên gia hạn khiến server bị tạm ngưng và người chơi bỏ đi.</p><p>Hướng dẫn kiểm tra ngày hết hạn (expired_at), sử dụng Credit để gia hạn nhanh chóng chỉ với vài thao tác.</p><p><strong>Gia hạn ngay để tránh gián đoạn cộng đồng của bạn.</strong></p>', 'gia hạn server, expired, credit', 'Cách gia hạn server game nhanh chóng.', 'published', 890, NULL, 0, NULL, 0, 0, '2026-05-14 20:07:55', '2026-05-14 20:07:55'),
+(106, 1, 3, 'Panel quản lý Server Game có những tính năng gì?', 'panel-quan-ly-server-game-co-nhung-tinh-nang-gi', NULL, '<p>Nhiều người mới chưa biết cách quản lý server thông qua web panel.</p><p>Giới thiệu các tính năng như Start/Stop/Restart, Console realtime, File Manager, Backup và Monitoring tài nguyên.</p><p><strong>Trải nghiệm Dashboard quản lý server hiện đại ngay hôm nay.</strong></p>', 'dashboard server, panel hosting, console', 'Khám phá tính năng panel quản lý server.', 'published', 920, NULL, 0, NULL, 0, 0, '2026-05-14 20:07:55', '2026-05-14 20:07:55'),
+(107, 1, 4, 'Có nên mở Server riêng để chơi cùng bạn bè?', 'co-nen-mo-server-rieng-de-choi-cung-ban-be', NULL, '<p>Nhiều nhóm bạn phân vân giữa host LAN và thuê server riêng.</p><p>Phân tích ưu điểm của server online 24/7: không phụ thuộc máy chủ cá nhân, ping ổn định và dễ mở rộng cộng đồng.</p><p><strong>Tạo server riêng để chơi mọi lúc cùng bạn bè.</strong></p>', 'server riêng, multiplayer, hosting game', 'Lý do nên thuê server game riêng.', 'published', 780, NULL, 0, NULL, 0, 0, '2026-05-14 20:07:55', '2026-05-14 20:07:55'),
+(108, 1, 3, 'Tối ưu TPS Minecraft: Những điều Admin cần biết', 'toi-uu-tps-minecraft-nhung-dieu-admin-can-biet', NULL, '<p>TPS thấp là nguyên nhân khiến gameplay Minecraft bị giật lag nghiêm trọng.</p><p>Hướng dẫn giảm entity, tối ưu chunk loading và sử dụng Paper thay cho Spigot để cải thiện hiệu suất.</p><p><strong>Áp dụng ngay các mẹo tối ưu TPS cho server của bạn.</strong></p>', 'tps minecraft, optimize server, papermc', 'Hướng dẫn tối ưu TPS cho Minecraft server.', 'published', 1250, NULL, 0, NULL, 0, 0, '2026-05-14 20:07:55', '2026-05-14 20:07:55'),
+(109, 1, 5, 'Cloud Arena cam kết Uptime 99.9% như thế nào?', 'cloud-arena-cam-ket-uptime-99-9-nhu-the-nao', NULL, '<p>Khách hàng lo ngại server downtime làm mất người chơi.</p><p>Giải thích hệ thống điện dự phòng, mạng redundancy và monitoring 24/7 giúp duy trì uptime ổn định.</p><p><strong>An tâm vận hành server với hạ tầng chuẩn doanh nghiệp.</strong></p>', 'uptime, monitoring, datacenter', 'Cam kết uptime và độ ổn định tại Cloud Arena.', 'published', 630, NULL, 0, NULL, 0, 0, '2026-05-14 20:07:55', '2026-05-14 20:07:55'),
+(110, 1, 3, 'Hướng dẫn sử dụng Console để quản lý Server Game', 'huong-dan-su-dung-console-de-quan-ly-server-game', NULL, '<p>Nhiều admin mới chưa biết sử dụng console để thao tác nhanh trên server.</p><p>Giới thiệu các lệnh cơ bản như stop, save-all, whitelist và op trong Minecraft hoặc các lệnh quản trị phổ biến ở game khác.</p><p><strong>Làm chủ server của bạn với hệ thống Console realtime.</strong></p>', 'console server, lệnh admin, minecraft op', 'Hướng dẫn sử dụng console quản trị server.', 'published', 710, NULL, 0, NULL, 0, 0, '2026-05-14 20:07:55', '2026-05-14 20:07:55'),
+(111, 1, 3, 'Top lỗi phổ biến khi tự host Server tại nhà', 'top-loi-pho-bien-khi-tu-host-server-tai-nha', NULL, '<p>Nhiều game thủ tự mở server bằng máy tính cá nhân nhưng gặp vô số vấn đề.</p><p>Liệt kê các lỗi phổ biến như mất điện, mạng yếu, NAT Port, IP động và quá nhiệt phần cứng.</p><p><strong>Chuyển sang hạ tầng chuyên nghiệp để vận hành server ổn định hơn.</strong></p>', 'self-host, mở port, server tại nhà', 'Những rủi ro khi tự host game server tại nhà.', 'published', 1020, NULL, 0, NULL, 0, 0, '2026-05-14 20:07:55', '2026-05-14 20:07:55');
 -- Ads (Khoa Branch)
 INSERT INTO ads (title, image_url, link_url, position, status) VALUES
 ('Khuyến mãi Game Server - Giảm 50%', '/public/uploads/ads/promo_banner.jpg', 'https://cloudarena.vn/products', 'sticky-sidebar', 'active'),
 ('Nạp Credit nhận thêm 20%', '/public/uploads/ads/credit_promo.jpg', 'https://cloudarena.vn/billing', 'sticky-sidebar', 'active');
+
+-- 10. Reviews (Khoa Branch)
+INSERT INTO reviews (user_id, product_id, news_id, rating, comment, status) VALUES
+(2, 1, NULL, 5, 'Dịch vụ rất tốt, server mượt mà!', 'approved'),
+(4, 2, NULL, 4, 'Chất lượng ổn định, hỗ trợ nhiệt tình.', 'approved'),
+(5, 1, NULL, 5, 'Rất hài lòng với Cloud Arena!', 'approved'),
+(3, NULL, 1, NULL, 'Nền tảng tuyệt vời cho cộng đồng!', 'approved'),
+(5, NULL, 1, NULL, 'Đã dùng và thấy rất ổn định.', 'approved');
 
 -- Analytics & Interactions
 INSERT INTO news_views (news_id, ip_address, source) VALUES
@@ -550,17 +588,54 @@ INSERT INTO settings (`key_name`, `value`) VALUES
 ('about_heading_prefix', 'Về'),
 ('about_para1', 'Cloud Arena tự hào là đơn vị tiên phong trong việc cung cấp các giải pháp máy chủ game hiệu năng cao tại Việt Nam.'),
 ('about_para2', 'Với đội ngũ kỹ thuật giàu kinh nghiệm và hạ tầng mạng băng thông rộng, chúng tôi cam kết mang lại trải nghiệm chơi game mượt mà nhất cho cộng đồng.'),
-('admin_notification_state_1', '{\"last_opened_id\":3850,\"last_opened_at\":\"2026-05-10 20:35:04\"}'),
+('admin_notification_state_1', '{\"last_opened_id\":3861,\"last_opened_at\":\"2026-05-15 13:37:35\"}'),
+('contact_cat_desc_banned', 'Khiếu nại khóa / blacklist'),
+('contact_cat_desc_billing_payment', 'Hóa đơn, thanh toán, hoàn tiền'),
+('contact_cat_desc_bugs_technical', 'Lỗi kỹ thuật & máy chủ'),
+('contact_cat_desc_forgot_password', 'Khôi phục truy cập tài khoản'),
+('contact_cat_desc_others', 'Các vấn đề khác'),
+('contact_cat_desc_purchase_issue', 'Chọn đơn pending trong form'),
+('contact_discord_invite_url', ''),
+('contact_discord_typed_block', '> relay / discord #support-hq … CONNECTED\r\n> channel latency … 42ms\r\n> join Discord #support-hq _'),
+('contact_form_banned_user_lbl', 'Username'),
+('contact_form_banned_user_ph', 'Tên đăng nhập cần hỗ trợ'),
+('contact_form_forgot_pw_lbl', 'Mật khẩu trước đó (tuỳ chọn)'),
+('contact_form_forgot_pw_ph', ''),
+('contact_form_purchase_empty', 'Không có đơn pending.'),
+('contact_form_purchase_guest', 'Đăng nhập để chọn đơn hàng chờ xử lý.'),
+('contact_form_purchase_opt', '— Chọn đơn —'),
+('contact_form_purchase_order_lbl', 'Đơn hàng (pending)'),
+('contact_gate_cta_body', 'Mở Support Terminal để chọn loại ticket, đính kèm thông tin đơn hàng hoặc bằng chứng kỹ thuật, và gửi yêu cầu được mã hóa an toàn.'),
+('contact_gate_cta_button', 'Tạo Ticket'),
+('contact_gate_headline', 'Trung tâm'),
+('contact_gate_headline_accent', 'hỗ trợ'),
+('contact_gate_subtitle', 'Kết nối trực tiếp tới đội kỹ sư Cloud Arena.'),
+('contact_main_back', '← Quay lại'),
+('contact_main_btn_reset', 'Reset'),
+('contact_main_btn_send', 'Gửi Ticket'),
+('contact_main_cat_heading', 'Chọn danh mục ticket'),
+('contact_main_email_label', 'Email'),
+('contact_main_issue_hint', 'Chọn nhanh bằng các thẻ danh mục phía dưới trang (đồng bộ với ô ẩn).'),
+('contact_main_issue_label', 'Loại vấn đề'),
+('contact_main_msg_label', 'Nội dung'),
+('contact_main_msg_placeholder', '> Mô tả chi tiết lỗi, bước tái hiện, mã đơn (nếu có)…'),
+('contact_main_name_label', 'Tên'),
+('contact_main_stat_lbl_1', 'Avg response'),
+('contact_main_stat_lbl_2', 'Active engineers'),
+('contact_main_stat_lbl_3', 'Nodes healthy'),
+('contact_main_stat_val_1', '~3m'),
+('contact_main_status_online', 'Support online'),
+('contact_main_status_title', 'Trạng thái hệ thống hỗ trợ'),
+('contact_main_term_title', 'Support Terminal'),
+('contact_main_topo_title', 'Network topology'),
+('contact_node_card_title', 'Support Node VN-01'),
+('contact_node_latency_label', 'Latency'),
+('contact_node_online_label', 'Online'),
+('contact_node_region', 'Ho Chi Minh City'),
 ('contact_page_intro', 'Gửi ticket hỗ trợ cho chúng tôi. Đội ngũ sẽ phản hồi sớm nhất có thể.'),
 ('contact_page_title', 'Liên Hệ'),
 ('contact_sidebar_title', 'Thông tin liên hệ'),
-('contact_ticket_meta_2_1', '{\"priority\":\"high\",\"admin_reply\":\"no\",\"replied_at\":\"2026-05-06 10:58:51\"}'),
-('contact_ticket_meta_2_2', '{\"priority\":\"normal\",\"admin_reply\":\"\u1ee8ng v\u1edbi Vanilla b\u1ea1n nh\u00e9 !\",\"replied_at\":\"2026-05-08 15:52:24\"}'),
-('contact_ticket_meta_2_3', '{\"priority\":\"normal\",\"admin_reply\":\"h\u1ea3\",\"replied_at\":\"2026-05-07 15:26:15\"}'),
-('contact_ticket_meta_2_5', '{\"priority\":\"high\",\"admin_reply\":null,\"replied_at\":null}'),
-('contact_ticket_meta_8_1', '{\"priority\":\"high\",\"admin_reply\":null,\"replied_at\":null}'),
-('contact_ticket_meta_8_2', '{\"priority\":\"normal\",\"admin_reply\":null,\"replied_at\":null}'),
-('contact_ticket_meta_8_4', '{\"priority\":\"low\",\"admin_reply\":\"ok bro\",\"replied_at\":\"2026-05-10 14:05:05\"}'),
+('contact_ticket_meta_1_2', '{\"priority\":\"high\",\"admin_reply\":\"ok\",\"replied_at\":\"2026-05-15 13:38:15\",\"previous_password_bcrypt\":null}'),
 ('home_about_feat1_text', 'Sử dụng CPU Intel Core i9 & AMD Ryzen mới nhất, cùng ổ cứng NVMe Gen4 cho tốc độ xử lý vượt trội.'),
 ('home_about_feat1_title', 'Hiệu năng tối đa'),
 ('home_about_feat2_text', 'Lớp bảo vệ đa tầng giúp lọc bỏ các cuộc tấn công DDoS lên đến hàng trăm Gbps, giữ server luôn ổn định.'),
@@ -571,7 +646,7 @@ INSERT INTO settings (`key_name`, `value`) VALUES
 ('home_about_kicker', 'Tính năng vượt trội'),
 ('home_about_lead', 'Nền tảng tập trung cho cộng đồng game thủ: triển khai nhanh, bảo mật cao và vận hành ổn định xuyên suốt.'),
 ('home_card_tech_title', 'Năng lực công nghệ'),
-('home_hero_bg_image', 'hero_bg_bee5ab4cb1755332d8cb6d17dc0d5ad7.gif'),
+('home_hero_bg_image', 'hero_bg_db8ea773262e13220e3e0d25aaafa298.gif'),
 ('home_hero_subtitle', 'Máy chủ game chuyên nghiệp với hiệu năng cao, hỗ trợ modpack và quản lý dễ dàng. Khởi động Server chỉ trong vài phút với công nghệ ảo hóa tiên tiến nhất.'),
 ('home_hero_title_gradient', 'Game Server Hosting'),
 ('home_hero_title_plain', 'Cho Mọi Game Thủ'),
@@ -595,7 +670,7 @@ INSERT INTO settings (`key_name`, `value`) VALUES
 ('site_address', '268 Lý Thường Kiệt, Q10, TP.HCM'),
 ('site_contact_email', 'contact@gameserver.vn'),
 ('site_hotline', '0123 456 789'),
-('site_logo_image', 'brand_logo_20260508144225_50ea750b.png'),
+('site_logo_image', 'brand_f1ce6b8c910f51a2b1f111a7b8cd92c7.png'),
 ('site_logo_text', 'G-SERVER'),
 ('site_map_embed_url', 'https://www.google.com/maps?q=268+Ly+Thuong+Kiet+Q10+TPHCM&output=embed')
 ON DUPLICATE KEY UPDATE value = VALUES(value);
